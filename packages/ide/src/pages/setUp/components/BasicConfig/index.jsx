@@ -3,7 +3,7 @@ import { Result } from 'antd';
 import FormRender, { useForm } from 'form-render';
 import { connect } from 'dva';
 import { isEmpty, cloneDeep } from 'lodash';
-import { findNodeById, isRootNode } from '@/common/tools';
+import { findNodeById, isRootNode, getInfoBySchema } from '@/common/tools';
 import { CodeEditor } from '@apaas-lego/setting-widgets';
 
 const RenderForm = ({ currentNode, dispatch, renderTree }) => {
@@ -17,7 +17,8 @@ const RenderForm = ({ currentNode, dispatch, renderTree }) => {
   if (isEmpty(currentNode)) {
     return <Result status="404" title="请选中组件" />;
   }
-  const { schemas, id } = currentNode;
+  const { sourcePackage, componentName, id } = currentNode;
+  const schemas = getInfoBySchema(sourcePackage, componentName)
   const copyRenderTree = cloneDeep(renderTree);
   let subTree = findNodeById([copyRenderTree], id);
   const watch = {

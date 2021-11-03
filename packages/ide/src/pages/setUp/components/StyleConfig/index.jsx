@@ -3,8 +3,7 @@ import { Result } from 'antd';
 import FormRender, { useForm } from 'form-render';
 import { connect } from 'dva';
 import { isEmpty, cloneDeep } from 'lodash';
-import { findNodeById, isRootNode, calcNewStylesByProps } from '@/common/tools';
-
+import { findNodeById, isRootNode, calcNewStylesByProps, getInfoBySchema } from '@/common/tools';
 
 // 通过原始树，我们将扁平化数据转成树行数据
 const fn = (tree = {}, data) => {
@@ -22,21 +21,23 @@ const fn = (tree = {}, data) => {
   }, {})
 }
 
-const RenderForm = ({ currentNode, dispatch, renderTree }) => {
+const RenderForm = ({ currentNode = {}, dispatch, renderTree }) => {
   const form = useForm();
   useEffect(() => {
     if (!isEmpty(currentNode) && !isRootNode(currentNode?.id)) {
+      const schemas = getInfoBySchema(currentNode?.sourcePackage, currentNode?.componentName);
       // 每次当组件Id发生变化时，即表示切换组件了，我们更新我们右侧表单值
-      const originSchemaStructure = fn(currentNode?.schemas?.styleSchema, currentNode?.styleProps)
-      console.log('originSchemaStructure', currentNode,originSchemaStructure)
+      const originSchemaStructure = fn(schemas?.styleSchema, currentNode?.styleProps)
       form.setValues(originSchemaStructure);
     }
   }, [currentNode?.id]);
+
   if (isEmpty(currentNode)) {
     return <Result status="404" title="请选中组件" />;
   }
-  
-  const { schemas, id, styleProps } = currentNode;
+
+  const { sourcePackage, componentName, id, styleProps } = currentNode;
+  const schemas = getInfoBySchema(sourcePackage, componentName)
   const copyRenderTree = cloneDeep(renderTree);
   let subTree = findNodeById([copyRenderTree], id);
   const watch = {

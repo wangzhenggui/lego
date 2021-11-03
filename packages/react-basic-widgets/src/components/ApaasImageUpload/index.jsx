@@ -3,7 +3,9 @@ import { Upload, Modal } from 'antd';
 import ImgCrop from 'antd-img-crop';
 import { PlusOutlined } from '@ant-design/icons';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
+import { formItemProperties, styleSchema } from '../../common/schema';
 
+const COMPONENT_NAME = '图片上传'
 
 const defaultBeforeUpload = () => { }
 const getBase64 = (file) => {
@@ -127,13 +129,15 @@ ApaasImageUpload.schema = {
         min: 1,
         default: 1,
         widget: "slider"
-      }
+      },
+      ...formItemProperties({label: COMPONENT_NAME})
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -148,7 +152,7 @@ ApaasImageUpload.schema = {
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasImageUpload",
-  name: "图片上传",
+  name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM,
 };

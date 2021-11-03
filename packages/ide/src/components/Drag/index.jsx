@@ -9,7 +9,8 @@ const Drag = memo((props) => {
     type: DRAG_TYPE,
     item: {
       componentName: item?.schema?.type,
-      schemas: item?.schema,
+      sourcePackage: item?.schema?.__source__,
+      // schemas: item?.schema,
       props: {},
     },
     collect: (monitor) => ({

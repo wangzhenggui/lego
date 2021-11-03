@@ -1,5 +1,6 @@
 import { Form } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_CONTAINER } from "../../common/constant";
+import { styleSchema } from '../../common/schema';
 
 const ApaasForm = (props) => {
   return <Form {...props}/>;
@@ -111,6 +112,7 @@ ApaasForm.schema = {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {

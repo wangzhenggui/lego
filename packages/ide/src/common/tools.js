@@ -7,7 +7,7 @@ import {
   ROOT_NODE_FLAG,
   COMPONENT_TYPE_BASIC,
 } from '@/common/constant';
-import { findIndex, set } from 'lodash';
+import { findIndex, get } from 'lodash';
 
 export const isAntComp = (type) => type === COMPONENT_SOURCE_ANTD;
 export const isOfficeComp = (type) => type === COMPONENT_SOURCE_OFFICE;
@@ -121,6 +121,15 @@ export const getPropsByStyleSchema = (schema) => {
   }
   getLeafNode(schema);
   return result;
+}
+
+
+export const getInfoBySchema = (packageName, componentName, key) => {
+  if (!packageName || !componentName) return {};
+  // FIXME: 需要替换成动态方案，目前只有基础组件一种，可以先这样写
+  if (packageName === '@apaas-lego/react-basic-widgets') {
+    return key ? get(require(`@apaas-lego/react-basic-widgets/dist/index`), `${componentName}.schema.${key}`) : get(require(`@apaas-lego/react-basic-widgets/dist/index`), `${componentName}.schema`)
+  }
 }
 
 // export const mergeSchemaAndData = (schema, data) => {

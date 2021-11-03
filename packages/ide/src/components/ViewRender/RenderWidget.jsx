@@ -1,10 +1,12 @@
 import React from 'react';
 import { Form } from 'antd';
 import { get, set } from 'lodash';
-import { isFormType, isContainerType, calcNewStylesByProps } from '@/common/tools';
+import { isFormType, isContainerType, getInfoBySchema } from '@/common/tools';
 import { ROOT_NODE_FLAG } from '@/common/constant';
 
-const RenderWidget = ({ componentName, schemas, id, props, styleProps, children }) => {
+const RenderWidget = ({ componentName, id, props, styleProps, children, sourcePackage }) => {
+
+  const schemas = getInfoBySchema(sourcePackage, componentName)
   // 根节点
   if (id === ROOT_NODE_FLAG) {
     return <div>{children}</div>;
