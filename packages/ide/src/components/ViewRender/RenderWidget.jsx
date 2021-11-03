@@ -13,7 +13,7 @@ const RenderWidget = ({ componentName, schemas, id, props, styleProps, children 
   if (schemas?.__source__) {
     // FIXME: 这里不能将包的名字通过变量的方式导入，只能静态导入，编译时就需要确定,需要想想办法怎么样将自定义组件导入
     Component = get(
-      require(`apaas-basic-widgets/dist/index`),
+      require(`@apaas-lego/react-basic-widgets/dist/index`),
       `${componentName}`,
     );
   }

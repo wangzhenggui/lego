@@ -1,7 +1,7 @@
 import React from 'react';
 import { keys } from 'lodash';
 import Drag from '@/components/Drag';
-import apaasBasicComponent from 'apaas-basic-widgets';
+import apaasBasicComponent from '@apaas-lego/react-basic-widgets';
 import styles from './index.less';
 
 const FormBasic = () => {

@@ -4,7 +4,7 @@ import FormRender, { useForm } from 'form-render';
 import { connect } from 'dva';
 import { isEmpty, cloneDeep } from 'lodash';
 import { findNodeById, isRootNode } from '@/common/tools';
-import { BindAction } from 'apaas-editor-setting-widgets';
+import { BindAction } from '@apaas-lego/setting-widgets';
 
 
 const RenderForm = ({ currentNode, dispatch, renderTree }) => {

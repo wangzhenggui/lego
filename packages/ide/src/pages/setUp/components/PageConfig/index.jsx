@@ -1,7 +1,7 @@
 import React from 'react';
 import FormRender, { useForm } from 'form-render';
 import pageSchema from '@/components/widgets/pageSchema';
-import { CodeEditor } from 'apaas-editor-setting-widgets';
+import { CodeEditor } from '@apaas-lego/setting-widgets';
 import { cloneDeep } from 'lodash';
 import { connect } from 'dva';
 
