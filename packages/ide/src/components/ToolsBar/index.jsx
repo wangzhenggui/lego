@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef } from 'react';
+import { Link } from 'umi'
 import { Button, Modal, Space } from 'antd';
 import MonacoEditor from 'react-monaco-editor';
 import { connect } from 'dva';
@@ -59,6 +60,11 @@ const ToolsBar = ({ dispatch, schema }) => {
       <Button type="primary" onClick={handleExport}>
         导出Schema
       </Button>
+      <Link to="/preview">
+        <Button type="primary">
+          预览
+        </Button>
+      </Link>
     </Space>
   )
 }

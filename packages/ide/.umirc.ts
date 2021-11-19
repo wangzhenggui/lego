@@ -12,6 +12,7 @@ export default defineConfig({
   },
   routes: [
     { path: '/', component: '@/pages/setUp' },
+    { path: '/preview', component: '@/pages/preview' },
   ],
   fastRefresh: {},
   alias: {
