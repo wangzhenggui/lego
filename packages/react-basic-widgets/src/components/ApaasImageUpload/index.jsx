@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Upload, Modal } from 'antd';
-import ImgCrop from 'antd-img-crop';
+// import ImgCrop from 'antd-img-crop';
+// import ImgCrop from './ImgCrop';
 import { PlusOutlined } from '@ant-design/icons';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
 import { formItemProperties, styleSchema } from '../../common/schema';
@@ -82,13 +83,13 @@ const ApaasImageUpload = (props) => {
       </Modal>
     </>)
 
-  if (crop) {
-    return (
-      <ImgCrop rotate>
-        <UploadChild />
-      </ImgCrop>
-    )
-  }
+  // if (crop) {
+  //   return (
+  //     <ImgCrop rotate>
+  //       <UploadChild />
+  //     </ImgCrop>
+  //   )
+  // }
   return (
     <UploadChild />
   )
@@ -117,12 +118,12 @@ ApaasImageUpload.schema = {
         required: false,
         description: "后面使用函数表达式组件替换"
       },
-      crop: {
-        title: "开启裁剪功能",
-        type: "boolean",
-        required: false,
-        widget: "switch"
-      },
+      // crop: {
+      //   title: "开启裁剪功能",
+      //   type: "boolean",
+      //   required: false,
+      //   widget: "switch"
+      // },
       maxCount: {
         title: "最大上传个数",
         type: "number",

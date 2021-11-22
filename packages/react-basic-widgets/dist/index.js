@@ -2,13 +2,11 @@
 
 var React = require('react');
 var antd = require('antd');
-var ImgCrop = require('antd-img-crop');
 var icons = require('@ant-design/icons');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
-var ImgCrop__default = /*#__PURE__*/_interopDefaultLegacy(ImgCrop);
 
 function ownKeys(object, enumerableOnly) {
   var keys = Object.keys(object);
@@ -1269,13 +1267,14 @@ var ApaasImageUpload = function ApaasImageUpload(props) {
       },
       src: previewImageDetail.previewImage
     })));
-  };
+  }; // if (crop) {
+  //   return (
+  //     <ImgCrop rotate>
+  //       <UploadChild />
+  //     </ImgCrop>
+  //   )
+  // }
 
-  if (crop) {
-    return /*#__PURE__*/React__default['default'].createElement(ImgCrop__default['default'], {
-      rotate: true
-    }, /*#__PURE__*/React__default['default'].createElement(UploadChild, null));
-  }
 
   return /*#__PURE__*/React__default['default'].createElement(UploadChild, null);
 };
@@ -1303,12 +1302,12 @@ ApaasImageUpload.schema = {
         required: false,
         description: "后面使用函数表达式组件替换"
       },
-      crop: {
-        title: "开启裁剪功能",
-        type: "boolean",
-        required: false,
-        widget: "switch"
-      },
+      // crop: {
+      //   title: "开启裁剪功能",
+      //   type: "boolean",
+      //   required: false,
+      //   widget: "switch"
+      // },
       maxCount: {
         title: "最大上传个数",
         type: "number",

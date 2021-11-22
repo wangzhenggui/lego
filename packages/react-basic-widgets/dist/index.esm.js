@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Input, InputNumber, Form, Radio, Select, Checkbox, DatePicker, Upload, Modal, Button } from 'antd';
-import ImgCrop from 'antd-img-crop';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 
 function ownKeys(object, enumerableOnly) {
@@ -1262,13 +1261,14 @@ var ApaasImageUpload = function ApaasImageUpload(props) {
       },
       src: previewImageDetail.previewImage
     })));
-  };
+  }; // if (crop) {
+  //   return (
+  //     <ImgCrop rotate>
+  //       <UploadChild />
+  //     </ImgCrop>
+  //   )
+  // }
 
-  if (crop) {
-    return /*#__PURE__*/React.createElement(ImgCrop, {
-      rotate: true
-    }, /*#__PURE__*/React.createElement(UploadChild, null));
-  }
 
   return /*#__PURE__*/React.createElement(UploadChild, null);
 };
@@ -1296,12 +1296,12 @@ ApaasImageUpload.schema = {
         required: false,
         description: "后面使用函数表达式组件替换"
       },
-      crop: {
-        title: "开启裁剪功能",
-        type: "boolean",
-        required: false,
-        widget: "switch"
-      },
+      // crop: {
+      //   title: "开启裁剪功能",
+      //   type: "boolean",
+      //   required: false,
+      //   widget: "switch"
+      // },
       maxCount: {
         title: "最大上传个数",
         type: "number",

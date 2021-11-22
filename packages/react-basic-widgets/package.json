@@ -7,6 +7,7 @@
   "license": "ISC",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
+  "unpkg": "dist/index.umd.min.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
@@ -30,12 +31,7 @@
     "url": "https://github.com/wangzhenggui/lego/issues"
   },
   "dependencies": {
-    "@ant-design/icons": "^4.6.2",
-    "antd": "^4.16.6",
-    "antd-img-crop": "^3.14.2",
-    "prop-types": "^15.7.2",
-    "react": "^16.12.0",
-    "umi-request": "^1.3.9"
+    "react-easy-crop": "^3.5.3"
   },
   "devDependencies": {
     "@umijs/test": "^3.0.5",
@@ -44,10 +40,17 @@
     "gh-pages": "^3.0.0",
     "lint-staged": "^10.0.7",
     "prettier": "^2.2.1",
+    "prop-types": "^15.7.2",
     "proptypes-to-json-schema": "^0.1.1",
     "yorkie": "^2.0.0"
   },
+  "peerDependencies": {
+    "@ant-design/icons": "^4.6.2",
+    "antd": "^4.16.6",
+    "react": "^16.12.0",
+    "umi-request": "^1.3.9"
+  },
   "publishConfig": {
     "access": "public"
- }
+  }
 }
