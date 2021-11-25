@@ -16,12 +16,11 @@ const FR = (props) => {
     return (
       <Wrapper id={id} className={styles.rootWrapper}>
         <div className={styles.emptyNode}>
-          点击/拖拽左侧栏的组件进行添加
+          拖拽左侧栏的组件进行添加
         </div>
       </Wrapper>
     )
   }
-
   return (
     <Wrapper id={id} className={styles.rootWrapper}>
       <RenderWidget {...currentNodeConfig}>

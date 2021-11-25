@@ -77,6 +77,16 @@ export const insertNodeIntoParentTree = (
     node,
   );
 };
+
+// 插入一个节点到目标节点指定位置
+export const insertNodeInParentTreePosition = (parentTree, node, position) => {
+  parentTree.child.splice(
+    position,
+    0,
+    node,
+  );
+}
+
 /**
  *
  * @param {数组} arr
@@ -126,10 +136,7 @@ export const getPropsByStyleSchema = (schema) => {
 
 export const getInfoBySchema = (packageName, componentName, key) => {
   if (!packageName || !componentName) return {};
-  // FIXME: 需要替换成动态方案，目前只有基础组件一种，可以先这样写
-  if (packageName === '@apaas-lego/react-basic-widgets') {
-    return key ? get(require(`@apaas-lego/react-basic-widgets/dist/index`), `${componentName}.schema.${key}`) : get(require(`@apaas-lego/react-basic-widgets/dist/index`), `${componentName}.schema`)
-  }
+  return key ? get(window, `${packageName}.${componentName}.schema.${key}`) : get(window, `${packageName}.${componentName}.schema`)
 }
 
 // export const mergeSchemaAndData = (schema, data) => {

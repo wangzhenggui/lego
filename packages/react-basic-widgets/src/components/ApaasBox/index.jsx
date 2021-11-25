@@ -3,7 +3,6 @@ import { styleSchema } from '../../common/schema';
 
 const ApaasBox = (props) => {
   const { children, styles } = props;
-  console.log('BOX', styles)
   return <div style={styles}>{children}</div>;
 };
 

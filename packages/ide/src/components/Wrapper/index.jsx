@@ -151,7 +151,7 @@ const Wrapper = ({ children, id, renderTree, dispatch, currentNode }) => {
           id,
           copyRenderTree,
         );
-        const newId = `${toLower(item.componentName)}-${nanoid(8)}`; // 每个组件生成唯一id
+        const newId = `${toLower(item.componentName)}-${nanoid(16)}`; // 每个组件生成唯一id
 
         // 通过sourcePackage、componentName获取schema
         const resourceSchema = getInfoBySchema(item.sourcePackage, item.componentName)

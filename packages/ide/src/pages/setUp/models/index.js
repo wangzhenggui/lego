@@ -1,8 +1,10 @@
-import { ROOT_NODE_FLAG } from '@/common/constant';
+import { ROOT_NODE_FLAG, COMPONENT_TYPE_CONTAINER } from '@/common/constant';
 
 const INIT_TREE = { // 默认添加一个根节点
   "componentName": "RootComponent",
+  "componentZhName": "Root",
   "id": ROOT_NODE_FLAG,
+  "__componentType__": COMPONENT_TYPE_CONTAINER,
   "props": {},
   "child": []
 }
