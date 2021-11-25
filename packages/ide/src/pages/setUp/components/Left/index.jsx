@@ -5,15 +5,21 @@ import {
   FormOutlined,
   PieChartOutlined,
   LayoutOutlined,
+  ApartmentOutlined,
   GlobalOutlined,
 } from '@ant-design/icons';
 import FormBasic from '../FormBasic';
-import ChartBasic from '../ChartBasic';
+import ComponentTree from '../ComponentTree';
 import PageConfig from '../PageConfig';
 import LayoutBasic from '../LayoutBasic';
 import styles from './index.less';
 
 const tabs = [
+  {
+    icon: <ApartmentOutlined />,
+    content: <ComponentTree />,
+    key: 'componentTree'
+  },
   {
     icon: <FormOutlined />,
     content: <FormBasic />,
@@ -38,7 +44,7 @@ const Left = ({ dispatch }) => {
   }
   return (
     <>
-      <Tabs defaultActiveKey="0" tabPosition="left" onChange={handleChange}>
+      <Tabs defaultActiveKey="components" tabPosition="left" onChange={handleChange}>
         {tabs.map((item, index) => (
           <TabPane tab={item.icon} key={item.key}>
             {item.content}

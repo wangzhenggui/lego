@@ -1,5 +1,6 @@
 import { Button } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_BASIC } from "../../common/constant";
+import { styleSchema } from '../../common/schema';
 
 const ApaasButton = (props) => {
   return (
@@ -74,6 +75,7 @@ ApaasButton.schema = {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {

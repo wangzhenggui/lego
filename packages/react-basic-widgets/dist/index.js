@@ -2,382 +2,11 @@
 
 var React = require('react');
 var antd = require('antd');
-var ImgCrop = require('antd-img-crop');
 var icons = require('@ant-design/icons');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
-var ImgCrop__default = /*#__PURE__*/_interopDefaultLegacy(ImgCrop);
-
-var CURRENT_PACKAGE_NAME = '@apaas-lego/react-basic-widgets'; // FIXME: 组件类型  [关于这部分我们需要抽出去，每个组件库其实都需要]
-
-var COMPONENT_TYPE_FORM = 'form'; // form类型
-
-var COMPONENT_TYPE_CONTAINER = 'container'; // 容器类型
-
-var COMPONENT_TYPE_BASIC = 'basic'; // 基础类型
-
-var COMPONENT_LAYOUT_INLINE = 'inline'; // 行类元素
-
-var ApaasInput = function ApaasInput(props) {
-  return /*#__PURE__*/React__default['default'].createElement(antd.Input, props);
-};
-
-ApaasInput.schema = {
-  basicSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      allowClear: {
-        title: "清除图标",
-        type: "boolean",
-        required: false
-      },
-      bordered: {
-        title: "是否有边框",
-        type: "boolean",
-        required: false,
-        default: true
-      },
-      maxLength: {
-        title: "最大长度",
-        type: "number",
-        required: false
-      }
-    }
-  },
-  // 基础属性Schema
-  styleSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {}
-  },
-  // 样式属性Schema
-  expandSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
-      }
-    }
-  },
-  // 扩展属性Schema,用于写函数这些功能
-  type: "ApaasInput",
-  name: "输入框",
-  __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
-};
-
-var ApaasInputNumber = function ApaasInputNumber(props) {
-  return /*#__PURE__*/React__default['default'].createElement(antd.InputNumber, props);
-};
-
-ApaasInputNumber.schema = {
-  basicSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      max: {
-        title: "最大值",
-        type: "number",
-        required: false
-      },
-      min: {
-        title: "最小值",
-        type: "number",
-        required: false
-      },
-      reg: {
-        title: "校验规则",
-        type: "string",
-        description: '正则表达式组件'
-      }
-    }
-  },
-  // 基础属性Schema
-  styleSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {}
-  },
-  // 样式属性Schema
-  expandSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
-      }
-    }
-  },
-  // 扩展属性Schema,用于写函数这些功能
-  type: "ApaasInputNumber",
-  name: "数字输入框",
-  __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
-};
-
-var ApaasTextArea = function ApaasTextArea(props) {
-  return /*#__PURE__*/React__default['default'].createElement(antd.Input.TextArea, props);
-};
-
-ApaasTextArea.schema = {
-  basicSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      allowClear: {
-        title: "清除图标",
-        type: "boolean",
-        required: false
-      },
-      maxLength: {
-        title: "最大长度",
-        type: "number",
-        required: false
-      },
-      rows: {
-        title: "行数",
-        type: "number",
-        default: 4
-      }
-    }
-  },
-  // 基础属性Schema
-  styleSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {}
-  },
-  // 样式属性Schema
-  expandSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
-      }
-    }
-  },
-  // 扩展属性Schema,用于写函数这些功能
-  type: "ApaasTextArea",
-  name: "多行输入框",
-  __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
-};
-
-var ApaasForm = function ApaasForm(props) {
-  return /*#__PURE__*/React__default['default'].createElement(antd.Form, props);
-};
-
-ApaasForm.schema = {
-  basicSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      labelCol: {
-        type: "object",
-        displayType: "column",
-        title: "label设置",
-        properties: {
-          span: {
-            title: "span",
-            type: "number",
-            required: false,
-            default: 3
-          },
-          offset: {
-            title: "offset",
-            type: "number",
-            required: false,
-            default: 0
-          }
-        }
-      },
-      wrapperCol: {
-        type: "object",
-        displayType: "column",
-        title: "设置",
-        properties: {
-          span: {
-            title: "span",
-            type: "number",
-            required: false,
-            default: 9
-          },
-          offset: {
-            title: "offset",
-            type: "number",
-            required: false,
-            default: 0
-          }
-        }
-      },
-      initialValues: {
-        title: "初始值",
-        type: "string",
-        required: false,
-        description: "表达式组件"
-      },
-      layout: {
-        title: "布局方式",
-        type: "string",
-        required: false,
-        "enum": ["horizontal", "vertical", "inline"],
-        "enumNames": ["水平", "垂直", "内联"],
-        default: 'horizontal'
-      },
-      labelAlign: {
-        title: "对齐方式",
-        type: "string",
-        required: false,
-        "enum": ["left", "right"],
-        "enumNames": ["左", "右"],
-        default: 'right'
-      },
-      onFinish: {
-        title: "提交函数",
-        type: "string",
-        widget: "CodeEditor",
-        required: false,
-        description: "函数表达式组件",
-        default: "// 请填写提交函数 \n function submit() {}",
-        props: {
-          options: {
-            selectOnLineNumbers: true,
-            roundedSelection: false,
-            readOnly: false,
-            cursorStyle: "line",
-            automaticLayout: false
-          },
-          language: 'javascript',
-          width: '300',
-          height: '200',
-          theme: 'vs-dark' // vs-light
-
-        }
-      }
-    }
-  },
-  // 基础属性Schema
-  styleSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {}
-  },
-  // 样式属性Schema
-  expandSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        widget: "CodeEditor",
-        required: false,
-        description: "函数表达式组件"
-      }
-    }
-  },
-  // 扩展属性Schema,用于写函数这些功能
-  type: "ApaasForm",
-  name: "表单容器",
-  __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_CONTAINER
-};
-
-var ApaasRadio = function ApaasRadio(props) {
-  var _props$names = props.names,
-      names = _props$names === void 0 ? [] : _props$names,
-      _props$values = props.values,
-      values = _props$values === void 0 ? [] : _props$values,
-      isButton = props.isButton;
-  console.log('names', names, 'values', values, 'props', props);
-  return /*#__PURE__*/React__default['default'].createElement(antd.Radio.Group, props, values.map(function (value, index) {
-    return isButton ? /*#__PURE__*/React__default['default'].createElement(antd.Radio.Button, {
-      value: value,
-      key: value
-    }, names[index]) : /*#__PURE__*/React__default['default'].createElement(antd.Radio, {
-      value: value,
-      key: value
-    }, names[index]);
-  }));
-};
-
-ApaasRadio.schema = {
-  basicSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      values: {
-        "title": "选项字段",
-        "type": "array",
-        "enum": ["A", "B", "C"],
-        "enumNames": ["A", "B", "C"],
-        "widget": "select",
-        "props": {
-          "mode": "tags"
-        },
-        "default": ["A", "B", "C"]
-      },
-      names: {
-        "title": "选项名称",
-        "type": "array",
-        "enum": ["选项1", "选项2", "选项3"],
-        "enumNames": ["选项1", "选项2", "选项3"],
-        "widget": "select",
-        "props": {
-          "mode": "tags"
-        },
-        "default": ["选项1", "选项2", "选项3"]
-      },
-      isButton: {
-        "title": "是否是按钮",
-        "type": "boolean",
-        "default": false
-      },
-      buttonStyle: {
-        "title": "风格样式",
-        "type": "string",
-        "default": "solid",
-        "enum": ["outline", "solid"],
-        "enumNames": ["描边", "填色"],
-        "widget": "select"
-      }
-    }
-  },
-  // 基础属性Schema
-  styleSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {}
-  },
-  // 样式属性Schema
-  expandSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
-      }
-    }
-  },
-  // 扩展属性Schema,用于写函数这些功能
-  type: "ApaasRadio",
-  name: "单选框",
-  __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
-};
 
 function ownKeys(object, enumerableOnly) {
   var keys = Object.keys(object);
@@ -561,6 +190,643 @@ function _nonIterableRest() {
   throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
+var CURRENT_PACKAGE_NAME = '@apaas-lego/react-basic-widgets'; // FIXME: 组件类型  [关于这部分我们需要抽出去，每个组件库其实都需要]
+
+var COMPONENT_TYPE_FORM = 'form'; // form类型
+
+var COMPONENT_TYPE_CONTAINER = 'container'; // 容器类型
+
+var COMPONENT_TYPE_BASIC = 'basic'; // 基础类型
+
+var COMPONENT_LAYOUT_INLINE = 'inline'; // 行类元素
+
+var formItemProperties = function formItemProperties(_ref) {
+  var _ref$label = _ref.label,
+      label = _ref$label === void 0 ? '' : _ref$label,
+      _ref$colon = _ref.colon,
+      colon = _ref$colon === void 0 ? true : _ref$colon,
+      _ref$required = _ref.required,
+      required = _ref$required === void 0 ? false : _ref$required,
+      placeholder = _ref.placeholder,
+      initialValue = _ref.initialValue,
+      extra = _ref.extra,
+      name = _ref.name;
+  return {
+    label: {
+      title: '标题',
+      type: 'string',
+      default: label
+    },
+    colon: {
+      title: '是否有冒号',
+      type: 'boolean',
+      default: colon
+    },
+    required: {
+      title: '必填',
+      type: 'boolean',
+      default: required
+    },
+    placeholder: {
+      title: '占位符',
+      type: 'string',
+      default: placeholder
+    },
+    initialValue: {
+      title: '初始值',
+      type: 'string',
+      default: initialValue
+    },
+    extra: {
+      title: '提示信息',
+      type: 'string',
+      default: extra
+    },
+    name: {
+      title: '字段名',
+      type: 'string',
+      default: name
+    }
+  };
+};
+var styleSchema = {
+  width: {
+    title: '宽度',
+    type: 'string',
+    required: false
+  },
+  height: {
+    title: '高度',
+    type: 'string',
+    required: false
+  },
+  background: {
+    title: '背景色',
+    type: 'string'
+  },
+  layout: {
+    type: 'object',
+    title: '布局',
+    properties: {
+      display: {
+        "title": "布局",
+        "type": "string",
+        "enum": ["flex", "block", "inline-block"],
+        "enumNames": ["flex", "block", "inline-block"],
+        "widget": "select",
+        "default": "block"
+      },
+      flexDirection: {
+        "title": "弹性布局方向",
+        "type": "string",
+        "enum": ["row", "column"],
+        "enumNames": ["横向", "纵向"],
+        "default": "row",
+        "hidden": "{{formData.layout.display !== 'flex'}}"
+      },
+      justifyContent: {
+        "title": "主轴方向",
+        "type": "string",
+        "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "default": "center",
+        "hidden": "{{formData.layout.display !== 'flex'}}"
+      },
+      alignItems: {
+        "title": "侧轴方向",
+        "type": "string",
+        "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "default": "center",
+        "hidden": "{{formData.layout.display !== 'flex'}}"
+      }
+    }
+  },
+  font: {
+    type: 'object',
+    title: '文字',
+    properties: {
+      fontFamily: {
+        title: '字体',
+        description: 'font-family',
+        type: 'string',
+        required: false
+      },
+      fontWidget: {
+        type: 'string',
+        description: 'font-widget',
+        title: '字重',
+        default: 'normal',
+        widget: 'select',
+        enum: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder'],
+        enumNames: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder']
+      },
+      fontStyle: {
+        type: 'string',
+        title: '样式',
+        description: 'font-style',
+        default: 'normal',
+        widget: 'select',
+        enum: ['normal', 'italic'],
+        enumNames: ['正常', '斜体']
+      },
+      fontSize: {
+        title: '字体大小',
+        description: 'font-size',
+        type: 'number',
+        required: false,
+        default: 14
+      },
+      lineHeight: {
+        title: '行高',
+        description: 'line-height',
+        type: 'string',
+        required: false,
+        default: '21px'
+      },
+      color: {
+        title: '字体颜色',
+        description: 'color',
+        type: 'string',
+        format: 'color',
+        default: '#000'
+      },
+      textAlign: {
+        type: 'string',
+        description: 'text-align',
+        title: '对齐方式',
+        default: 'left',
+        enum: ['left', 'center', 'right', 'justify'],
+        enumNames: ['left', 'center', 'right', 'justify']
+      },
+      textDecorationLine: {
+        type: 'string',
+        description: 'text-decoration-line',
+        title: '装饰线',
+        default: 'none',
+        enum: ['none', 'underline', 'line-through'],
+        enumNames: ['none', '下划线', '横划线']
+      }
+    }
+  },
+  margin: {
+    type: 'object',
+    title: '外边距',
+    properties: {
+      marginTop: {
+        title: '上边距',
+        type: 'string'
+      },
+      marginRight: {
+        title: '右边距',
+        type: 'string'
+      },
+      marginBottom: {
+        title: '下边距',
+        type: 'string'
+      },
+      marginLeft: {
+        title: '左边距',
+        type: 'string'
+      }
+    }
+  },
+  padding: {
+    type: 'object',
+    title: '内边距',
+    properties: {
+      paddingTop: {
+        title: '上边距',
+        type: 'string'
+      },
+      paddingRight: {
+        title: '右边距',
+        type: 'string'
+      },
+      paddingBottom: {
+        title: '下边距',
+        type: 'string'
+      },
+      paddingLeft: {
+        title: '左边距',
+        type: 'string'
+      }
+    }
+  },
+  border: {
+    type: 'object',
+    title: '边框',
+    properties: {
+      borderStyle: {
+        type: 'string',
+        title: '线形',
+        default: 'none',
+        widget: 'select',
+        enum: ['none', 'solid', 'dashed', 'dotted'],
+        enumNames: ['无', '实线', '虚线', '点线']
+      },
+      borderWidth: {
+        type: 'string',
+        title: '线宽'
+      },
+      borderColor: {
+        type: 'string',
+        title: '颜色',
+        widget: 'color'
+      },
+      borderRadius: {
+        type: 'string',
+        title: '圆角'
+      }
+    }
+  },
+  cursor: {
+    title: '鼠标手势',
+    type: 'string',
+    enum: ['default', 'pointer'],
+    enumNames: ['default', 'pointer'],
+    widget: 'select',
+    default: 'default'
+  }
+};
+
+var COMPONENT_NAME = '输入框';
+
+var ApaasInput = function ApaasInput(props) {
+  return /*#__PURE__*/React__default['default'].createElement(antd.Input, props);
+};
+
+ApaasInput.schema = {
+  basicSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({
+      allowClear: {
+        title: "清除图标",
+        type: "boolean",
+        required: false
+      },
+      bordered: {
+        title: "是否有边框",
+        type: "boolean",
+        required: false,
+        default: true
+      },
+      maxLength: {
+        title: "最大长度",
+        type: "number",
+        required: false
+      }
+    }, formItemProperties({
+      label: COMPONENT_NAME
+    }))
+  },
+  // 基础属性Schema
+  styleSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({}, styleSchema)
+  },
+  // 样式属性Schema
+  expandSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      didMount: {
+        title: "组件加载后",
+        type: "string",
+        default: ""
+      }
+    }
+  },
+  // 扩展属性Schema,用于写函数这些功能
+  type: "ApaasInput",
+  name: COMPONENT_NAME,
+  __source__: CURRENT_PACKAGE_NAME,
+  __componentType__: COMPONENT_TYPE_FORM
+};
+
+var COMPONENT_NAME$1 = '数字输入框';
+
+var ApaasInputNumber = function ApaasInputNumber(props) {
+  return /*#__PURE__*/React__default['default'].createElement(antd.InputNumber, props);
+};
+
+ApaasInputNumber.schema = {
+  basicSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({
+      max: {
+        title: "最大值",
+        type: "number",
+        required: false
+      },
+      min: {
+        title: "最小值",
+        type: "number",
+        required: false
+      },
+      reg: {
+        title: "校验规则",
+        type: "string",
+        description: '正则表达式组件'
+      }
+    }, formItemProperties({
+      label: COMPONENT_NAME$1
+    }))
+  },
+  // 基础属性Schema
+  styleSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({}, styleSchema)
+  },
+  // 样式属性Schema
+  expandSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      didMount: {
+        title: "组件加载后",
+        type: "string",
+        default: ""
+      }
+    }
+  },
+  // 扩展属性Schema,用于写函数这些功能
+  type: "ApaasInputNumber",
+  name: COMPONENT_NAME$1,
+  __source__: CURRENT_PACKAGE_NAME,
+  __componentType__: COMPONENT_TYPE_FORM
+};
+
+var COMPONENT_NAME$2 = '多行输入框';
+
+var ApaasTextArea = function ApaasTextArea(props) {
+  return /*#__PURE__*/React__default['default'].createElement(antd.Input.TextArea, props);
+};
+
+ApaasTextArea.schema = {
+  basicSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({
+      allowClear: {
+        title: "清除图标",
+        type: "boolean",
+        required: false
+      },
+      maxLength: {
+        title: "最大长度",
+        type: "number",
+        required: false
+      },
+      rows: {
+        title: "行数",
+        type: "number",
+        default: 4
+      }
+    }, formItemProperties({
+      label: COMPONENT_NAME$2
+    }))
+  },
+  // 基础属性Schema
+  styleSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({}, styleSchema)
+  },
+  // 样式属性Schema
+  expandSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      didMount: {
+        title: "组件加载后",
+        type: "string",
+        default: ""
+      }
+    }
+  },
+  // 扩展属性Schema,用于写函数这些功能
+  type: "ApaasTextArea",
+  name: COMPONENT_NAME$2,
+  __source__: CURRENT_PACKAGE_NAME,
+  __componentType__: COMPONENT_TYPE_FORM
+};
+
+var ApaasForm = function ApaasForm(props) {
+  return /*#__PURE__*/React__default['default'].createElement(antd.Form, props);
+};
+
+ApaasForm.schema = {
+  basicSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      labelCol: {
+        type: "object",
+        displayType: "column",
+        title: "label设置",
+        properties: {
+          span: {
+            title: "span",
+            type: "number",
+            required: false,
+            default: 3
+          },
+          offset: {
+            title: "offset",
+            type: "number",
+            required: false,
+            default: 0
+          }
+        }
+      },
+      wrapperCol: {
+        type: "object",
+        displayType: "column",
+        title: "设置",
+        properties: {
+          span: {
+            title: "span",
+            type: "number",
+            required: false,
+            default: 9
+          },
+          offset: {
+            title: "offset",
+            type: "number",
+            required: false,
+            default: 0
+          }
+        }
+      },
+      initialValues: {
+        title: "初始值",
+        type: "string",
+        required: false,
+        description: "表达式组件"
+      },
+      layout: {
+        title: "布局方式",
+        type: "string",
+        required: false,
+        "enum": ["horizontal", "vertical", "inline"],
+        "enumNames": ["水平", "垂直", "内联"],
+        default: 'horizontal'
+      },
+      labelAlign: {
+        title: "对齐方式",
+        type: "string",
+        required: false,
+        "enum": ["left", "right"],
+        "enumNames": ["左", "右"],
+        default: 'right'
+      },
+      onFinish: {
+        title: "提交函数",
+        type: "string",
+        widget: "CodeEditor",
+        required: false,
+        description: "函数表达式组件",
+        default: "// 请填写提交函数 \n function submit() {}",
+        props: {
+          options: {
+            selectOnLineNumbers: true,
+            roundedSelection: false,
+            readOnly: false,
+            cursorStyle: "line",
+            automaticLayout: false
+          },
+          language: 'javascript',
+          width: '300',
+          height: '200',
+          theme: 'vs-dark' // vs-light
+
+        }
+      }
+    }
+  },
+  // 基础属性Schema
+  styleSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({}, styleSchema)
+  },
+  // 样式属性Schema
+  expandSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      didMount: {
+        title: "组件加载后",
+        type: "string",
+        widget: "CodeEditor",
+        required: false,
+        description: "函数表达式组件"
+      }
+    }
+  },
+  // 扩展属性Schema,用于写函数这些功能
+  type: "ApaasForm",
+  name: "表单容器",
+  __source__: CURRENT_PACKAGE_NAME,
+  __componentType__: COMPONENT_TYPE_CONTAINER
+};
+
+var COMPONENT_NAME$3 = '单选框';
+
+var ApaasRadio = function ApaasRadio(props) {
+  var _props$names = props.names,
+      names = _props$names === void 0 ? [] : _props$names,
+      _props$values = props.values,
+      values = _props$values === void 0 ? [] : _props$values,
+      isButton = props.isButton;
+  console.log('names', names, 'values', values, 'props', props);
+  return /*#__PURE__*/React__default['default'].createElement(antd.Radio.Group, props, values.map(function (value, index) {
+    return isButton ? /*#__PURE__*/React__default['default'].createElement(antd.Radio.Button, {
+      value: value,
+      key: value
+    }, names[index]) : /*#__PURE__*/React__default['default'].createElement(antd.Radio, {
+      value: value,
+      key: value
+    }, names[index]);
+  }));
+};
+
+ApaasRadio.schema = {
+  basicSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({
+      values: {
+        "title": "选项字段",
+        "type": "array",
+        "enum": ["A", "B", "C"],
+        "enumNames": ["A", "B", "C"],
+        "widget": "select",
+        "props": {
+          "mode": "tags"
+        },
+        "default": ["A", "B", "C"]
+      },
+      names: {
+        "title": "选项名称",
+        "type": "array",
+        "enum": ["选项1", "选项2", "选项3"],
+        "enumNames": ["选项1", "选项2", "选项3"],
+        "widget": "select",
+        "props": {
+          "mode": "tags"
+        },
+        "default": ["选项1", "选项2", "选项3"]
+      },
+      isButton: {
+        "title": "是否是按钮",
+        "type": "boolean",
+        "default": false
+      },
+      buttonStyle: {
+        "title": "风格样式",
+        "type": "string",
+        "default": "solid",
+        "enum": ["outline", "solid"],
+        "enumNames": ["描边", "填色"],
+        "widget": "select"
+      }
+    }, formItemProperties({
+      label: COMPONENT_NAME$3
+    }))
+  },
+  // 基础属性Schema
+  styleSchema: {
+    type: "object",
+    displayType: "column",
+    properties: _objectSpread2({}, styleSchema)
+  },
+  // 样式属性Schema
+  expandSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      didMount: {
+        title: "组件加载后",
+        type: "string",
+        default: ""
+      }
+    }
+  },
+  // 扩展属性Schema,用于写函数这些功能
+  type: "ApaasRadio",
+  name: COMPONENT_NAME$3,
+  __source__: CURRENT_PACKAGE_NAME,
+  __componentType__: COMPONENT_TYPE_FORM
+};
+
+var COMPONENT_NAME$4 = '下拉选择';
+
 var ApaasSingleSelect = function ApaasSingleSelect(props) {
   var _props$names = props.names,
       names = _props$names === void 0 ? [] : _props$names,
@@ -586,7 +852,7 @@ ApaasSingleSelect.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: {
+    properties: _objectSpread2({
       values: {
         "title": "选项字段",
         "type": "array",
@@ -622,13 +888,15 @@ ApaasSingleSelect.schema = {
         "widget": "select",
         "default": "children"
       }
-    }
+    }, formItemProperties({
+      label: COMPONENT_NAME$4
+    }))
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -644,10 +912,12 @@ ApaasSingleSelect.schema = {
   },
   // 扩展属性Schema,用于写函数这些功能
   type: "ApaasSingleSelect",
-  name: "下拉选择",
+  name: COMPONENT_NAME$4,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM
 };
+
+var COMPONENT_NAME$5 = '多选框';
 
 var ApaasCheckBox = function ApaasCheckBox(props) {
   var _props$names = props.names,
@@ -666,7 +936,7 @@ ApaasCheckBox.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: {
+    properties: _objectSpread2({
       values: {
         "title": "选项字段",
         "type": "array",
@@ -689,13 +959,15 @@ ApaasCheckBox.schema = {
         },
         "default": ["选项1", "选项2", "选项3"]
       }
-    }
+    }, formItemProperties({
+      label: COMPONENT_NAME$5
+    }))
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -711,10 +983,12 @@ ApaasCheckBox.schema = {
   },
   // 扩展属性Schema,用于写函数这些功能
   type: "ApaasCheckBox",
-  name: "多选框",
+  name: COMPONENT_NAME$5,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM
 };
+
+var COMPONENT_NAME$6 = '下拉多选';
 
 var ApaasMultSelect = function ApaasMultSelect(props) {
   var _props$names = props.names,
@@ -741,7 +1015,7 @@ ApaasMultSelect.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: {
+    properties: _objectSpread2({
       values: {
         "title": "选项字段",
         "type": "array",
@@ -772,13 +1046,15 @@ ApaasMultSelect.schema = {
         "widget": "select",
         "default": "children"
       }
-    }
+    }, formItemProperties({
+      label: COMPONENT_NAME$6
+    }))
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -794,10 +1070,12 @@ ApaasMultSelect.schema = {
   },
   // 扩展属性Schema,用于写函数这些功能
   type: "ApaasMultSelect",
-  name: "下拉多选",
+  name: COMPONENT_NAME$6,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM
 };
+
+var COMPONENT_NAME$7 = '日期';
 
 var ApaasDatePicker = function ApaasDatePicker(props) {
   var range = props.range;
@@ -808,7 +1086,7 @@ ApaasDatePicker.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: {
+    properties: _objectSpread2({
       picker: {
         "title": "选择器类型",
         "type": "string",
@@ -835,13 +1113,15 @@ ApaasDatePicker.schema = {
         type: "boolean",
         required: false
       }
-    }
+    }, formItemProperties({
+      label: COMPONENT_NAME$7
+    }))
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -857,10 +1137,12 @@ ApaasDatePicker.schema = {
   },
   // 扩展属性Schema,用于写函数这些功能
   type: "ApaasDatePicker",
-  name: "日期",
+  name: COMPONENT_NAME$7,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM
 };
+
+var COMPONENT_NAME$8 = '图片上传';
 
 var defaultBeforeUpload = function defaultBeforeUpload() {};
 
@@ -985,13 +1267,14 @@ var ApaasImageUpload = function ApaasImageUpload(props) {
       },
       src: previewImageDetail.previewImage
     })));
-  };
+  }; // if (crop) {
+  //   return (
+  //     <ImgCrop rotate>
+  //       <UploadChild />
+  //     </ImgCrop>
+  //   )
+  // }
 
-  if (crop) {
-    return /*#__PURE__*/React__default['default'].createElement(ImgCrop__default['default'], {
-      rotate: true
-    }, /*#__PURE__*/React__default['default'].createElement(UploadChild, null));
-  }
 
   return /*#__PURE__*/React__default['default'].createElement(UploadChild, null);
 };
@@ -1000,7 +1283,7 @@ ApaasImageUpload.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: {
+    properties: _objectSpread2({
       accept: {
         title: "接受类型",
         type: "string",
@@ -1019,12 +1302,12 @@ ApaasImageUpload.schema = {
         required: false,
         description: "后面使用函数表达式组件替换"
       },
-      crop: {
-        title: "开启裁剪功能",
-        type: "boolean",
-        required: false,
-        widget: "switch"
-      },
+      // crop: {
+      //   title: "开启裁剪功能",
+      //   type: "boolean",
+      //   required: false,
+      //   widget: "switch"
+      // },
       maxCount: {
         title: "最大上传个数",
         type: "number",
@@ -1032,13 +1315,15 @@ ApaasImageUpload.schema = {
         default: 1,
         widget: "slider"
       }
-    }
+    }, formItemProperties({
+      label: COMPONENT_NAME$8
+    }))
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -1054,7 +1339,7 @@ ApaasImageUpload.schema = {
   },
   // 扩展属性Schema,用于写函数这些功能
   type: "ApaasImageUpload",
-  name: "图片上传",
+  name: COMPONENT_NAME$8,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM
 };
@@ -1084,7 +1369,7 @@ ApaasText.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -1127,7 +1412,7 @@ ApaasBox.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -1143,59 +1428,9 @@ ApaasBox.schema = {
   },
   // 扩展属性Schema,用于写函数这些功能
   type: "ApaasBox",
+  // 组件类型, 需要和导出名称一致
   name: "Box",
-  __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_CONTAINER
-};
-
-/**
- * TODO:  这里配置了dataSource为什么没有用？
- * 1、这里的dataSource是一个数组结构，但是我们搭建平台可能会配置一个表达式来表示，所以这里类型会有问题
- * 2、这里和Box不就是一个组件了吗？ 还是有区别的，这个组件明确表示是一个迭代器组件，表示的功能和含义是不一致的
- * @param {*} props 
- * @returns 
- */
-
-var ApaasIterator = function ApaasIterator(props) {
-  var children = props.children,
-      styles = props.styles;
-  return /*#__PURE__*/React__default['default'].createElement("div", {
-    style: styles
-  }, children);
-};
-
-ApaasIterator.schema = {
-  basicSchema: {
-    type: 'object',
-    displayType: 'column',
-    properties: {
-      dataSource: {
-        title: '数据源',
-        type: 'string'
-      }
-    }
-  },
-  // 基础属性Schema
-  styleSchema: {
-    type: 'object',
-    displayType: 'column',
-    properties: {}
-  },
-  // 样式属性Schema
-  expandSchema: {
-    type: 'object',
-    displayType: 'column',
-    properties: {
-      didMount: {
-        title: '组件加载后',
-        type: 'string',
-        default: ''
-      }
-    }
-  },
-  // 扩展属性Schema,用于写函数这些功能
-  type: 'ApaasIterator',
-  name: '迭代器组件',
+  // 组件名称，组件展示时使用
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_CONTAINER
 };
@@ -1290,7 +1525,7 @@ ApaasModal.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -1368,7 +1603,7 @@ ApaasButton.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: {}
+    properties: _objectSpread2({}, styleSchema)
   },
   // 样式属性Schema
   expandSchema: {
@@ -1425,7 +1660,7 @@ var index = {
   ApaasMultSelect: ApaasMultSelect,
   ApaasDatePicker: ApaasDatePicker,
   ApaasImageUpload: ApaasImageUpload,
-  ApaasIterator: ApaasIterator,
+  // ApaasIterator,
   ApaasModal: ApaasModal,
   ApaasForm: ApaasForm,
   ApaasButton: ApaasButton

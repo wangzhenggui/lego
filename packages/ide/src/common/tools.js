@@ -7,7 +7,7 @@ import {
   ROOT_NODE_FLAG,
   COMPONENT_TYPE_BASIC,
 } from '@/common/constant';
-import { findIndex, set } from 'lodash';
+import { findIndex, get } from 'lodash';
 
 export const isAntComp = (type) => type === COMPONENT_SOURCE_ANTD;
 export const isOfficeComp = (type) => type === COMPONENT_SOURCE_OFFICE;
@@ -77,6 +77,16 @@ export const insertNodeIntoParentTree = (
     node,
   );
 };
+
+// 插入一个节点到目标节点指定位置
+export const insertNodeInParentTreePosition = (parentTree, node, position) => {
+  parentTree.child.splice(
+    position,
+    0,
+    node,
+  );
+}
+
 /**
  *
  * @param {数组} arr
@@ -121,6 +131,12 @@ export const getPropsByStyleSchema = (schema) => {
   }
   getLeafNode(schema);
   return result;
+}
+
+
+export const getInfoBySchema = (packageName, componentName, key) => {
+  if (!packageName || !componentName) return {};
+  return key ? get(window, `${packageName}.${componentName}.schema.${key}`) : get(window, `${packageName}.${componentName}.schema`)
 }
 
 // export const mergeSchemaAndData = (schema, data) => {

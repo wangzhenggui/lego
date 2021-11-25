@@ -5,20 +5,17 @@ import { useDrag, useDrop } from 'react-dnd';
 import { connect } from 'dva';
 import classNames from 'classnames';
 import { DRAG_TYPE, COMPONENT_LAYOUT_INLINE } from '@/common/constant';
-import formFieldSchema from '@/components/widgets/formFieldSchema';
-import styleSchema from '@/components/widgets/styleSchema';
 import {
-  isFormType,
   findNodeById,
   isRootNode,
   getPropsBySchema,
   getPropsByStyleSchema,
   findNodeParentById,
   isContainerType,
-  isBasicType,
   insertNodeIntoParentTree,
   moveNode,
   removeNodeOnParentTree,
+  getInfoBySchema,
 } from '@/common/tools';
 import { nanoid } from 'nanoid';
 import { toLower, cloneDeep, findIndex, set, eq, get } from 'lodash';
@@ -27,8 +24,9 @@ import styles from './index.less';
 const Wrapper = ({ children, id, renderTree, dispatch, currentNode }) => {
   const rootNode = isRootNode(id);
   const isSelected = currentNode?.id === id;
+  const idToNode = findNodeById([renderTree], id);
   const isTextNode = eq(
-    get(findNodeById([renderTree], id), 'schemas.__componentLayout__'),
+    getInfoBySchema(idToNode.sourcePackage, idToNode.componentName, '__componentLayout__'),
     COMPONENT_LAYOUT_INLINE,
   );
   const wrapRef = useRef(null);
@@ -153,34 +151,37 @@ const Wrapper = ({ children, id, renderTree, dispatch, currentNode }) => {
           id,
           copyRenderTree,
         );
-        const newId = `${toLower(item.componentName)}-${nanoid(8)}`; // 每个组件生成唯一id
-        // 为表单组件统一增加formItem的公共配置
-        if (isFormType(item?.schemas?.__componentType__)) {
-          const newFormFieldSchema = cloneDeep(formFieldSchema);
-          set(newFormFieldSchema, 'label.default', item?.schemas?.name);
-          set(item, 'schemas.basicSchema.properties', {
-            ...item?.schemas?.basicSchema?.properties,
-            ...newFormFieldSchema,
-          });
-        }
+        const newId = `${toLower(item.componentName)}-${nanoid(16)}`; // 每个组件生成唯一id
+
+        // 通过sourcePackage、componentName获取schema
+        const resourceSchema = getInfoBySchema(item.sourcePackage, item.componentName)
+        // 为表单组件统一增加formItem的公共配置 TODO: 这一部分功能移动到元组件内部了，要不然后期维护可能会出现问题
+        // if (isFormType(resourceSchema?.__componentType__)) {
+        //   const newFormFieldSchema = cloneDeep(formFieldSchema);
+        //   set(newFormFieldSchema, 'label.default', resourceSchema?.name);
+        //   set(resourceSchema, 'basicSchema.properties', {
+        //     ...resourceSchema?.basicSchema?.properties,
+        //     ...newFormFieldSchema,
+        //   });
+        // }
         // 为容器组件和基础组件统一的添加样式配置
-        if (item?.schemas) {
-          const newStyleSchema = cloneDeep(styleSchema);
-          set(item, 'schemas.styleSchema.properties', {
-            ...item?.schemas?.styleSchema?.properties,
-            ...newStyleSchema,
-          });
-        }
-        const basicProps = getPropsBySchema(item?.schemas?.basicSchema);
-        const styleProps = getPropsByStyleSchema(item?.schemas?.styleSchema);
-        const expandProps = getPropsBySchema(item?.schemas?.expandSchema);
+        // if (resourceSchema) {
+        //   const newStyleSchema = cloneDeep(styleSchema);
+        //   set(resourceSchema, 'styleSchema.properties', {
+        //     ...resourceSchema?.styleSchema?.properties,
+        //     ...newStyleSchema,
+        //   });
+        // }
+        const basicProps = getPropsBySchema(resourceSchema?.basicSchema);
+        const styleProps = getPropsByStyleSchema(resourceSchema?.styleSchema);
+        const expandProps = getPropsBySchema(resourceSchema?.expandSchema);
         const newNode = {
           ...item,
           id: newId,
           props: { ...basicProps, id: newId },
           styleProps,
           expandProps,
-          __componentType__: item?.schemas?.__componentType__,
+          __componentType__: resourceSchema?.__componentType__,
           child: [],
         };
         // 当前节点是容器节点，或者是Root节点

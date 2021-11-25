@@ -1,6 +1,8 @@
 import { Select } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
+import { formItemProperties, styleSchema } from '../../common/schema';
 
+const COMPONENT_NAME = '下拉多选'
 const ApaasMultSelect = (props) => {
   const { names = [], values = [], filterItem } = props
   return (
@@ -75,13 +77,15 @@ ApaasMultSelect.schema = {
         ],
         "widget": "select",
         "default": "children"
-      }
+      },
+      ...formItemProperties({label: COMPONENT_NAME})
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -96,7 +100,7 @@ ApaasMultSelect.schema = {
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasMultSelect",
-  name: "下拉多选",
+  name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM,
 };

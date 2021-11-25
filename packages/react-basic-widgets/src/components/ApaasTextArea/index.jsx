@@ -1,5 +1,8 @@
 import { Input } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
+import { formItemProperties, styleSchema } from '../../common/schema';
+
+const COMPONENT_NAME = '多行输入框'
 
 const ApaasTextArea = (props) => {
   return <Input.TextArea {...props}/>;
@@ -24,13 +27,15 @@ ApaasTextArea.schema = {
         title: "行数",
         type: "number",
         default: 4
-      }
+      },
+      ...formItemProperties({label: COMPONENT_NAME})
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -45,7 +50,7 @@ ApaasTextArea.schema = {
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasTextArea",
-  name: "多行输入框",
+  name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM,
 };

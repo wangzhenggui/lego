@@ -8,8 +8,10 @@ const Drag = memo((props) => {
   const [{ isDragging }, drag] = useDrag({
     type: DRAG_TYPE,
     item: {
+      componentZhName: item?.schema?.name,
       componentName: item?.schema?.type,
-      schemas: item?.schema,
+      sourcePackage: item?.schema?.__source__,
+      // schemas: item?.schema,
       props: {},
     },
     collect: (monitor) => ({

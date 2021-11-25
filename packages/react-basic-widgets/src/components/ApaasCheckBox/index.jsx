@@ -1,5 +1,8 @@
 import { Checkbox } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
+import { formItemProperties, styleSchema } from '../../common/schema';
+
+const COMPONENT_NAME = '多选框';
 
 const ApaasCheckBox = (props) => {
   const { names = [], values = [] } = props
@@ -55,12 +58,14 @@ ApaasCheckBox.schema = {
         },
         "default": ["选项1", "选项2", "选项3"]
       },
+      ...formItemProperties({label: COMPONENT_NAME})
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -75,7 +80,7 @@ ApaasCheckBox.schema = {
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasCheckBox",
-  name: "多选框",
+  name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM,
 };

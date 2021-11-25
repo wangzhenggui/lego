@@ -1,4 +1,5 @@
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_BASIC, COMPONENT_LAYOUT_INLINE } from "../../common/constant";
+import { styleSchema } from '../../common/schema';
 
 const ApaasText = (props) => {
   const { content, styles } = props;
@@ -22,6 +23,7 @@ ApaasText.schema = {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {

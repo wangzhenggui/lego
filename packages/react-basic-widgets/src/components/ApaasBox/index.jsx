@@ -1,8 +1,8 @@
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_CONTAINER } from "../../common/constant";
+import { styleSchema } from '../../common/schema';
 
 const ApaasBox = (props) => {
   const { children, styles } = props;
-  console.log('BOX', styles)
   return <div style={styles}>{children}</div>;
 };
 
@@ -17,6 +17,7 @@ ApaasBox.schema = {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -30,8 +31,8 @@ ApaasBox.schema = {
       },
     }
   }, // 扩展属性Schema,用于写函数这些功能
-  type: "ApaasBox",
-  name: "Box",
+  type: "ApaasBox", // 组件类型, 需要和导出名称一致
+  name: "Box", // 组件名称，组件展示时使用
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_CONTAINER,
 };

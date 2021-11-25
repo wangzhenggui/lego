@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Upload, Modal } from 'antd';
-import ImgCrop from 'antd-img-crop';
+// import ImgCrop from 'antd-img-crop';
+// import ImgCrop from './ImgCrop';
 import { PlusOutlined } from '@ant-design/icons';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
+import { formItemProperties, styleSchema } from '../../common/schema';
 
+const COMPONENT_NAME = '图片上传'
 
 const defaultBeforeUpload = () => { }
 const getBase64 = (file) => {
@@ -80,13 +83,13 @@ const ApaasImageUpload = (props) => {
       </Modal>
     </>)
 
-  if (crop) {
-    return (
-      <ImgCrop rotate>
-        <UploadChild />
-      </ImgCrop>
-    )
-  }
+  // if (crop) {
+  //   return (
+  //     <ImgCrop rotate>
+  //       <UploadChild />
+  //     </ImgCrop>
+  //   )
+  // }
   return (
     <UploadChild />
   )
@@ -115,25 +118,27 @@ ApaasImageUpload.schema = {
         required: false,
         description: "后面使用函数表达式组件替换"
       },
-      crop: {
-        title: "开启裁剪功能",
-        type: "boolean",
-        required: false,
-        widget: "switch"
-      },
+      // crop: {
+      //   title: "开启裁剪功能",
+      //   type: "boolean",
+      //   required: false,
+      //   widget: "switch"
+      // },
       maxCount: {
         title: "最大上传个数",
         type: "number",
         min: 1,
         default: 1,
         widget: "slider"
-      }
+      },
+      ...formItemProperties({label: COMPONENT_NAME})
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -148,7 +153,7 @@ ApaasImageUpload.schema = {
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasImageUpload",
-  name: "图片上传",
+  name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM,
 };

@@ -1,20 +1,26 @@
 import React from 'react';
 import { keys } from 'lodash';
+import { connect } from 'dva';
 import Drag from '@/components/Drag';
-import apaasBasicComponent from '@apaas-lego/react-basic-widgets';
 import styles from './index.less';
 
-const FormBasic = () => {
+const FormBasic = ({ resourceList }) => {
   return (
     <div className={styles.leftWrap}>
       <h3>基础组件</h3>
       <div className={styles.templatesLayout}>
-        {keys(apaasBasicComponent).map((item) => {
-          return <Drag item={apaasBasicComponent[item]} key={item.type} />;
-        })}
+        {
+          resourceList.map(resource => {
+            return keys(window[resource.name]).map((item) => {
+              return <Drag item={window[resource.name][item]} key={item.type} />;
+            })
+          })
+        }
       </div>
     </div>
   );
 };
 
-export default FormBasic;
+export default connect((state) => ({
+  resourceList: state?.globalSetting?.resourceList,
+}))(FormBasic);

@@ -1,6 +1,8 @@
 import { InputNumber } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
+import { formItemProperties, styleSchema } from '../../common/schema';
 
+const COMPONENT_NAME = '数字输入框'
 const ApaasInputNumber = (props) => {
   return <InputNumber {...props}/>;
 };
@@ -24,13 +26,15 @@ ApaasInputNumber.schema = {
         title: "校验规则",
         type: "string",
         description: '正则表达式组件'
-      }
+      },
+      ...formItemProperties({label: COMPONENT_NAME})
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -45,7 +49,7 @@ ApaasInputNumber.schema = {
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasInputNumber",
-  name: "数字输入框",
+  name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM,
 };

@@ -1,6 +1,8 @@
 import { Radio } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
+import { formItemProperties, styleSchema } from '../../common/schema';
 
+const COMPONENT_NAME = '单选框'
 const ApaasRadio = (props) => {
   const { names = [], values = [], isButton } = props
   console.log('names', names, 'values', values, 'props', props);
@@ -74,13 +76,15 @@ ApaasRadio.schema = {
           "填色"
         ],
         "widget": "select"
-      }
+      },
+      ...formItemProperties({label: COMPONENT_NAME})
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
+      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {
@@ -95,7 +99,7 @@ ApaasRadio.schema = {
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasRadio",
-  name: "单选框",
+  name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_FORM,
 };
