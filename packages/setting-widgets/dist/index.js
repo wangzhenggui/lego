@@ -270,5 +270,33 @@ var CodeEditor$1 = function CodeEditor(props) {
   }, "\u7ED1\u5B9A")));
 };
 
+var ColProportion = function ColProportion(_ref) {
+  var _ref$value = _ref.value,
+      value = _ref$value === void 0 ? [] : _ref$value,
+      onChange = _ref.onChange;
+  console.log('value', value);
+
+  var handleChange = function handleChange(e) {
+    var inputValue = e.target.value;
+    var reg = /^[\d:]+$/;
+
+    if (reg.test(inputValue)) {
+      var finalValue = inputValue.split(':'); // .map(item => {
+      //   const newItem = Number(item);
+      //   if (isNaN(newItem) || newItem === 0) return 1;
+      //   return newItem
+      // })
+
+      onChange(finalValue);
+    }
+  };
+
+  return /*#__PURE__*/React__default['default'].createElement(antd.Input, {
+    value: value.join(':'),
+    onChange: handleChange
+  });
+};
+
 exports.BindAction = CodeEditor$1;
 exports.CodeEditor = CodeEditor;
+exports.ColProportion = ColProportion;

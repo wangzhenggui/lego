@@ -17,7 +17,7 @@ window['ReactDOM'] = ReactDom;
 const SetUp = ({ loading, dispatch, resourceList } : any) => {
   const loadScript = (info: Object) => {
     return new Promise((resolve, reject) => {
-      const packageSrc = `https://unpkg.com/${info.name}@${info.version}`
+      const packageSrc = `https://unpkg.com/${info.name}@${info.version}`;
       const script = document.createElement('script')
       script.onload = resolve;
       script.onerror = reject;

@@ -43,6 +43,9 @@ ApaasText.schema = {
   __componentType__: COMPONENT_TYPE_BASIC,
   __componentLayout__: COMPONENT_LAYOUT_INLINE,
   __isNeedCommonStyleConfig__: true, // 扩展字段，是否需要通用样式
+  __canDelete__: true, // 是否支持在IDE中删除
+  __canCopy__: true, // 是否支持被复制
+  __canMove__: true // 是否支持被移动
 };
 
 export default ApaasText;

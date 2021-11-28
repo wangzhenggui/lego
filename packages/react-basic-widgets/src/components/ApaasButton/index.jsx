@@ -117,6 +117,9 @@ ApaasButton.schema = {
   name: "按钮",
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_BASIC,
+  __canDelete__: true, // 是否支持在IDE中删除
+  __canCopy__: true, // 是否支持被复制
+  __canMove__: true // 是否支持被移动
 };
 
 export default ApaasButton;

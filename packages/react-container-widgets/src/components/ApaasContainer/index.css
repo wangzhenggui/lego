@@ -1,0 +1,13 @@
+.container {
+  background-color: #f0f0f0;
+  border: 1px dotted;
+  color: rgb(167, 177, 189);
+  max-height: 572px;
+  padding: 20px;
+  overflow: auto;
+  margin-top: 16px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}

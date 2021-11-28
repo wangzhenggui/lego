@@ -69,6 +69,12 @@ export default {
         ...state,
         ...payload
       }
+    },
+    subContainerChange(state, { payload }) {
+      return {
+        ...state,
+        ...payload
+      }
     }
   },
 }

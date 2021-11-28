@@ -10,7 +10,6 @@ import ApaasDatePicker from './components/ApaasDatePicker';
 import ApaasImageUpload from './components/ApaasImageUpload';
 import ApaasText from './components/ApaasText';
 import ApaasBox from './components/ApaasBox';
-// import ApaasIterator from './components/ApaasIterator';
 import ApaasModal from './components/ApaasModal';
 import ApaasButton from './components/ApaasButton';
 
@@ -26,8 +25,22 @@ export default {
   ApaasMultSelect,
   ApaasDatePicker,
   ApaasImageUpload,
-  // ApaasIterator,
   ApaasModal,
   ApaasForm,
-  ApaasButton
+  ApaasButton,
+  showComponentList: [
+    ApaasText,
+    ApaasBox,
+    ApaasInput,
+    ApaasInputNumber,
+    ApaasTextArea,
+    ApaasRadio,
+    ApaasCheckBox,
+    ApaasSingleSelect,
+    ApaasMultSelect,
+    ApaasDatePicker,
+    ApaasImageUpload,
+    ApaasForm,
+    ApaasButton,
+  ]
 }

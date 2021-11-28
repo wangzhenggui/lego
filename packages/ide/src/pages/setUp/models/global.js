@@ -4,10 +4,13 @@ export default {
     setting: {},
     functionExpressionModal: false,
     globalFunctionContext: '',
-    loading: false,
+    loading: true,
     resourceList: [{
+      name: '@apaas-lego/react-container-widgets',
+      version: '0.0.7'
+    }, {
       name: '@apaas-lego/react-basic-widgets',
-      version: '0.0.2'
+      version: '0.0.26'
     }],
   },
   reducers: {

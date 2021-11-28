@@ -29320,6 +29320,7 @@
     getFieldValue: warningFunc,
     getFieldsValue: warningFunc,
     getFieldError: warningFunc,
+    getFieldWarning: warningFunc,
     getFieldsError: warningFunc,
     isFieldsTouched: warningFunc,
     isFieldTouched: warningFunc,
@@ -29341,7 +29342,8 @@
         setCallbacks: warningFunc,
         getFields: warningFunc,
         setValidateMessages: warningFunc,
-        setPreserve: warningFunc
+        setPreserve: warningFunc,
+        getInitialValue: warningFunc
       };
     }
   });
@@ -30263,7 +30265,7 @@
 
   if (typeof process !== 'undefined' && process.env && "development" !== 'production' && typeof window !== 'undefined' && typeof document !== 'undefined') {
     warning$1 = function warning(type, errors) {
-      if (typeof console !== 'undefined' && console.warn) {
+      if (typeof console !== 'undefined' && console.warn && typeof ASYNC_VALIDATOR_NO_WARNING === 'undefined') {
         if (errors.every(function (e) {
           return typeof e === 'string';
         })) {
@@ -30283,21 +30285,20 @@
     });
     return fields;
   }
-  function format() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
+  function format(template) {
+    for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
     }
 
-    var i = 1;
-    var f = args[0];
+    var i = 0;
     var len = args.length;
 
-    if (typeof f === 'function') {
-      return f.apply(null, args.slice(1));
+    if (typeof template === 'function') {
+      return template.apply(null, args);
     }
 
-    if (typeof f === 'string') {
-      var str = String(f).replace(formatRegExp, function (x) {
+    if (typeof template === 'string') {
+      var str = template.replace(formatRegExp, function (x) {
         if (x === '%%') {
           return '%';
         }
@@ -30329,7 +30330,7 @@
       return str;
     }
 
-    return f;
+    return template;
   }
 
   function isNativeStringType(type) {
@@ -30358,7 +30359,7 @@
     var arrLength = arr.length;
 
     function count(errors) {
-      results.push.apply(results, errors);
+      results.push.apply(results, errors || []);
       total++;
 
       if (total === arrLength) {
@@ -30397,7 +30398,7 @@
   function flattenObjArr(objArr) {
     var ret = [];
     Object.keys(objArr).forEach(function (k) {
-      ret.push.apply(ret, objArr[k]);
+      ret.push.apply(ret, objArr[k] || []);
     });
     return ret;
   }
@@ -30416,12 +30417,12 @@
 
     return AsyncValidationError;
   }( /*#__PURE__*/_wrapNativeSuper(Error));
-  function asyncMap(objArr, option, func, callback) {
+  function asyncMap(objArr, option, func, callback, source) {
     if (option.first) {
       var _pending = new Promise(function (resolve, reject) {
         var next = function next(errors) {
           callback(errors);
-          return errors.length ? reject(new AsyncValidationError(errors, convertFieldsError(errors))) : resolve();
+          return errors.length ? reject(new AsyncValidationError(errors, convertFieldsError(errors))) : resolve(source);
         };
 
         var flattenArr = flattenObjArr(objArr);
@@ -30435,12 +30436,7 @@
       return _pending;
     }
 
-    var firstFields = option.firstFields || [];
-
-    if (firstFields === true) {
-      firstFields = Object.keys(objArr);
-    }
-
+    var firstFields = option.firstFields === true ? Object.keys(objArr) : option.firstFields || [];
     var objArrKeys = Object.keys(objArr);
     var objArrLength = objArrKeys.length;
     var total = 0;
@@ -30452,13 +30448,13 @@
 
         if (total === objArrLength) {
           callback(results);
-          return results.length ? reject(new AsyncValidationError(results, convertFieldsError(results))) : resolve();
+          return results.length ? reject(new AsyncValidationError(results, convertFieldsError(results))) : resolve(source);
         }
       };
 
       if (!objArrKeys.length) {
         callback(results);
-        resolve();
+        resolve(source);
       }
 
       objArrKeys.forEach(function (key) {
@@ -30476,15 +30472,44 @@
     });
     return pending;
   }
-  function complementError(rule) {
+
+  function isErrorObj(obj) {
+    return !!(obj && obj.message !== undefined);
+  }
+
+  function getValue(value, path) {
+    var v = value;
+
+    for (var i = 0; i < path.length; i++) {
+      if (v == undefined) {
+        return v;
+      }
+
+      v = v[path[i]];
+    }
+
+    return v;
+  }
+
+  function complementError(rule, source) {
     return function (oe) {
-      if (oe && oe.message) {
+      var fieldValue;
+
+      if (rule.fullFields) {
+        fieldValue = getValue(source, rule.fullFields);
+      } else {
+        fieldValue = source[oe.field || rule.fullField];
+      }
+
+      if (isErrorObj(oe)) {
         oe.field = oe.field || rule.fullField;
+        oe.fieldValue = fieldValue;
         return oe;
       }
 
       return {
         message: typeof oe === 'function' ? oe() : oe,
+        fieldValue: fieldValue,
         field: oe.field || rule.fullField
       };
     };
@@ -30507,23 +30532,11 @@
     return target;
   }
 
-  /**
-   *  Rule for validating required fields.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param source The source object being validated.
-   *  @param errors An array of errors that this rule may add
-   *  validation errors to.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function required(rule, value, source, errors, options, type) {
+  var required$1 = function required(rule, value, source, errors, options, type) {
     if (rule.required && (!source.hasOwnProperty(rule.field) || isEmptyValue(value, type || rule.type))) {
       errors.push(format(options.messages.required, rule.fullField));
     }
-  }
+  };
 
   /**
    *  Rule for validating whitespace.
@@ -30537,17 +30550,17 @@
    *  @param options.messages The validation messages.
    */
 
-  function whitespace(rule, value, source, errors, options) {
+  var whitespace = function whitespace(rule, value, source, errors, options) {
     if (/^\s+$/.test(value) || value === '') {
       errors.push(format(options.messages.whitespace, rule.fullField));
     }
-  }
+  };
 
   /* eslint max-len:0 */
 
-  var pattern = {
+  var pattern$2 = {
     // http://emailregex.com/
-    email: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+    email: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+\.)+[a-zA-Z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]{2,}))$/,
     url: new RegExp("^(?!mailto:)(?:(?:http|https|ftp)://|//)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$", 'i'),
     hex: /^#?([a-f0-9]{6}|[a-f0-9]{3})$/i
   };
@@ -30589,30 +30602,19 @@
       return typeof value === 'function';
     },
     email: function email(value) {
-      return typeof value === 'string' && !!value.match(pattern.email) && value.length < 255;
+      return typeof value === 'string' && value.length <= 320 && !!value.match(pattern$2.email);
     },
     url: function url(value) {
-      return typeof value === 'string' && !!value.match(pattern.url);
+      return typeof value === 'string' && value.length <= 2048 && !!value.match(pattern$2.url);
     },
     hex: function hex(value) {
-      return typeof value === 'string' && !!value.match(pattern.hex);
+      return typeof value === 'string' && !!value.match(pattern$2.hex);
     }
   };
-  /**
-   *  Rule for validating the type of a value.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param source The source object being validated.
-   *  @param errors An array of errors that this rule may add
-   *  validation errors to.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
 
-  function type(rule, value, source, errors, options) {
+  var type$1 = function type(rule, value, source, errors, options) {
     if (rule.required && value === undefined) {
-      required(rule, value, source, errors, options);
+      required$1(rule, value, source, errors, options);
       return;
     }
 
@@ -30627,21 +30629,9 @@
     } else if (ruleType && typeof value !== rule.type) {
       errors.push(format(options.messages.types[ruleType], rule.fullField, rule.type));
     }
-  }
+  };
 
-  /**
-   *  Rule for validating minimum and maximum allowed values.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param source The source object being validated.
-   *  @param errors An array of errors that this rule may add
-   *  validation errors to.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function range(rule, value, source, errors, options) {
+  var range = function range(rule, value, source, errors, options) {
     var len = typeof rule.len === 'number';
     var min = typeof rule.min === 'number';
     var max = typeof rule.max === 'number'; // 正则匹配码点范围从U+010000一直到U+10FFFF的文字（补充平面Supplementary Plane）
@@ -30688,42 +30678,19 @@
     } else if (min && max && (val < rule.min || val > rule.max)) {
       errors.push(format(options.messages[key].range, rule.fullField, rule.min, rule.max));
     }
-  }
+  };
 
-  var ENUM = 'enum';
-  /**
-   *  Rule for validating a value exists in an enumerable list.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param source The source object being validated.
-   *  @param errors An array of errors that this rule may add
-   *  validation errors to.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
+  var ENUM$1 = 'enum';
 
-  function enumerable(rule, value, source, errors, options) {
-    rule[ENUM] = Array.isArray(rule[ENUM]) ? rule[ENUM] : [];
+  var enumerable$1 = function enumerable(rule, value, source, errors, options) {
+    rule[ENUM$1] = Array.isArray(rule[ENUM$1]) ? rule[ENUM$1] : [];
 
-    if (rule[ENUM].indexOf(value) === -1) {
-      errors.push(format(options.messages[ENUM], rule.fullField, rule[ENUM].join(', ')));
+    if (rule[ENUM$1].indexOf(value) === -1) {
+      errors.push(format(options.messages[ENUM$1], rule.fullField, rule[ENUM$1].join(', ')));
     }
-  }
+  };
 
-  /**
-   *  Rule for validating a regular expression pattern.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param source The source object being validated.
-   *  @param errors An array of errors that this rule may add
-   *  validation errors to.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function pattern$1(rule, value, source, errors, options) {
+  var pattern$1 = function pattern(rule, value, source, errors, options) {
     if (rule.pattern) {
       if (rule.pattern instanceof RegExp) {
         // if a RegExp instance is passed, reset `lastIndex` in case its `global`
@@ -30742,29 +30709,18 @@
         }
       }
     }
-  }
+  };
 
   var rules = {
-    required: required,
+    required: required$1,
     whitespace: whitespace,
-    type: type,
+    type: type$1,
     range: range,
-    "enum": enumerable,
+    "enum": enumerable$1,
     pattern: pattern$1
   };
 
-  /**
-   *  Performs validation for string types.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function string(rule, value, callback, source, options) {
+  var string = function string(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -30787,20 +30743,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates a function.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function method(rule, value, callback, source, options) {
+  var method = function method(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -30817,20 +30762,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates a number.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function number(rule, value, callback, source, options) {
+  var number = function number(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -30852,20 +30786,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates a boolean.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function _boolean(rule, value, callback, source, options) {
+  var _boolean = function _boolean(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -30882,20 +30805,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates the regular expression type.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function regexp(rule, value, callback, source, options) {
+  var regexp = function regexp(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -30912,20 +30824,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates a number is an integer.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function integer(rule, value, callback, source, options) {
+  var integer = function integer(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -30943,20 +30844,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates a number is a floating point number.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function floatFn(rule, value, callback, source, options) {
+  var floatFn = function floatFn(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -30974,20 +30864,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates an array.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function array(rule, value, callback, source, options) {
+  var array = function array(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -31005,20 +30884,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates an object.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function object(rule, value, callback, source, options) {
+  var object = function object(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -31035,21 +30903,11 @@
     }
 
     callback(errors);
-  }
+  };
 
-  var ENUM$1 = 'enum';
-  /**
-   *  Validates an enumerable list.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
+  var ENUM = 'enum';
 
-  function enumerable$1(rule, value, callback, source, options) {
+  var enumerable = function enumerable(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -31061,28 +30919,14 @@
       rules.required(rule, value, source, errors, options);
 
       if (value !== undefined) {
-        rules[ENUM$1](rule, value, source, errors, options);
+        rules[ENUM](rule, value, source, errors, options);
       }
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Validates a regular expression pattern.
-   *
-   *  Performs validation when a rule only contains
-   *  a pattern property but is not declared as a string type.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function pattern$2(rule, value, callback, source, options) {
+  var pattern = function pattern(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -31099,9 +30943,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  function date(rule, value, callback, source, options) {
+  var date = function date(rule, value, callback, source, options) {
     // console.log('integer rule called %j', rule);
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field); // console.log('validate on %s value', value);
@@ -31131,16 +30975,16 @@
     }
 
     callback(errors);
-  }
+  };
 
-  function required$1(rule, value, callback, source, options) {
+  var required = function required(rule, value, callback, source, options) {
     var errors = [];
     var type = Array.isArray(value) ? 'array' : typeof value;
     rules.required(rule, value, source, errors, options, type);
     callback(errors);
-  }
+  };
 
-  function type$1(rule, value, callback, source, options) {
+  var type = function type(rule, value, callback, source, options) {
     var ruleType = rule.type;
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
@@ -31158,20 +31002,9 @@
     }
 
     callback(errors);
-  }
+  };
 
-  /**
-   *  Performs validation for any type.
-   *
-   *  @param rule The validation rule.
-   *  @param value The value of the field on the source object.
-   *  @param callback The callback function.
-   *  @param source The source object being validated.
-   *  @param options The validation options.
-   *  @param options.messages The validation messages.
-   */
-
-  function any(rule, value, callback, source, options) {
+  var any = function any(rule, value, callback, source, options) {
     var errors = [];
     var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
 
@@ -31184,7 +31017,7 @@
     }
 
     callback(errors);
-  }
+  };
 
   var validators = {
     string: string,
@@ -31196,13 +31029,13 @@
     "float": floatFn,
     array: array,
     object: object,
-    "enum": enumerable$1,
-    pattern: pattern$2,
+    "enum": enumerable,
+    pattern: pattern,
     date: date,
-    url: type$1,
-    hex: type$1,
-    email: type$1,
-    required: required$1,
+    url: type,
+    hex: type,
+    email: type,
+    required: required,
     any: any
   };
 
@@ -31269,21 +31102,20 @@
    *  for this schema.
    */
 
-  function Schema(descriptor) {
-    this.rules = null;
-    this._messages = messages;
-    this.define(descriptor);
-  }
+  var Schema = /*#__PURE__*/function () {
+    // ========================= Static =========================
+    // ======================== Instance ========================
+    function Schema(descriptor) {
+      this.rules = null;
+      this._messages = messages;
+      this.define(descriptor);
+    }
 
-  Schema.prototype = {
-    messages: function messages(_messages) {
-      if (_messages) {
-        this._messages = deepMerge(newMessages(), _messages);
-      }
+    var _proto = Schema.prototype;
 
-      return this._messages;
-    },
-    define: function define(rules) {
+    _proto.define = function define(rules) {
+      var _this = this;
+
       if (!rules) {
         throw new Error('Cannot configure a schema with no rules');
       }
@@ -31293,18 +31125,22 @@
       }
 
       this.rules = {};
-      var z;
-      var item;
+      Object.keys(rules).forEach(function (name) {
+        var item = rules[name];
+        _this.rules[name] = Array.isArray(item) ? item : [item];
+      });
+    };
 
-      for (z in rules) {
-        if (rules.hasOwnProperty(z)) {
-          item = rules[z];
-          this.rules[z] = Array.isArray(item) ? item : [item];
-        }
+    _proto.messages = function messages(_messages) {
+      if (_messages) {
+        this._messages = deepMerge(newMessages(), _messages);
       }
-    },
-    validate: function validate(source_, o, oc) {
-      var _this = this;
+
+      return this._messages;
+    };
+
+    _proto.validate = function validate(source_, o, oc) {
+      var _this2 = this;
 
       if (o === void 0) {
         o = {};
@@ -31325,14 +31161,13 @@
 
       if (!this.rules || Object.keys(this.rules).length === 0) {
         if (callback) {
-          callback();
+          callback(null, source);
         }
 
-        return Promise.resolve();
+        return Promise.resolve(source);
       }
 
       function complete(results) {
-        var i;
         var errors = [];
         var fields = {};
 
@@ -31346,18 +31181,16 @@
           }
         }
 
-        for (i = 0; i < results.length; i++) {
+        for (var i = 0; i < results.length; i++) {
           add(results[i]);
         }
 
         if (!errors.length) {
-          errors = null;
-          fields = null;
+          callback(null, source);
         } else {
           fields = convertFieldsError(errors);
+          callback(errors, fields);
         }
-
-        callback(errors, fields);
       }
 
       if (options.messages) {
@@ -31373,13 +31206,11 @@
         options.messages = this.messages();
       }
 
-      var arr;
-      var value;
       var series = {};
       var keys = options.keys || Object.keys(this.rules);
       keys.forEach(function (z) {
-        arr = _this.rules[z];
-        value = source[z];
+        var arr = _this2.rules[z];
+        var value = source[z];
         arr.forEach(function (r) {
           var rule = r;
 
@@ -31397,17 +31228,18 @@
             };
           } else {
             rule = _extends$2({}, rule);
-          }
+          } // Fill validator. Skip if nothing need to validate
 
-          rule.validator = _this.getValidationMethod(rule);
-          rule.field = z;
-          rule.fullField = rule.fullField || z;
-          rule.type = _this.getType(rule);
+
+          rule.validator = _this2.getValidationMethod(rule);
 
           if (!rule.validator) {
             return;
           }
 
+          rule.field = z;
+          rule.fullField = rule.fullField || z;
+          rule.type = _this2.getType(rule);
           series[z] = series[z] || [];
           series[z].push({
             rule: rule,
@@ -31424,9 +31256,10 @@
         deep = deep && (rule.required || !rule.required && data.value);
         rule.field = data.field;
 
-        function addFullfield(key, schema) {
+        function addFullField(key, schema) {
           return _extends$2({}, schema, {
-            fullField: rule.fullField + "." + key
+            fullField: rule.fullField + "." + key,
+            fullFields: rule.fullFields ? [].concat(rule.fullFields, [key]) : [key]
           });
         }
 
@@ -31435,63 +31268,56 @@
             e = [];
           }
 
-          var errors = e;
+          var errorList = Array.isArray(e) ? e : [e];
 
-          if (!Array.isArray(errors)) {
-            errors = [errors];
+          if (!options.suppressWarning && errorList.length) {
+            Schema.warning('async-validator:', errorList);
           }
 
-          if (!options.suppressWarning && errors.length) {
-            Schema.warning('async-validator:', errors);
-          }
+          if (errorList.length && rule.message !== undefined) {
+            errorList = [].concat(rule.message);
+          } // Fill error info
 
-          if (errors.length && rule.message !== undefined) {
-            errors = [].concat(rule.message);
-          }
 
-          errors = errors.map(complementError(rule));
+          var filledErrors = errorList.map(complementError(rule, source));
 
-          if (options.first && errors.length) {
+          if (options.first && filledErrors.length) {
             errorFields[rule.field] = 1;
-            return doIt(errors);
+            return doIt(filledErrors);
           }
 
           if (!deep) {
-            doIt(errors);
+            doIt(filledErrors);
           } else {
             // if rule is required but the target object
             // does not exist fail at the rule level and don't
             // go deeper
             if (rule.required && !data.value) {
               if (rule.message !== undefined) {
-                errors = [].concat(rule.message).map(complementError(rule));
+                filledErrors = [].concat(rule.message).map(complementError(rule, source));
               } else if (options.error) {
-                errors = [options.error(rule, format(options.messages.required, rule.field))];
+                filledErrors = [options.error(rule, format(options.messages.required, rule.field))];
               }
 
-              return doIt(errors);
+              return doIt(filledErrors);
             }
 
             var fieldsSchema = {};
 
             if (rule.defaultField) {
-              for (var k in data.value) {
-                if (data.value.hasOwnProperty(k)) {
-                  fieldsSchema[k] = rule.defaultField;
-                }
-              }
+              Object.keys(data.value).map(function (key) {
+                fieldsSchema[key] = rule.defaultField;
+              });
             }
 
             fieldsSchema = _extends$2({}, fieldsSchema, data.rule.fields);
-
-            for (var f in fieldsSchema) {
-              if (fieldsSchema.hasOwnProperty(f)) {
-                var fieldSchema = Array.isArray(fieldsSchema[f]) ? fieldsSchema[f] : [fieldsSchema[f]];
-                fieldsSchema[f] = fieldSchema.map(addFullfield.bind(null, f));
-              }
-            }
-
-            var schema = new Schema(fieldsSchema);
+            var paredFieldsSchema = {};
+            Object.keys(fieldsSchema).forEach(function (field) {
+              var fieldSchema = fieldsSchema[field];
+              var fieldSchemaList = Array.isArray(fieldSchema) ? fieldSchema : [fieldSchema];
+              paredFieldsSchema[field] = fieldSchemaList.map(addFullField.bind(null, field));
+            });
+            var schema = new Schema(paredFieldsSchema);
             schema.messages(options.messages);
 
             if (data.rule.options) {
@@ -31502,8 +31328,8 @@
             schema.validate(data.value, data.rule.options || options, function (errs) {
               var finalErrors = [];
 
-              if (errors && errors.length) {
-                finalErrors.push.apply(finalErrors, errors);
+              if (filledErrors && filledErrors.length) {
+                finalErrors.push.apply(finalErrors, filledErrors);
               }
 
               if (errs && errs.length) {
@@ -31525,7 +31351,7 @@
           if (res === true) {
             cb();
           } else if (res === false) {
-            cb(rule.message || rule.field + " fails");
+            cb(typeof rule.message === 'function' ? rule.message(rule.fullField || rule.field) : rule.message || (rule.fullField || rule.field) + " fails");
           } else if (res instanceof Array) {
             cb(res);
           } else if (res instanceof Error) {
@@ -31542,9 +31368,10 @@
         }
       }, function (results) {
         complete(results);
-      });
-    },
-    getType: function getType(rule) {
+      }, source);
+    };
+
+    _proto.getType = function getType(rule) {
       if (rule.type === undefined && rule.pattern instanceof RegExp) {
         rule.type = 'pattern';
       }
@@ -31554,8 +31381,9 @@
       }
 
       return rule.type || 'string';
-    },
-    getValidationMethod: function getValidationMethod(rule) {
+    };
+
+    _proto.getValidationMethod = function getValidationMethod(rule) {
       if (typeof rule.validator === 'function') {
         return rule.validator;
       }
@@ -31571,9 +31399,11 @@
         return validators.required;
       }
 
-      return validators[this.getType(rule)] || false;
-    }
-  };
+      return validators[this.getType(rule)] || undefined;
+    };
+
+    return Schema;
+  }();
 
   Schema.register = function register(type, validator) {
     if (typeof validator !== 'function') {
@@ -31586,6 +31416,55 @@
   Schema.warning = warning$1;
   Schema.messages = messages;
   Schema.validators = validators;
+
+  var typeTemplate = "'${name}' is not a valid ${type}";
+  var defaultValidateMessages = {
+    default: "Validation error on field '${name}'",
+    required: "'${name}' is required",
+    enum: "'${name}' must be one of [${enum}]",
+    whitespace: "'${name}' cannot be empty",
+    date: {
+      format: "'${name}' is invalid for format date",
+      parse: "'${name}' could not be parsed as date",
+      invalid: "'${name}' is invalid date"
+    },
+    types: {
+      string: typeTemplate,
+      method: typeTemplate,
+      array: typeTemplate,
+      object: typeTemplate,
+      number: typeTemplate,
+      date: typeTemplate,
+      boolean: typeTemplate,
+      integer: typeTemplate,
+      float: typeTemplate,
+      regexp: typeTemplate,
+      email: typeTemplate,
+      url: typeTemplate,
+      hex: typeTemplate
+    },
+    string: {
+      len: "'${name}' must be exactly ${len} characters",
+      min: "'${name}' must be at least ${min} characters",
+      max: "'${name}' cannot be longer than ${max} characters",
+      range: "'${name}' must be between ${min} and ${max} characters"
+    },
+    number: {
+      len: "'${name}' must equal ${len}",
+      min: "'${name}' cannot be less than ${min}",
+      max: "'${name}' cannot be greater than ${max}",
+      range: "'${name}' must be between ${min} and ${max}"
+    },
+    array: {
+      len: "'${name}' must be exactly ${len} in length",
+      min: "'${name}' cannot be less than ${min} in length",
+      max: "'${name}' cannot be greater than ${max} in length",
+      range: "'${name}' must be between ${min} and ${max} in length"
+    },
+    pattern: {
+      mismatch: "'${name}' does not match pattern ${pattern}"
+    }
+  };
 
   function get(entity, path) {
     var current = entity;
@@ -31664,7 +31543,7 @@
   function getNamePath(path) {
     return toArray$1(path);
   }
-  function getValue(store, namePath) {
+  function getValue$1(store, namePath) {
     var value = get(store, namePath);
     return value;
   }
@@ -31676,7 +31555,7 @@
   function cloneByNamePathList(store, namePathList) {
     var newStore = {};
     namePathList.forEach(function (namePath) {
-      var value = getValue(store, namePath);
+      var value = getValue$1(store, namePath);
       newStore = setValue(newStore, namePath, value);
     });
     return newStore;
@@ -31801,55 +31680,6 @@
     return array;
   }
 
-  var typeTemplate = "'${name}' is not a valid ${type}";
-  var defaultValidateMessages = {
-    default: "Validation error on field '${name}'",
-    required: "'${name}' is required",
-    enum: "'${name}' must be one of [${enum}]",
-    whitespace: "'${name}' cannot be empty",
-    date: {
-      format: "'${name}' is invalid for format date",
-      parse: "'${name}' could not be parsed as date",
-      invalid: "'${name}' is invalid date"
-    },
-    types: {
-      string: typeTemplate,
-      method: typeTemplate,
-      array: typeTemplate,
-      object: typeTemplate,
-      number: typeTemplate,
-      date: typeTemplate,
-      boolean: typeTemplate,
-      integer: typeTemplate,
-      float: typeTemplate,
-      regexp: typeTemplate,
-      email: typeTemplate,
-      url: typeTemplate,
-      hex: typeTemplate
-    },
-    string: {
-      len: "'${name}' must be exactly ${len} characters",
-      min: "'${name}' must be at least ${min} characters",
-      max: "'${name}' cannot be longer than ${max} characters",
-      range: "'${name}' must be between ${min} and ${max} characters"
-    },
-    number: {
-      len: "'${name}' must equal ${len}",
-      min: "'${name}' cannot be less than ${min}",
-      max: "'${name}' cannot be greater than ${max}",
-      range: "'${name}' must be between ${min} and ${max}"
-    },
-    array: {
-      len: "'${name}' must be exactly ${len} in length",
-      min: "'${name}' cannot be less than ${min} in length",
-      max: "'${name}' cannot be greater than ${max} in length",
-      range: "'${name}' must be between ${min} and ${max} in length"
-    },
-    pattern: {
-      mismatch: "'${name}' does not match pattern ${pattern}"
-    }
-  };
-
   var AsyncValidator = Schema;
   /**
    * Replace with template.
@@ -31861,47 +31691,6 @@
       var key = str.slice(2, -1);
       return kv[key];
     });
-  }
-  /**
-   * We use `async-validator` to validate rules. So have to hot replace the message with validator.
-   * { required: '${name} is required' } => { required: () => 'field is required' }
-   */
-
-
-  function convertMessages(messages, name, rule, messageVariables) {
-    var kv = _objectSpread2$1(_objectSpread2$1({}, rule), {}, {
-      name: name,
-      enum: (rule.enum || []).join(', ')
-    });
-
-    var replaceFunc = function replaceFunc(template, additionalKV) {
-      return function () {
-        return replaceMessage(template, _objectSpread2$1(_objectSpread2$1({}, kv), additionalKV));
-      };
-    };
-    /* eslint-disable no-param-reassign */
-
-
-    function fillTemplate(source) {
-      var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      Object.keys(source).forEach(function (ruleName) {
-        var value = source[ruleName];
-
-        if (typeof value === 'string') {
-          target[ruleName] = replaceFunc(value, messageVariables);
-        } else if (value && _typeof$1(value) === 'object') {
-          target[ruleName] = {};
-          fillTemplate(value, target[ruleName]);
-        } else {
-          target[ruleName] = value;
-        }
-      });
-      return target;
-    }
-    /* eslint-enable */
-
-
-    return fillTemplate(setValues({}, defaultValidateMessages, messages));
   }
 
   function validateRule(_x, _x2, _x3, _x4, _x5) {
@@ -31915,12 +31704,16 @@
 
   function _validateRule() {
     _validateRule = _asyncToGenerator$1( /*#__PURE__*/regenerator.mark(function _callee2(name, value, rule, options, messageVariables) {
-      var cloneRule, subRuleField, validator, messages, result, subResults;
+      var cloneRule, subRuleField, validator, messages, result, subResults, kv, fillVariableResult;
       return regenerator.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              cloneRule = _objectSpread2$1({}, rule); // We should special handle array validate
+              cloneRule = _objectSpread2$1({}, rule); // Bug of `async-validator`
+              // https://github.com/react-component/field-form/issues/316
+              // https://github.com/react-component/field-form/issues/313
+
+              delete cloneRule.ruleIndex; // We should special handle array validate
 
               subRuleField = null;
 
@@ -31930,24 +31723,24 @@
               }
 
               validator = new AsyncValidator(_defineProperty$1({}, name, [cloneRule]));
-              messages = convertMessages(options.validateMessages, name, cloneRule, messageVariables);
+              messages = setValues({}, defaultValidateMessages, options.validateMessages);
               validator.messages(messages);
               result = [];
-              _context2.prev = 7;
-              _context2.next = 10;
+              _context2.prev = 8;
+              _context2.next = 11;
               return Promise.resolve(validator.validate(_defineProperty$1({}, name, value), _objectSpread2$1({}, options)));
 
-            case 10:
-              _context2.next = 15;
+            case 11:
+              _context2.next = 16;
               break;
 
-            case 12:
-              _context2.prev = 12;
-              _context2.t0 = _context2["catch"](7);
+            case 13:
+              _context2.prev = 13;
+              _context2.t0 = _context2["catch"](8);
 
               if (_context2.t0.errors) {
-                result = _context2.t0.errors.map(function (_ref2, index) {
-                  var message = _ref2.message;
+                result = _context2.t0.errors.map(function (_ref4, index) {
+                  var message = _ref4.message;
                   return (// Wrap ReactNode with `key`
 
                     /*#__PURE__*/
@@ -31958,35 +31751,47 @@
                 });
               } else {
                 console.error(_context2.t0);
-                result = [messages.default()];
+                result = [messages.default];
               }
 
-            case 15:
+            case 16:
               if (!(!result.length && subRuleField)) {
-                _context2.next = 20;
+                _context2.next = 21;
                 break;
               }
 
-              _context2.next = 18;
+              _context2.next = 19;
               return Promise.all(value.map(function (subValue, i) {
                 return validateRule("".concat(name, ".").concat(i), subValue, subRuleField, options, messageVariables);
               }));
 
-            case 18:
+            case 19:
               subResults = _context2.sent;
               return _context2.abrupt("return", subResults.reduce(function (prev, errors) {
                 return [].concat(_toConsumableArray$1(prev), _toConsumableArray$1(errors));
               }, []));
 
-            case 20:
-              return _context2.abrupt("return", result);
-
             case 21:
+              // Replace message with variables
+              kv = _objectSpread2$1(_objectSpread2$1({}, rule), {}, {
+                name: name,
+                enum: (rule.enum || []).join(', ')
+              }, messageVariables);
+              fillVariableResult = result.map(function (error) {
+                if (typeof error === 'string') {
+                  return replaceMessage(error, kv);
+                }
+
+                return error;
+              });
+              return _context2.abrupt("return", fillVariableResult);
+
+            case 24:
             case "end":
               return _context2.stop();
           }
         }
-      }, _callee2, null, [[7, 12]]);
+      }, _callee2, null, [[8, 13]]);
     }));
     return _validateRule.apply(this, arguments);
   }
@@ -31994,15 +31799,16 @@
   function validateRules(namePath, value, rules, options, validateFirst, messageVariables) {
     var name = namePath.join('.'); // Fill rule with context
 
-    var filledRules = rules.map(function (currentRule) {
+    var filledRules = rules.map(function (currentRule, ruleIndex) {
       var originValidatorFunc = currentRule.validator;
 
-      if (!originValidatorFunc) {
-        return currentRule;
-      }
+      var cloneRule = _objectSpread2$1(_objectSpread2$1({}, currentRule), {}, {
+        ruleIndex: ruleIndex
+      }); // Replace validator if needed
 
-      return _objectSpread2$1(_objectSpread2$1({}, currentRule), {}, {
-        validator: function validator(rule, val, callback) {
+
+      if (originValidatorFunc) {
+        cloneRule.validator = function (rule, val, callback) {
           var hasPromise = false; // Wrap callback only accept when promise not provided
 
           var wrappedCallback = function wrappedCallback() {
@@ -32037,16 +31843,35 @@
               callback(err || ' ');
             });
           }
-        }
-      });
-    });
+        };
+      }
+
+      return cloneRule;
+    }).sort(function (_ref, _ref2) {
+      var w1 = _ref.warningOnly,
+          i1 = _ref.ruleIndex;
+      var w2 = _ref2.warningOnly,
+          i2 = _ref2.ruleIndex;
+
+      if (!!w1 === !!w2) {
+        // Let keep origin order
+        return i1 - i2;
+      }
+
+      if (w1) {
+        return 1;
+      }
+
+      return -1;
+    }); // Do validate rules
+
     var summaryPromise;
 
     if (validateFirst === true) {
       // >>>>> Validate by serialization
       summaryPromise = new Promise( /*#__PURE__*/function () {
-        var _ref = _asyncToGenerator$1( /*#__PURE__*/regenerator.mark(function _callee(resolve, reject) {
-          var i, errors;
+        var _ref3 = _asyncToGenerator$1( /*#__PURE__*/regenerator.mark(function _callee(resolve, reject) {
+          var i, rule, errors;
           return regenerator.wrap(function _callee$(_context) {
             while (1) {
               switch (_context.prev = _context.next) {
@@ -32055,34 +31880,38 @@
 
                 case 1:
                   if (!(i < filledRules.length)) {
-                    _context.next = 11;
+                    _context.next = 12;
                     break;
                   }
 
-                  _context.next = 4;
-                  return validateRule(name, value, filledRules[i], options, messageVariables);
+                  rule = filledRules[i];
+                  _context.next = 5;
+                  return validateRule(name, value, rule, options, messageVariables);
 
-                case 4:
+                case 5:
                   errors = _context.sent;
 
                   if (!errors.length) {
-                    _context.next = 8;
+                    _context.next = 9;
                     break;
                   }
 
-                  reject(errors);
+                  reject([{
+                    errors: errors,
+                    rule: rule
+                  }]);
                   return _context.abrupt("return");
 
-                case 8:
+                case 9:
                   i += 1;
                   _context.next = 1;
                   break;
 
-                case 11:
+                case 12:
                   /* eslint-enable */
                   resolve([]);
 
-                case 12:
+                case 13:
                 case "end":
                   return _context.stop();
               }
@@ -32091,19 +31920,21 @@
         }));
 
         return function (_x6, _x7) {
-          return _ref.apply(this, arguments);
+          return _ref3.apply(this, arguments);
         };
       }());
     } else {
       // >>>>> Validate by parallel
       var rulePromises = filledRules.map(function (rule) {
-        return validateRule(name, value, rule, options, messageVariables);
+        return validateRule(name, value, rule, options, messageVariables).then(function (errors) {
+          return {
+            errors: errors,
+            rule: rule
+          };
+        });
       });
       summaryPromise = (validateFirst ? finishOnFirstFailed(rulePromises) : finishOnAllFailed(rulePromises)).then(function (errors) {
-        if (!errors.length) {
-          return [];
-        }
-
+        // Always change to rejection for Field to catch
         return Promise.reject(errors);
       });
     } // Internal catch error to avoid console error log.
@@ -32126,9 +31957,9 @@
           switch (_context3.prev = _context3.next) {
             case 0:
               return _context3.abrupt("return", Promise.all(rulePromises).then(function (errorsList) {
-                var _ref3;
+                var _ref5;
 
-                var errors = (_ref3 = []).concat.apply(_ref3, _toConsumableArray$1(errorsList));
+                var errors = (_ref5 = []).concat.apply(_ref5, _toConsumableArray$1(errorsList));
 
                 return errors;
               }));
@@ -32157,9 +31988,9 @@
               count = 0;
               return _context4.abrupt("return", new Promise(function (resolve) {
                 rulePromises.forEach(function (promise) {
-                  promise.then(function (errors) {
-                    if (errors.length) {
-                      resolve(errors);
+                  promise.then(function (ruleError) {
+                    if (ruleError.errors.length) {
+                      resolve([ruleError]);
                     }
 
                     count += 1;
@@ -32181,6 +32012,9 @@
     return _finishOnFirstFailed.apply(this, arguments);
   }
 
+  var _excluded = ["name"];
+  var EMPTY_ERRORS = [];
+
   function requireUpdate(shouldUpdate, prev, next, prevValue, nextValue, info) {
     if (typeof shouldUpdate === 'function') {
       return shouldUpdate(prev, next, 'source' in info ? {
@@ -32197,29 +32031,35 @@
 
     var _super = _createSuper(Field);
 
+    /**
+     * Follow state should not management in State since it will async update by React.
+     * This makes first render of form can not get correct state value.
+     */
+
+    /**
+     * Mark when touched & validated. Currently only used for `dependencies`.
+     * Note that we do not think field with `initialValue` is dirty
+     * but this will be by `isFieldDirty` func.
+     */
     // ============================== Subscriptions ==============================
     function Field(props) {
       var _this;
 
       _classCallCheck(this, Field);
 
-      _this = _super.call(this, props);
+      _this = _super.call(this, props); // Register on init
+
       _this.state = {
         resetCount: 0
       };
       _this.cancelRegisterFunc = null;
       _this.mounted = false;
-      /**
-       * Follow state should not management in State since it will async update by React.
-       * This makes first render of form can not get correct state value.
-       */
-
       _this.touched = false;
-      /** Mark when touched & validated. Currently only used for `dependencies` */
-
       _this.dirty = false;
       _this.validatePromise = null;
-      _this.errors = [];
+      _this.prevValidating = void 0;
+      _this.errors = EMPTY_ERRORS;
+      _this.warnings = EMPTY_ERRORS;
 
       _this.cancelRegister = function () {
         var _this$props = _this.props,
@@ -32232,8 +32072,7 @@
         }
 
         _this.cancelRegisterFunc = null;
-      }; // ================================== Utils ==================================
-
+      };
 
       _this.getNamePath = function () {
         var _this$props2 = _this.props,
@@ -32270,9 +32109,14 @@
             resetCount: resetCount + 1
           };
         });
-      }; // ========================= Field Entity Interfaces =========================
-      // Trigger by store update. Check if need update the component
+      };
 
+      _this.triggerMetaEvent = function (destroy) {
+        var onMetaChange = _this.props.onMetaChange;
+        onMetaChange === null || onMetaChange === void 0 ? void 0 : onMetaChange(_objectSpread2$1(_objectSpread2$1({}, _this.getMeta()), {}, {
+          destroy: destroy
+        }));
+      };
 
       _this.onStoreChange = function (prevStore, namePathList, info) {
         var _this$props4 = _this.props,
@@ -32294,7 +32138,10 @@
           _this.touched = true;
           _this.dirty = true;
           _this.validatePromise = null;
-          _this.errors = [];
+          _this.errors = EMPTY_ERRORS;
+          _this.warnings = EMPTY_ERRORS;
+
+          _this.triggerMetaEvent();
         }
 
         switch (info.type) {
@@ -32304,11 +32151,12 @@
               _this.touched = false;
               _this.dirty = false;
               _this.validatePromise = null;
-              _this.errors = [];
+              _this.errors = EMPTY_ERRORS;
+              _this.warnings = EMPTY_ERRORS;
 
-              if (onReset) {
-                onReset();
-              }
+              _this.triggerMetaEvent();
+
+              onReset === null || onReset === void 0 ? void 0 : onReset();
 
               _this.refresh();
 
@@ -32331,10 +32179,16 @@
                 }
 
                 if ('errors' in data) {
-                  _this.errors = data.errors || [];
+                  _this.errors = data.errors || EMPTY_ERRORS;
+                }
+
+                if ('warnings' in data) {
+                  _this.warnings = data.warnings || EMPTY_ERRORS;
                 }
 
                 _this.dirty = true;
+
+                _this.triggerMetaEvent();
 
                 _this.reRender();
 
@@ -32435,11 +32289,28 @@
           promise.catch(function (e) {
             return e;
           }).then(function () {
-            var errors = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+            var ruleErrors = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : EMPTY_ERRORS;
 
             if (_this.validatePromise === rootPromise) {
-              _this.validatePromise = null;
-              _this.errors = errors;
+              _this.validatePromise = null; // Get errors & warnings
+
+              var nextErrors = [];
+              var nextWarnings = [];
+              ruleErrors.forEach(function (_ref3) {
+                var warningOnly = _ref3.rule.warningOnly,
+                    _ref3$errors = _ref3.errors,
+                    errors = _ref3$errors === void 0 ? EMPTY_ERRORS : _ref3$errors;
+
+                if (warningOnly) {
+                  nextWarnings.push.apply(nextWarnings, _toConsumableArray$1(errors));
+                } else {
+                  nextErrors.push.apply(nextErrors, _toConsumableArray$1(errors));
+                }
+              });
+              _this.errors = nextErrors;
+              _this.warnings = nextWarnings;
+
+              _this.triggerMetaEvent();
 
               _this.reRender();
             }
@@ -32448,7 +32319,11 @@
         });
         _this.validatePromise = rootPromise;
         _this.dirty = true;
-        _this.errors = []; // Force trigger re-render since we need sync renderProps with new meta
+        _this.errors = EMPTY_ERRORS;
+        _this.warnings = EMPTY_ERRORS;
+
+        _this.triggerMetaEvent(); // Force trigger re-render since we need sync renderProps with new meta
+
 
         _this.reRender();
 
@@ -32464,11 +32339,30 @@
       };
 
       _this.isFieldDirty = function () {
-        return _this.dirty;
+        // Touched or validate or has initialValue
+        if (_this.dirty || _this.props.initialValue !== undefined) {
+          return true;
+        } // Form set initialValue
+
+
+        var fieldContext = _this.props.fieldContext;
+
+        var _fieldContext$getInte = fieldContext.getInternalHooks(HOOK_MARK),
+            getInitialValue = _fieldContext$getInte.getInitialValue;
+
+        if (getInitialValue(_this.getNamePath()) !== undefined) {
+          return true;
+        }
+
+        return false;
       };
 
       _this.getErrors = function () {
         return _this.errors;
+      };
+
+      _this.getWarnings = function () {
+        return _this.warnings;
       };
 
       _this.isListField = function () {
@@ -32481,8 +32375,7 @@
 
       _this.isPreserve = function () {
         return _this.props.preserve;
-      }; // ============================= Child Component =============================
-
+      };
 
       _this.getMeta = function () {
         // Make error & validating in cache to save perf
@@ -32491,11 +32384,11 @@
           touched: _this.isFieldTouched(),
           validating: _this.prevValidating,
           errors: _this.errors,
+          warnings: _this.warnings,
           name: _this.getNamePath()
         };
         return meta;
-      }; // Only return validate child node. If invalidate, will do nothing about field.
-
+      };
 
       _this.getOnlyChild = function (children) {
         // Support render props
@@ -32521,15 +32414,14 @@
           child: childList[0],
           isFunction: false
         };
-      }; // ============================== Field Control ==============================
-
+      };
 
       _this.getValue = function (store) {
         var getFieldsValue = _this.props.fieldContext.getFieldsValue;
 
         var namePath = _this.getNamePath();
 
-        return getValue(store || getFieldsValue(true), namePath);
+        return getValue$1(store || getFieldsValue(true), namePath);
       };
 
       _this.getControlled = function () {
@@ -32568,6 +32460,9 @@
           // Mark as touched
           _this.touched = true;
           _this.dirty = true;
+
+          _this.triggerMetaEvent();
+
           var newValue;
 
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -32621,8 +32516,7 @@
           };
         });
         return control;
-      }; // Register on init
-
+      };
 
       if (props.fieldContext) {
         var getInternalHooks = props.fieldContext.getInternalHooks;
@@ -32662,6 +32556,7 @@
       key: "componentWillUnmount",
       value: function componentWillUnmount() {
         this.cancelRegister();
+        this.triggerMetaEvent(true);
         this.mounted = false;
       }
     }, {
@@ -32707,9 +32602,9 @@
     valuePropName: 'value'
   };
 
-  function WrapperField(_ref4) {
-    var name = _ref4.name,
-        restProps = _objectWithoutProperties(_ref4, ["name"]);
+  function WrapperField(_ref5) {
+    var name = _ref5.name,
+        restProps = _objectWithoutProperties(_ref5, _excluded);
 
     var fieldContext = React.useContext(Context);
     var namePath = name !== undefined ? getNamePath(name) : undefined;
@@ -33025,12 +32920,14 @@
     return NameMap;
   }();
 
+  var _excluded$1 = ["name", "errors"];
   var FormStore = function FormStore(forceRootUpdate) {
     var _this = this;
 
     _classCallCheck(this, FormStore);
 
     this.formHooked = false;
+    this.forceRootUpdate = void 0;
     this.subscribable = true;
     this.store = {};
     this.fieldEntities = [];
@@ -33045,6 +32942,7 @@
         getFieldValue: _this.getFieldValue,
         getFieldsValue: _this.getFieldsValue,
         getFieldError: _this.getFieldError,
+        getFieldWarning: _this.getFieldWarning,
         getFieldsError: _this.getFieldsError,
         isFieldsTouched: _this.isFieldsTouched,
         isFieldTouched: _this.isFieldTouched,
@@ -33057,8 +32955,7 @@
         submit: _this.submit,
         getInternalHooks: _this.getInternalHooks
       };
-    }; // ======================== Internal Hooks ========================
-
+    };
 
     this.getInternalHooks = function (key) {
       if (key === HOOK_MARK) {
@@ -33072,7 +32969,8 @@
           setCallbacks: _this.setCallbacks,
           setValidateMessages: _this.setValidateMessages,
           getFields: _this.getFields,
-          setPreserve: _this.setPreserve
+          setPreserve: _this.setPreserve,
+          getInitialValue: _this.getInitialValue
         };
       }
 
@@ -33083,10 +32981,6 @@
     this.useSubscribe = function (subscribable) {
       _this.subscribable = subscribable;
     };
-    /**
-     * First time `setInitialValues` should update store with initial value
-     */
-
 
     this.setInitialValues = function (initialValues, init) {
       _this.initialValues = initialValues || {};
@@ -33097,7 +32991,7 @@
     };
 
     this.getInitialValue = function (namePath) {
-      return getValue(_this.initialValues, namePath);
+      return getValue$1(_this.initialValues, namePath);
     };
 
     this.setCallbacks = function (callbacks) {
@@ -33110,8 +33004,7 @@
 
     this.setPreserve = function (preserve) {
       _this.preserve = preserve;
-    }; // ========================== Dev Warning =========================
-
+    };
 
     this.timeoutId = null;
 
@@ -33125,13 +33018,7 @@
           }
         });
       }
-    }; // ============================ Fields ============================
-
-    /**
-     * Get registered field entities.
-     * @param pure Only return field which has a `name`. Default: false
-     */
-
+    };
 
     this.getFieldEntities = function () {
       var pure = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
@@ -33209,7 +33096,7 @@
       _this.warningUnhooked();
 
       var namePath = getNamePath(name);
-      return getValue(_this.store, namePath);
+      return getValue$1(_this.store, namePath);
     };
 
     this.getFieldsError = function (nameList) {
@@ -33221,13 +33108,15 @@
         if (entity && !('INVALIDATE_NAME_PATH' in entity)) {
           return {
             name: entity.getNamePath(),
-            errors: entity.getErrors()
+            errors: entity.getErrors(),
+            warnings: entity.getWarnings()
           };
         }
 
         return {
           name: getNamePath(nameList[index]),
-          errors: []
+          errors: [],
+          warnings: []
         };
       });
     };
@@ -33240,6 +33129,16 @@
       var fieldError = _this.getFieldsError([namePath])[0];
 
       return fieldError.errors;
+    };
+
+    this.getFieldWarning = function (name) {
+      _this.warningUnhooked();
+
+      var namePath = getNamePath(name);
+
+      var fieldError = _this.getFieldsError([namePath])[0];
+
+      return fieldError.warnings;
     };
 
     this.isFieldsTouched = function () {
@@ -33339,11 +33238,6 @@
 
       return _this.isFieldsValidating([name]);
     };
-    /**
-     * Reset Field with field `initialValue` prop.
-     * Can pass `entities` or `namePathList` or just nothing.
-     */
-
 
     this.resetWithFieldInitialValue = function () {
       var info = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -33462,7 +33356,7 @@
       fields.forEach(function (fieldData) {
         var name = fieldData.name,
             errors = fieldData.errors,
-            data = _objectWithoutProperties(fieldData, ["name", "errors"]);
+            data = _objectWithoutProperties(fieldData, _excluded$1);
 
         var namePath = getNamePath(name); // Value
 
@@ -33495,19 +33389,14 @@
         return fieldData;
       });
       return fields;
-    }; // =========================== Observer ===========================
-
-    /**
-     * This only trigger when a field is on constructor to avoid we get initialValue too late
-     */
-
+    };
 
     this.initEntityValue = function (entity) {
       var initialValue = entity.props.initialValue;
 
       if (initialValue !== undefined) {
         var namePath = entity.getNamePath();
-        var prevValue = getValue(_this.store, namePath);
+        var prevValue = getValue$1(_this.store, namePath);
 
         if (prevValue === undefined) {
           _this.store = setValue(_this.store, namePath, initialValue);
@@ -33544,7 +33433,7 @@
 
         if (mergedPreserve === false && (!isListField || subNamePath.length > 1)) {
           var namePath = entity.getNamePath();
-          var defaultValue = isListField ? undefined : getValue(_this.initialValues, namePath);
+          var defaultValue = isListField ? undefined : getValue$1(_this.initialValues, namePath);
 
           if (namePath.length && _this.getFieldValue(namePath) !== defaultValue && _this.fieldEntities.every(function (field) {
             return (// Only reset when no namePath exist
@@ -33631,8 +33520,7 @@
       }
 
       _this.triggerOnFieldsChange([namePath].concat(_toConsumableArray$1(childrenFields)));
-    }; // Let all child Field get update.
-
+    };
 
     this.setFieldsValue = function (store) {
       _this.warningUnhooked();
@@ -33718,8 +33606,7 @@
         });
         onFieldsChange(changedFields, fields);
       }
-    }; // =========================== Validate ===========================
-
+    };
 
     this.validateFields = function (nameList, options) {
       _this.warningUnhooked();
@@ -33767,13 +33654,36 @@
           promiseList.push(promise.then(function () {
             return {
               name: fieldNamePath,
-              errors: []
+              errors: [],
+              warnings: []
             };
-          }).catch(function (errors) {
-            return Promise.reject({
-              name: fieldNamePath,
-              errors: errors
+          }).catch(function (ruleErrors) {
+            var mergedErrors = [];
+            var mergedWarnings = [];
+            ruleErrors.forEach(function (_ref5) {
+              var warningOnly = _ref5.rule.warningOnly,
+                  errors = _ref5.errors;
+
+              if (warningOnly) {
+                mergedWarnings.push.apply(mergedWarnings, _toConsumableArray$1(errors));
+              } else {
+                mergedErrors.push.apply(mergedErrors, _toConsumableArray$1(errors));
+              }
             });
+
+            if (mergedErrors.length) {
+              return Promise.reject({
+                name: fieldNamePath,
+                errors: mergedErrors,
+                warnings: mergedWarnings
+              });
+            }
+
+            return {
+              name: fieldNamePath,
+              errors: mergedErrors,
+              warnings: mergedWarnings
+            };
           }));
         }
       });
@@ -33784,8 +33694,8 @@
       summaryPromise.catch(function (results) {
         return results;
       }).then(function (results) {
-        var resultNamePathList = results.map(function (_ref5) {
-          var name = _ref5.name;
+        var resultNamePathList = results.map(function (_ref6) {
+          var name = _ref6.name;
           return name;
         });
 
@@ -33816,8 +33726,7 @@
         return e;
       });
       return returnPromise;
-    }; // ============================ Submit ============================
-
+    };
 
     this.submit = function () {
       _this.warningUnhooked();
@@ -33927,6 +33836,8 @@
     }, children);
   };
 
+  var _excluded$2 = ["name", "initialValues", "fields", "form", "preserve", "children", "component", "validateMessages", "validateTrigger", "onValuesChange", "onFieldsChange", "onFinish", "onFinishFailed"];
+
   var Form = function Form(_ref, ref) {
     var name = _ref.name,
         initialValues = _ref.initialValues,
@@ -33943,7 +33854,7 @@
         _onFieldsChange = _ref.onFieldsChange,
         _onFinish = _ref.onFinish,
         onFinishFailed = _ref.onFinishFailed,
-        restProps = _objectWithoutProperties(_ref, ["name", "initialValues", "fields", "form", "preserve", "children", "component", "validateMessages", "validateTrigger", "onValuesChange", "onFieldsChange", "onFinish", "onFinishFailed"]);
+        restProps = _objectWithoutProperties(_ref, _excluded$2);
 
     var formContext = React.useContext(FormContext); // We customize handle event since Context will makes all the consumer re-render:
     // https://reactjs.org/docs/context.html#contextprovider
@@ -34079,14 +33990,15 @@
     items_per_page: '/ page',
     jump_to: 'Go to',
     jump_to_confirm: 'confirm',
-    page: '',
+    page: 'Page',
     // Pagination.jsx
     prev_page: 'Previous Page',
     next_page: 'Next Page',
     prev_5: 'Previous 5 Pages',
     next_5: 'Next 5 Pages',
     prev_3: 'Previous 3 Pages',
-    next_3: 'Next 3 Pages'
+    next_3: 'Next 3 Pages',
+    page_size: 'Page Size'
   };
 
   var locale = {
@@ -34155,6 +34067,8 @@
       filterConfirm: 'OK',
       filterReset: 'Reset',
       filterEmptyText: 'No filters',
+      filterCheckall: 'Select all items',
+      filterSearchPlaceholder: 'Search in filters',
       emptyText: 'No data',
       selectAll: 'Select current page',
       selectInvert: 'Invert current page',
@@ -35951,6 +35865,13 @@
       return n;
   }
   /**
+   * Force a number between 0 and 1
+   * @hidden
+   */
+  function clamp01(val) {
+      return Math.min(1, Math.max(0, val));
+  }
+  /**
    * Need to handle 1.0 as 100%, since once it is a number, there is no difference between it and 1
    * <http://stackoverflow.com/questions/7422072/javascript-how-to-detect-number-as-a-decimal-including-1-0>
    * @hidden
@@ -36008,6 +35929,42 @@
           g: bound01(g, 255) * 255,
           b: bound01(b, 255) * 255,
       };
+  }
+  /**
+   * Converts an RGB color value to HSL.
+   * *Assumes:* r, g, and b are contained in [0, 255] or [0, 1]
+   * *Returns:* { h, s, l } in [0,1]
+   */
+  function rgbToHsl(r, g, b) {
+      r = bound01(r, 255);
+      g = bound01(g, 255);
+      b = bound01(b, 255);
+      var max = Math.max(r, g, b);
+      var min = Math.min(r, g, b);
+      var h = 0;
+      var s = 0;
+      var l = (max + min) / 2;
+      if (max === min) {
+          s = 0;
+          h = 0; // achromatic
+      }
+      else {
+          var d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+              case r:
+                  h = (g - b) / d + (g < b ? 6 : 0);
+                  break;
+              case g:
+                  h = (b - r) / d + 2;
+                  break;
+              case b:
+                  h = (r - g) / d + 4;
+                  break;
+          }
+          h /= 6;
+      }
+      return { h: h, s: s, l: l };
   }
   function hue2rgb(p, q, t) {
       if (t < 0) {
@@ -36132,6 +36089,34 @@
       }
       return hex.join('');
   }
+  /**
+   * Converts an RGBA color plus alpha transparency to hex
+   *
+   * Assumes r, g, b are contained in the set [0, 255] and
+   * a in [0, 1]. Returns a 4 or 8 character rgba hex
+   */
+  // eslint-disable-next-line max-params
+  function rgbaToHex(r, g, b, a, allow4Char) {
+      var hex = [
+          pad2(Math.round(r).toString(16)),
+          pad2(Math.round(g).toString(16)),
+          pad2(Math.round(b).toString(16)),
+          pad2(convertDecimalToHex(a)),
+      ];
+      // Return a 4 character hex if possible
+      if (allow4Char &&
+          hex[0].startsWith(hex[0].charAt(1)) &&
+          hex[1].startsWith(hex[1].charAt(1)) &&
+          hex[2].startsWith(hex[2].charAt(1)) &&
+          hex[3].startsWith(hex[3].charAt(1))) {
+          return hex[0].charAt(0) + hex[1].charAt(0) + hex[2].charAt(0) + hex[3].charAt(0);
+      }
+      return hex.join('');
+  }
+  /** Converts a decimal to a hex value */
+  function convertDecimalToHex(d) {
+      return Math.round(parseFloat(d) * 255).toString(16);
+  }
   /** Converts a hex value to a decimal */
   function convertHexToDecimal(h) {
       return parseIntFromHex(h) / 255;
@@ -36139,6 +36124,13 @@
   /** Parse a base-16 hex value into a base-10 integer */
   function parseIntFromHex(val) {
       return parseInt(val, 16);
+  }
+  function numberInputToObject(color) {
+      return {
+          r: color >> 16,
+          g: (color & 0xff00) >> 8,
+          b: color & 0xff,
+      };
   }
 
   // https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json
@@ -36476,6 +36468,487 @@
       return Boolean(matchers.CSS_UNIT.exec(String(color)));
   }
 
+  var TinyColor = /** @class */ (function () {
+      function TinyColor(color, opts) {
+          if (color === void 0) { color = ''; }
+          if (opts === void 0) { opts = {}; }
+          var _a;
+          // If input is already a tinycolor, return itself
+          if (color instanceof TinyColor) {
+              // eslint-disable-next-line no-constructor-return
+              return color;
+          }
+          if (typeof color === 'number') {
+              color = numberInputToObject(color);
+          }
+          this.originalInput = color;
+          var rgb = inputToRGB(color);
+          this.originalInput = color;
+          this.r = rgb.r;
+          this.g = rgb.g;
+          this.b = rgb.b;
+          this.a = rgb.a;
+          this.roundA = Math.round(100 * this.a) / 100;
+          this.format = (_a = opts.format) !== null && _a !== void 0 ? _a : rgb.format;
+          this.gradientType = opts.gradientType;
+          // Don't let the range of [0,255] come back in [0,1].
+          // Potentially lose a little bit of precision here, but will fix issues where
+          // .5 gets interpreted as half of the total, instead of half of 1
+          // If it was supposed to be 128, this was already taken care of by `inputToRgb`
+          if (this.r < 1) {
+              this.r = Math.round(this.r);
+          }
+          if (this.g < 1) {
+              this.g = Math.round(this.g);
+          }
+          if (this.b < 1) {
+              this.b = Math.round(this.b);
+          }
+          this.isValid = rgb.ok;
+      }
+      TinyColor.prototype.isDark = function () {
+          return this.getBrightness() < 128;
+      };
+      TinyColor.prototype.isLight = function () {
+          return !this.isDark();
+      };
+      /**
+       * Returns the perceived brightness of the color, from 0-255.
+       */
+      TinyColor.prototype.getBrightness = function () {
+          // http://www.w3.org/TR/AERT#color-contrast
+          var rgb = this.toRgb();
+          return (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+      };
+      /**
+       * Returns the perceived luminance of a color, from 0-1.
+       */
+      TinyColor.prototype.getLuminance = function () {
+          // http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+          var rgb = this.toRgb();
+          var R;
+          var G;
+          var B;
+          var RsRGB = rgb.r / 255;
+          var GsRGB = rgb.g / 255;
+          var BsRGB = rgb.b / 255;
+          if (RsRGB <= 0.03928) {
+              R = RsRGB / 12.92;
+          }
+          else {
+              // eslint-disable-next-line prefer-exponentiation-operator
+              R = Math.pow((RsRGB + 0.055) / 1.055, 2.4);
+          }
+          if (GsRGB <= 0.03928) {
+              G = GsRGB / 12.92;
+          }
+          else {
+              // eslint-disable-next-line prefer-exponentiation-operator
+              G = Math.pow((GsRGB + 0.055) / 1.055, 2.4);
+          }
+          if (BsRGB <= 0.03928) {
+              B = BsRGB / 12.92;
+          }
+          else {
+              // eslint-disable-next-line prefer-exponentiation-operator
+              B = Math.pow((BsRGB + 0.055) / 1.055, 2.4);
+          }
+          return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+      };
+      /**
+       * Returns the alpha value of a color, from 0-1.
+       */
+      TinyColor.prototype.getAlpha = function () {
+          return this.a;
+      };
+      /**
+       * Sets the alpha value on the current color.
+       *
+       * @param alpha - The new alpha value. The accepted range is 0-1.
+       */
+      TinyColor.prototype.setAlpha = function (alpha) {
+          this.a = boundAlpha(alpha);
+          this.roundA = Math.round(100 * this.a) / 100;
+          return this;
+      };
+      /**
+       * Returns the object as a HSVA object.
+       */
+      TinyColor.prototype.toHsv = function () {
+          var hsv = rgbToHsv(this.r, this.g, this.b);
+          return { h: hsv.h * 360, s: hsv.s, v: hsv.v, a: this.a };
+      };
+      /**
+       * Returns the hsva values interpolated into a string with the following format:
+       * "hsva(xxx, xxx, xxx, xx)".
+       */
+      TinyColor.prototype.toHsvString = function () {
+          var hsv = rgbToHsv(this.r, this.g, this.b);
+          var h = Math.round(hsv.h * 360);
+          var s = Math.round(hsv.s * 100);
+          var v = Math.round(hsv.v * 100);
+          return this.a === 1 ? "hsv(" + h + ", " + s + "%, " + v + "%)" : "hsva(" + h + ", " + s + "%, " + v + "%, " + this.roundA + ")";
+      };
+      /**
+       * Returns the object as a HSLA object.
+       */
+      TinyColor.prototype.toHsl = function () {
+          var hsl = rgbToHsl(this.r, this.g, this.b);
+          return { h: hsl.h * 360, s: hsl.s, l: hsl.l, a: this.a };
+      };
+      /**
+       * Returns the hsla values interpolated into a string with the following format:
+       * "hsla(xxx, xxx, xxx, xx)".
+       */
+      TinyColor.prototype.toHslString = function () {
+          var hsl = rgbToHsl(this.r, this.g, this.b);
+          var h = Math.round(hsl.h * 360);
+          var s = Math.round(hsl.s * 100);
+          var l = Math.round(hsl.l * 100);
+          return this.a === 1 ? "hsl(" + h + ", " + s + "%, " + l + "%)" : "hsla(" + h + ", " + s + "%, " + l + "%, " + this.roundA + ")";
+      };
+      /**
+       * Returns the hex value of the color.
+       * @param allow3Char will shorten hex value to 3 char if possible
+       */
+      TinyColor.prototype.toHex = function (allow3Char) {
+          if (allow3Char === void 0) { allow3Char = false; }
+          return rgbToHex(this.r, this.g, this.b, allow3Char);
+      };
+      /**
+       * Returns the hex value of the color -with a # appened.
+       * @param allow3Char will shorten hex value to 3 char if possible
+       */
+      TinyColor.prototype.toHexString = function (allow3Char) {
+          if (allow3Char === void 0) { allow3Char = false; }
+          return '#' + this.toHex(allow3Char);
+      };
+      /**
+       * Returns the hex 8 value of the color.
+       * @param allow4Char will shorten hex value to 4 char if possible
+       */
+      TinyColor.prototype.toHex8 = function (allow4Char) {
+          if (allow4Char === void 0) { allow4Char = false; }
+          return rgbaToHex(this.r, this.g, this.b, this.a, allow4Char);
+      };
+      /**
+       * Returns the hex 8 value of the color -with a # appened.
+       * @param allow4Char will shorten hex value to 4 char if possible
+       */
+      TinyColor.prototype.toHex8String = function (allow4Char) {
+          if (allow4Char === void 0) { allow4Char = false; }
+          return '#' + this.toHex8(allow4Char);
+      };
+      /**
+       * Returns the object as a RGBA object.
+       */
+      TinyColor.prototype.toRgb = function () {
+          return {
+              r: Math.round(this.r),
+              g: Math.round(this.g),
+              b: Math.round(this.b),
+              a: this.a,
+          };
+      };
+      /**
+       * Returns the RGBA values interpolated into a string with the following format:
+       * "RGBA(xxx, xxx, xxx, xx)".
+       */
+      TinyColor.prototype.toRgbString = function () {
+          var r = Math.round(this.r);
+          var g = Math.round(this.g);
+          var b = Math.round(this.b);
+          return this.a === 1 ? "rgb(" + r + ", " + g + ", " + b + ")" : "rgba(" + r + ", " + g + ", " + b + ", " + this.roundA + ")";
+      };
+      /**
+       * Returns the object as a RGBA object.
+       */
+      TinyColor.prototype.toPercentageRgb = function () {
+          var fmt = function (x) { return Math.round(bound01(x, 255) * 100) + "%"; };
+          return {
+              r: fmt(this.r),
+              g: fmt(this.g),
+              b: fmt(this.b),
+              a: this.a,
+          };
+      };
+      /**
+       * Returns the RGBA relative values interpolated into a string
+       */
+      TinyColor.prototype.toPercentageRgbString = function () {
+          var rnd = function (x) { return Math.round(bound01(x, 255) * 100); };
+          return this.a === 1
+              ? "rgb(" + rnd(this.r) + "%, " + rnd(this.g) + "%, " + rnd(this.b) + "%)"
+              : "rgba(" + rnd(this.r) + "%, " + rnd(this.g) + "%, " + rnd(this.b) + "%, " + this.roundA + ")";
+      };
+      /**
+       * The 'real' name of the color -if there is one.
+       */
+      TinyColor.prototype.toName = function () {
+          if (this.a === 0) {
+              return 'transparent';
+          }
+          if (this.a < 1) {
+              return false;
+          }
+          var hex = '#' + rgbToHex(this.r, this.g, this.b, false);
+          for (var _i = 0, _a = Object.entries(names); _i < _a.length; _i++) {
+              var _b = _a[_i], key = _b[0], value = _b[1];
+              if (hex === value) {
+                  return key;
+              }
+          }
+          return false;
+      };
+      TinyColor.prototype.toString = function (format) {
+          var formatSet = Boolean(format);
+          format = format !== null && format !== void 0 ? format : this.format;
+          var formattedString = false;
+          var hasAlpha = this.a < 1 && this.a >= 0;
+          var needsAlphaFormat = !formatSet && hasAlpha && (format.startsWith('hex') || format === 'name');
+          if (needsAlphaFormat) {
+              // Special case for "transparent", all other non-alpha formats
+              // will return rgba when there is transparency.
+              if (format === 'name' && this.a === 0) {
+                  return this.toName();
+              }
+              return this.toRgbString();
+          }
+          if (format === 'rgb') {
+              formattedString = this.toRgbString();
+          }
+          if (format === 'prgb') {
+              formattedString = this.toPercentageRgbString();
+          }
+          if (format === 'hex' || format === 'hex6') {
+              formattedString = this.toHexString();
+          }
+          if (format === 'hex3') {
+              formattedString = this.toHexString(true);
+          }
+          if (format === 'hex4') {
+              formattedString = this.toHex8String(true);
+          }
+          if (format === 'hex8') {
+              formattedString = this.toHex8String();
+          }
+          if (format === 'name') {
+              formattedString = this.toName();
+          }
+          if (format === 'hsl') {
+              formattedString = this.toHslString();
+          }
+          if (format === 'hsv') {
+              formattedString = this.toHsvString();
+          }
+          return formattedString || this.toHexString();
+      };
+      TinyColor.prototype.toNumber = function () {
+          return (Math.round(this.r) << 16) + (Math.round(this.g) << 8) + Math.round(this.b);
+      };
+      TinyColor.prototype.clone = function () {
+          return new TinyColor(this.toString());
+      };
+      /**
+       * Lighten the color a given amount. Providing 100 will always return white.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.lighten = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.l += amount / 100;
+          hsl.l = clamp01(hsl.l);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Brighten the color a given amount, from 0 to 100.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.brighten = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var rgb = this.toRgb();
+          rgb.r = Math.max(0, Math.min(255, rgb.r - Math.round(255 * -(amount / 100))));
+          rgb.g = Math.max(0, Math.min(255, rgb.g - Math.round(255 * -(amount / 100))));
+          rgb.b = Math.max(0, Math.min(255, rgb.b - Math.round(255 * -(amount / 100))));
+          return new TinyColor(rgb);
+      };
+      /**
+       * Darken the color a given amount, from 0 to 100.
+       * Providing 100 will always return black.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.darken = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.l -= amount / 100;
+          hsl.l = clamp01(hsl.l);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Mix the color with pure white, from 0 to 100.
+       * Providing 0 will do nothing, providing 100 will always return white.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.tint = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          return this.mix('white', amount);
+      };
+      /**
+       * Mix the color with pure black, from 0 to 100.
+       * Providing 0 will do nothing, providing 100 will always return black.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.shade = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          return this.mix('black', amount);
+      };
+      /**
+       * Desaturate the color a given amount, from 0 to 100.
+       * Providing 100 will is the same as calling greyscale
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.desaturate = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.s -= amount / 100;
+          hsl.s = clamp01(hsl.s);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Saturate the color a given amount, from 0 to 100.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.saturate = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.s += amount / 100;
+          hsl.s = clamp01(hsl.s);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Completely desaturates a color into greyscale.
+       * Same as calling `desaturate(100)`
+       */
+      TinyColor.prototype.greyscale = function () {
+          return this.desaturate(100);
+      };
+      /**
+       * Spin takes a positive or negative amount within [-360, 360] indicating the change of hue.
+       * Values outside of this range will be wrapped into this range.
+       */
+      TinyColor.prototype.spin = function (amount) {
+          var hsl = this.toHsl();
+          var hue = (hsl.h + amount) % 360;
+          hsl.h = hue < 0 ? 360 + hue : hue;
+          return new TinyColor(hsl);
+      };
+      /**
+       * Mix the current color a given amount with another color, from 0 to 100.
+       * 0 means no mixing (return current color).
+       */
+      TinyColor.prototype.mix = function (color, amount) {
+          if (amount === void 0) { amount = 50; }
+          var rgb1 = this.toRgb();
+          var rgb2 = new TinyColor(color).toRgb();
+          var p = amount / 100;
+          var rgba = {
+              r: (rgb2.r - rgb1.r) * p + rgb1.r,
+              g: (rgb2.g - rgb1.g) * p + rgb1.g,
+              b: (rgb2.b - rgb1.b) * p + rgb1.b,
+              a: (rgb2.a - rgb1.a) * p + rgb1.a,
+          };
+          return new TinyColor(rgba);
+      };
+      TinyColor.prototype.analogous = function (results, slices) {
+          if (results === void 0) { results = 6; }
+          if (slices === void 0) { slices = 30; }
+          var hsl = this.toHsl();
+          var part = 360 / slices;
+          var ret = [this];
+          for (hsl.h = (hsl.h - ((part * results) >> 1) + 720) % 360; --results;) {
+              hsl.h = (hsl.h + part) % 360;
+              ret.push(new TinyColor(hsl));
+          }
+          return ret;
+      };
+      /**
+       * taken from https://github.com/infusion/jQuery-xcolor/blob/master/jquery.xcolor.js
+       */
+      TinyColor.prototype.complement = function () {
+          var hsl = this.toHsl();
+          hsl.h = (hsl.h + 180) % 360;
+          return new TinyColor(hsl);
+      };
+      TinyColor.prototype.monochromatic = function (results) {
+          if (results === void 0) { results = 6; }
+          var hsv = this.toHsv();
+          var h = hsv.h;
+          var s = hsv.s;
+          var v = hsv.v;
+          var res = [];
+          var modification = 1 / results;
+          while (results--) {
+              res.push(new TinyColor({ h: h, s: s, v: v }));
+              v = (v + modification) % 1;
+          }
+          return res;
+      };
+      TinyColor.prototype.splitcomplement = function () {
+          var hsl = this.toHsl();
+          var h = hsl.h;
+          return [
+              this,
+              new TinyColor({ h: (h + 72) % 360, s: hsl.s, l: hsl.l }),
+              new TinyColor({ h: (h + 216) % 360, s: hsl.s, l: hsl.l }),
+          ];
+      };
+      /**
+       * Compute how the color would appear on a background
+       */
+      TinyColor.prototype.onBackground = function (background) {
+          var fg = this.toRgb();
+          var bg = new TinyColor(background).toRgb();
+          return new TinyColor({
+              r: bg.r + (fg.r - bg.r) * fg.a,
+              g: bg.g + (fg.g - bg.g) * fg.a,
+              b: bg.b + (fg.b - bg.b) * fg.a,
+          });
+      };
+      /**
+       * Alias for `polyad(3)`
+       */
+      TinyColor.prototype.triad = function () {
+          return this.polyad(3);
+      };
+      /**
+       * Alias for `polyad(4)`
+       */
+      TinyColor.prototype.tetrad = function () {
+          return this.polyad(4);
+      };
+      /**
+       * Get polyad colors, like (for 1, 2, 3, 4, 5, 6, 7, 8, etc...)
+       * monad, dyad, triad, tetrad, pentad, hexad, heptad, octad, etc...
+       */
+      TinyColor.prototype.polyad = function (n) {
+          var hsl = this.toHsl();
+          var h = hsl.h;
+          var result = [this];
+          var increment = 360 / n;
+          for (var i = 1; i < n; i++) {
+              result.push(new TinyColor({ h: (h + i * increment) % 360, s: hsl.s, l: hsl.l }));
+          }
+          return result;
+      };
+      /**
+       * compare color vs current color
+       */
+      TinyColor.prototype.equals = function (color) {
+          return this.toRgbString() === new TinyColor(color).toRgbString();
+      };
+      return TinyColor;
+  }());
+
   var hueStep = 2; // 色相阶梯
 
   var saturationStep = 0.16; // 饱和度阶梯，浅色部分
@@ -36609,7 +37082,7 @@
     return Number(saturation.toFixed(2));
   }
 
-  function getValue$1(hsv, i, light) {
+  function getValue$2(hsv, i, light) {
     var value;
 
     if (light) {
@@ -36635,7 +37108,7 @@
       var colorString = toHex(inputToRGB({
         h: getHue(hsv, i, true),
         s: getSaturation(hsv, i, true),
-        v: getValue$1(hsv, i, true)
+        v: getValue$2(hsv, i, true)
       }));
       patterns.push(colorString);
     }
@@ -36648,7 +37121,7 @@
       var _colorString = toHex(inputToRGB({
         h: getHue(_hsv, _i),
         s: getSaturation(_hsv, _i),
-        v: getValue$1(_hsv, _i)
+        v: getValue$2(_hsv, _i)
       }));
 
       patterns.push(_colorString);
@@ -36841,7 +37314,7 @@
     }, []);
   };
 
-  var _excluded = ["icon", "className", "onClick", "style", "primaryColor", "secondaryColor"];
+  var _excluded$3 = ["icon", "className", "onClick", "style", "primaryColor", "secondaryColor"];
   var twoToneColorPalette = {
     primaryColor: '#333',
     secondaryColor: '#E6E6E6',
@@ -36867,7 +37340,7 @@
         style = props.style,
         primaryColor = props.primaryColor,
         secondaryColor = props.secondaryColor,
-        restProps = _objectWithoutProperties(props, _excluded);
+        restProps = _objectWithoutProperties(props, _excluded$3);
 
     var colors = twoToneColorPalette;
 
@@ -36930,7 +37403,7 @@
     return [colors.primaryColor, colors.secondaryColor];
   }
 
-  var _excluded$1 = ["className", "icon", "spin", "rotate", "tabIndex", "onClick", "twoToneColor"];
+  var _excluded$4 = ["className", "icon", "spin", "rotate", "tabIndex", "onClick", "twoToneColor"];
   // should move it to antd main repo?
 
   setTwoToneColor('#1890ff');
@@ -36944,7 +37417,7 @@
         tabIndex = props.tabIndex,
         onClick = props.onClick,
         twoToneColor = props.twoToneColor,
-        restProps = _objectWithoutProperties(props, _excluded$1);
+        restProps = _objectWithoutProperties(props, _excluded$4);
 
     var _React$useContext = React.useContext(IconContext),
         _React$useContext$pre = _React$useContext.prefixCls,
@@ -37051,7 +37524,8 @@
   function createUseMessage(getRcNotificationInstance, getRCNoticeProps) {
     var useMessage = function useMessage() {
       // We can only get content by render
-      var getPrefixCls; // We create a proxy to handle delay created instance
+      var getPrefixCls;
+      var getPopupContainer; // We create a proxy to handle delay created instance
 
       var innerInstance = null;
       var proxy = {
@@ -37081,7 +37555,8 @@
 
           getRcNotificationInstance(_extends$1(_extends$1({}, args), {
             prefixCls: mergedPrefixCls,
-            rootPrefixCls: rootPrefixCls
+            rootPrefixCls: rootPrefixCls,
+            getPopupContainer: getPopupContainer
           }), function (_ref) {
             var prefixCls = _ref.prefixCls,
                 instance = _ref.instance;
@@ -37117,6 +37592,7 @@
         key: "holder"
       }, function (context) {
         getPrefixCls = context.getPrefixCls;
+        getPopupContainer = context.getPopupContainer;
         return holder;
       })];
     };
@@ -37174,19 +37650,23 @@
   }
 
   function getRCNotificationInstance(args, callback) {
-    var customizePrefixCls = args.prefixCls;
+    var customizePrefixCls = args.prefixCls,
+        getContextPopupContainer = args.getPopupContainer;
 
     var _globalConfig = globalConfig(),
         getPrefixCls = _globalConfig.getPrefixCls,
-        getRootPrefixCls = _globalConfig.getRootPrefixCls;
+        getRootPrefixCls = _globalConfig.getRootPrefixCls,
+        getIconPrefixCls = _globalConfig.getIconPrefixCls;
 
     var prefixCls = getPrefixCls('message', customizePrefixCls || localPrefixCls);
     var rootPrefixCls = getRootPrefixCls(args.rootPrefixCls, prefixCls);
+    var iconPrefixCls = getIconPrefixCls();
 
     if (messageInstance) {
       callback({
         prefixCls: prefixCls,
         rootPrefixCls: rootPrefixCls,
+        iconPrefixCls: iconPrefixCls,
         instance: messageInstance
       });
       return;
@@ -37198,7 +37678,7 @@
       style: {
         top: defaultTop
       },
-      getContainer: getContainer$1,
+      getContainer: getContainer$1 || getContextPopupContainer,
       maxCount: maxCount
     };
     Notification.newInstance(instanceConfig, function (instance) {
@@ -37206,6 +37686,7 @@
         callback({
           prefixCls: prefixCls,
           rootPrefixCls: rootPrefixCls,
+          iconPrefixCls: iconPrefixCls,
           instance: messageInstance
         });
         return;
@@ -37216,6 +37697,7 @@
       callback({
         prefixCls: prefixCls,
         rootPrefixCls: rootPrefixCls,
+        iconPrefixCls: iconPrefixCls,
         instance: instance
       });
     });
@@ -37229,7 +37711,7 @@
     loading: LoadingOutlined$2
   };
 
-  function getRCNoticeProps(args, prefixCls) {
+  function getRCNoticeProps(args, prefixCls, iconPrefixCls) {
     var _classNames;
 
     var duration = args.duration !== undefined ? args.duration : defaultDuration;
@@ -37240,16 +37722,18 @@
       duration: duration,
       style: args.style || {},
       className: args.className,
-      content: /*#__PURE__*/React.createElement("div", {
+      content: /*#__PURE__*/React.createElement(ConfigProvider, {
+        iconPrefixCls: iconPrefixCls
+      }, /*#__PURE__*/React.createElement("div", {
         className: messageClass
-      }, args.icon || IconComponent && /*#__PURE__*/React.createElement(IconComponent, null), /*#__PURE__*/React.createElement("span", null, args.content)),
+      }, args.icon || IconComponent && /*#__PURE__*/React.createElement(IconComponent, null), /*#__PURE__*/React.createElement("span", null, args.content))),
       onClose: args.onClose,
       onClick: args.onClick
     };
   }
 
   function notice(args) {
-    var target = args.key || key++;
+    var target = args.key || getKeyThenIncreaseKey();
     var closePromise = new Promise(function (resolve) {
       var callback = function callback() {
         if (typeof args.onClose === 'function') {
@@ -37261,11 +37745,12 @@
 
       getRCNotificationInstance(args, function (_ref) {
         var prefixCls = _ref.prefixCls,
+            iconPrefixCls = _ref.iconPrefixCls,
             instance = _ref.instance;
         instance.notice(getRCNoticeProps(_extends$1(_extends$1({}, args), {
           key: target,
           onClose: callback
-        }), prefixCls));
+        }), prefixCls, iconPrefixCls));
       });
     });
 
@@ -37488,6 +37973,7 @@
   var defaultGetContainer;
   var defaultCloseIcon;
   var rtl$1 = false;
+  var maxCount$1;
 
   function setNotificationConfig(options) {
     var duration = options.duration,
@@ -37530,6 +38016,10 @@
 
     if (options.rtl !== undefined) {
       rtl$1 = options.rtl;
+    }
+
+    if (options.maxCount !== undefined) {
+      maxCount$1 = options.maxCount;
     }
   }
 
@@ -37582,14 +38072,14 @@
         bottom = args.bottom,
         _args$getContainer = args.getContainer,
         getContainer = _args$getContainer === void 0 ? defaultGetContainer : _args$getContainer,
-        _args$closeIcon = args.closeIcon,
-        closeIcon = _args$closeIcon === void 0 ? defaultCloseIcon : _args$closeIcon,
         customizePrefixCls = args.prefixCls;
 
     var _globalConfig = globalConfig(),
-        getPrefixCls = _globalConfig.getPrefixCls;
+        getPrefixCls = _globalConfig.getPrefixCls,
+        getIconPrefixCls = _globalConfig.getIconPrefixCls;
 
     var prefixCls = getPrefixCls('notification', customizePrefixCls || defaultPrefixCls);
+    var iconPrefixCls = getIconPrefixCls();
     var cacheKey = "".concat(prefixCls, "-").concat(placement);
     var cacheInstance = notificationInstance[cacheKey];
 
@@ -37597,17 +38087,13 @@
       Promise.resolve(cacheInstance).then(function (instance) {
         callback({
           prefixCls: "".concat(prefixCls, "-notice"),
+          iconPrefixCls: iconPrefixCls,
           instance: instance
         });
       });
       return;
     }
 
-    var closeIconToRender = /*#__PURE__*/React.createElement("span", {
-      className: "".concat(prefixCls, "-close-x")
-    }, closeIcon || /*#__PURE__*/React.createElement(CloseOutlined$2, {
-      className: "".concat(prefixCls, "-close-icon")
-    }));
     var notificationClass = classnames("".concat(prefixCls, "-").concat(placement), _defineProperty$1({}, "".concat(prefixCls, "-rtl"), rtl$1 === true));
     notificationInstance[cacheKey] = new Promise(function (resolve) {
       Notification.newInstance({
@@ -37615,11 +38101,12 @@
         className: notificationClass,
         style: getPlacementStyle(placement, top, bottom),
         getContainer: getContainer,
-        closeIcon: closeIconToRender
+        maxCount: maxCount$1
       }, function (notification) {
         resolve(notification);
         callback({
           prefixCls: "".concat(prefixCls, "-notice"),
+          iconPrefixCls: iconPrefixCls,
           instance: notification
         });
       });
@@ -37633,7 +38120,7 @@
     warning: ExclamationCircleOutlined$2
   };
 
-  function getRCNoticeProps$1(args, prefixCls) {
+  function getRCNoticeProps$1(args, prefixCls, iconPrefixCls) {
     var durationArg = args.duration,
         icon = args.icon,
         type = args.type,
@@ -37644,7 +38131,9 @@
         onClick = args.onClick,
         key = args.key,
         style = args.style,
-        className = args.className;
+        className = args.className,
+        _args$closeIcon = args.closeIcon,
+        closeIcon = _args$closeIcon === void 0 ? defaultCloseIcon : _args$closeIcon;
     var duration = durationArg === undefined ? defaultDuration$1 : durationArg;
     var iconNode = null;
 
@@ -37658,11 +38147,18 @@
       });
     }
 
+    var closeIconToRender = /*#__PURE__*/React.createElement("span", {
+      className: "".concat(prefixCls, "-close-x")
+    }, closeIcon || /*#__PURE__*/React.createElement(CloseOutlined$2, {
+      className: "".concat(prefixCls, "-close-icon")
+    }));
     var autoMarginTag = !description && iconNode ? /*#__PURE__*/React.createElement("span", {
       className: "".concat(prefixCls, "-message-single-line-auto-margin")
     }) : null;
     return {
-      content: /*#__PURE__*/React.createElement("div", {
+      content: /*#__PURE__*/React.createElement(ConfigProvider, {
+        iconPrefixCls: iconPrefixCls
+      }, /*#__PURE__*/React.createElement("div", {
         className: iconNode ? "".concat(prefixCls, "-with-icon") : '',
         role: "alert"
       }, iconNode, /*#__PURE__*/React.createElement("div", {
@@ -37671,9 +38167,10 @@
         className: "".concat(prefixCls, "-description")
       }, description), btn ? /*#__PURE__*/React.createElement("span", {
         className: "".concat(prefixCls, "-btn")
-      }, btn) : null),
+      }, btn) : null)),
       duration: duration,
       closable: true,
+      closeIcon: closeIconToRender,
       onClose: onClose,
       onClick: onClick,
       key: key,
@@ -37685,8 +38182,9 @@
   function notice$1(args) {
     getNotificationInstance(args, function (_ref) {
       var prefixCls = _ref.prefixCls,
+          iconPrefixCls = _ref.iconPrefixCls,
           instance = _ref.instance;
-      instance.notice(getRCNoticeProps$1(args, prefixCls));
+      instance.notice(getRCNoticeProps$1(args, prefixCls, iconPrefixCls));
     });
   }
 
@@ -37719,19 +38217,121 @@
   api$1.warn = api$1.warning;
   api$1.useNotification = createUseNotification(getNotificationInstance, getRCNoticeProps$1);
 
+  /* eslint-disable import/prefer-default-export, prefer-destructuring */
+  var dynamicStyleMark = "-ant-".concat(Date.now(), "-").concat(Math.random());
+  function registerTheme(globalPrefixCls, theme) {
+    var variables = {};
+
+    var formatColor = function formatColor(color, updater) {
+      var clone = color.clone();
+      clone = (updater === null || updater === void 0 ? void 0 : updater(clone)) || clone;
+      return clone.toRgbString();
+    };
+
+    var fillColor = function fillColor(colorVal, type) {
+      var baseColor = new TinyColor(colorVal);
+      var colorPalettes = generate(baseColor.toRgbString());
+      variables["".concat(type, "-color")] = formatColor(baseColor);
+      variables["".concat(type, "-color-disabled")] = colorPalettes[1];
+      variables["".concat(type, "-color-hover")] = colorPalettes[4];
+      variables["".concat(type, "-color-active")] = colorPalettes[7];
+      variables["".concat(type, "-color-outline")] = baseColor.clone().setAlpha(0.2).toRgbString();
+      variables["".concat(type, "-color-deprecated-bg")] = colorPalettes[1];
+      variables["".concat(type, "-color-deprecated-border")] = colorPalettes[3];
+    }; // ================ Primary Color ================
+
+
+    if (theme.primaryColor) {
+      fillColor(theme.primaryColor, 'primary');
+      var primaryColor = new TinyColor(theme.primaryColor);
+      var primaryColors = generate(primaryColor.toRgbString()); // Legacy - We should use semantic naming standard
+
+      primaryColors.forEach(function (color, index) {
+        variables["primary-".concat(index + 1)] = color;
+      }); // Deprecated
+
+      variables['primary-color-deprecated-l-35'] = formatColor(primaryColor, function (c) {
+        return c.lighten(35);
+      });
+      variables['primary-color-deprecated-l-20'] = formatColor(primaryColor, function (c) {
+        return c.lighten(20);
+      });
+      variables['primary-color-deprecated-t-20'] = formatColor(primaryColor, function (c) {
+        return c.tint(20);
+      });
+      variables['primary-color-deprecated-t-50'] = formatColor(primaryColor, function (c) {
+        return c.tint(50);
+      });
+      variables['primary-color-deprecated-f-12'] = formatColor(primaryColor, function (c) {
+        return c.setAlpha(c.getAlpha() * 0.12);
+      });
+      var primaryActiveColor = new TinyColor(primaryColors[0]);
+      variables['primary-color-active-deprecated-f-30'] = formatColor(primaryActiveColor, function (c) {
+        return c.setAlpha(c.getAlpha() * 0.3);
+      });
+      variables['primary-color-active-deprecated-d-02'] = formatColor(primaryActiveColor, function (c) {
+        return c.darken(2);
+      });
+    } // ================ Success Color ================
+
+
+    if (theme.successColor) {
+      fillColor(theme.successColor, 'success');
+    } // ================ Warning Color ================
+
+
+    if (theme.warningColor) {
+      fillColor(theme.warningColor, 'warning');
+    } // ================= Error Color =================
+
+
+    if (theme.errorColor) {
+      fillColor(theme.errorColor, 'error');
+    } // ================= Info Color ==================
+
+
+    if (theme.infoColor) {
+      fillColor(theme.infoColor, 'info');
+    } // Convert to css variables
+
+
+    var cssList = Object.keys(variables).map(function (key) {
+      return "--".concat(globalPrefixCls, "-").concat(key, ": ").concat(variables[key], ";");
+    });
+    updateCSS("\n  :root {\n    ".concat(cssList.join('\n'), "\n  }\n  "), "".concat(dynamicStyleMark, "-dynamic-theme"));
+  }
+
   var PASSED_PROPS = ['getTargetContainer', 'getPopupContainer', 'renderEmpty', 'pageHeader', 'input', 'form'];
   var defaultPrefixCls$1 = 'ant';
+  var defaultIconPrefixCls = 'anticon';
   var globalPrefixCls;
-
-  var setGlobalConfig = function setGlobalConfig(params) {
-    if (params.prefixCls !== undefined) {
-      globalPrefixCls = params.prefixCls;
-    }
-  };
+  var globalIconPrefixCls;
 
   function getGlobalPrefixCls() {
     return globalPrefixCls || defaultPrefixCls$1;
   }
+
+  function getGlobalIconPrefixCls() {
+    return globalIconPrefixCls || defaultIconPrefixCls;
+  }
+
+  var setGlobalConfig = function setGlobalConfig(_ref) {
+    var prefixCls = _ref.prefixCls,
+        iconPrefixCls = _ref.iconPrefixCls,
+        theme = _ref.theme;
+
+    if (prefixCls !== undefined) {
+      globalPrefixCls = prefixCls;
+    }
+
+    if (iconPrefixCls !== undefined) {
+      globalIconPrefixCls = iconPrefixCls;
+    }
+
+    if (theme) {
+      registerTheme(getGlobalPrefixCls(), theme);
+    }
+  };
 
   var globalConfig = function globalConfig() {
     return {
@@ -37739,6 +38339,7 @@
         if (customizePrefixCls) return customizePrefixCls;
         return suffixCls ? "".concat(getGlobalPrefixCls(), "-").concat(suffixCls) : getGlobalPrefixCls();
       },
+      getIconPrefixCls: getGlobalIconPrefixCls,
       getRootPrefixCls: function getRootPrefixCls(rootPrefixCls, customizePrefixCls) {
         // Customize rootPrefixCls is first priority
         if (rootPrefixCls) {
@@ -39383,7 +39984,7 @@
     }, [inVirtual]);
   }
 
-  var _excluded$2 = ["prefixCls", "className", "height", "itemHeight", "fullHeight", "style", "data", "children", "itemKey", "virtual", "component", "onScroll", "onVisibleChange"];
+  var _excluded$5 = ["prefixCls", "className", "height", "itemHeight", "fullHeight", "style", "data", "children", "itemKey", "virtual", "component", "onScroll", "onVisibleChange"];
 
   function _extends$3() { _extends$3 = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends$3.apply(this, arguments); }
 
@@ -39430,7 +40031,7 @@
         Component = _props$component === void 0 ? 'div' : _props$component,
         onScroll = props.onScroll,
         onVisibleChange = props.onVisibleChange,
-        restProps = _objectWithoutProperties$1(props, _excluded$2); // ================================= MISC =================================
+        restProps = _objectWithoutProperties$1(props, _excluded$5); // ================================= MISC =================================
 
 
     var useVirtual = !!(virtual !== false && height && itemHeight);
@@ -39770,379 +40371,6 @@
     }, children));
   };
 
-  /**
-   * Using virtual list of option display.
-   * Will fallback to dom if use customize render.
-   */
-
-  var OptionList = function OptionList(_ref, ref) {
-    var prefixCls = _ref.prefixCls,
-        id = _ref.id,
-        flattenOptions = _ref.flattenOptions,
-        childrenAsData = _ref.childrenAsData,
-        values = _ref.values,
-        searchValue = _ref.searchValue,
-        multiple = _ref.multiple,
-        defaultActiveFirstOption = _ref.defaultActiveFirstOption,
-        height = _ref.height,
-        itemHeight = _ref.itemHeight,
-        notFoundContent = _ref.notFoundContent,
-        open = _ref.open,
-        menuItemSelectedIcon = _ref.menuItemSelectedIcon,
-        virtual = _ref.virtual,
-        onSelect = _ref.onSelect,
-        onToggleOpen = _ref.onToggleOpen,
-        onActiveValue = _ref.onActiveValue,
-        onScroll = _ref.onScroll,
-        onMouseEnter = _ref.onMouseEnter;
-    var itemPrefixCls = "".concat(prefixCls, "-item");
-    var memoFlattenOptions = useMemo(function () {
-      return flattenOptions;
-    }, [open, flattenOptions], function (prev, next) {
-      return next[0] && prev[1] !== next[1];
-    }); // =========================== List ===========================
-
-    var listRef = React.useRef(null);
-
-    var onListMouseDown = function onListMouseDown(event) {
-      event.preventDefault();
-    };
-
-    var scrollIntoView = function scrollIntoView(index) {
-      if (listRef.current) {
-        listRef.current.scrollTo({
-          index: index
-        });
-      }
-    }; // ========================== Active ==========================
-
-
-    var getEnabledActiveIndex = function getEnabledActiveIndex(index) {
-      var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-      var len = memoFlattenOptions.length;
-
-      for (var i = 0; i < len; i += 1) {
-        var current = (index + i * offset + len) % len;
-        var _memoFlattenOptions$c = memoFlattenOptions[current],
-            group = _memoFlattenOptions$c.group,
-            data = _memoFlattenOptions$c.data;
-
-        if (!group && !data.disabled) {
-          return current;
-        }
-      }
-
-      return -1;
-    };
-
-    var _React$useState = React.useState(function () {
-      return getEnabledActiveIndex(0);
-    }),
-        _React$useState2 = _slicedToArray$1(_React$useState, 2),
-        activeIndex = _React$useState2[0],
-        setActiveIndex = _React$useState2[1];
-
-    var setActive = function setActive(index) {
-      var fromKeyboard = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      setActiveIndex(index);
-      var info = {
-        source: fromKeyboard ? 'keyboard' : 'mouse'
-      }; // Trigger active event
-
-      var flattenItem = memoFlattenOptions[index];
-
-      if (!flattenItem) {
-        onActiveValue(null, -1, info);
-        return;
-      }
-
-      onActiveValue(flattenItem.data.value, index, info);
-    }; // Auto active first item when list length or searchValue changed
-
-
-    React.useEffect(function () {
-      setActive(defaultActiveFirstOption !== false ? getEnabledActiveIndex(0) : -1);
-    }, [memoFlattenOptions.length, searchValue]); // Auto scroll to item position in single mode
-
-    React.useEffect(function () {
-      /**
-       * React will skip `onChange` when component update.
-       * `setActive` function will call root accessibility state update which makes re-render.
-       * So we need to delay to let Input component trigger onChange first.
-       */
-      var timeoutId = setTimeout(function () {
-        if (!multiple && open && values.size === 1) {
-          var value = Array.from(values)[0];
-          var index = memoFlattenOptions.findIndex(function (_ref2) {
-            var data = _ref2.data;
-            return data.value === value;
-          });
-          setActive(index);
-          scrollIntoView(index);
-        }
-      }); // Force trigger scrollbar visible when open
-
-      if (open) {
-        var _listRef$current;
-
-        (_listRef$current = listRef.current) === null || _listRef$current === void 0 ? void 0 : _listRef$current.scrollTo(undefined);
-      }
-
-      return function () {
-        return clearTimeout(timeoutId);
-      };
-    }, [open]); // ========================== Values ==========================
-
-    var onSelectValue = function onSelectValue(value) {
-      if (value !== undefined) {
-        onSelect(value, {
-          selected: !values.has(value)
-        });
-      } // Single mode should always close by select
-
-
-      if (!multiple) {
-        onToggleOpen(false);
-      }
-    }; // ========================= Keyboard =========================
-
-
-    React.useImperativeHandle(ref, function () {
-      return {
-        onKeyDown: function onKeyDown(event) {
-          var which = event.which;
-
-          switch (which) {
-            // >>> Arrow keys
-            case KeyCode.UP:
-            case KeyCode.DOWN:
-              {
-                var offset = 0;
-
-                if (which === KeyCode.UP) {
-                  offset = -1;
-                } else if (which === KeyCode.DOWN) {
-                  offset = 1;
-                }
-
-                if (offset !== 0) {
-                  var nextActiveIndex = getEnabledActiveIndex(activeIndex + offset, offset);
-                  scrollIntoView(nextActiveIndex);
-                  setActive(nextActiveIndex, true);
-                }
-
-                break;
-              }
-            // >>> Select
-
-            case KeyCode.ENTER:
-              {
-                // value
-                var item = memoFlattenOptions[activeIndex];
-
-                if (item && !item.data.disabled) {
-                  onSelectValue(item.data.value);
-                } else {
-                  onSelectValue(undefined);
-                }
-
-                if (open) {
-                  event.preventDefault();
-                }
-
-                break;
-              }
-            // >>> Close
-
-            case KeyCode.ESC:
-              {
-                onToggleOpen(false);
-
-                if (open) {
-                  event.stopPropagation();
-                }
-              }
-          }
-        },
-        onKeyUp: function onKeyUp() {},
-        scrollTo: function scrollTo(index) {
-          scrollIntoView(index);
-        }
-      };
-    }); // ========================== Render ==========================
-
-    if (memoFlattenOptions.length === 0) {
-      return /*#__PURE__*/React.createElement("div", {
-        role: "listbox",
-        id: "".concat(id, "_list"),
-        className: "".concat(itemPrefixCls, "-empty"),
-        onMouseDown: onListMouseDown
-      }, notFoundContent);
-    }
-
-    function renderItem(index) {
-      var item = memoFlattenOptions[index];
-      if (!item) return null;
-      var itemData = item.data || {};
-      var value = itemData.value,
-          label = itemData.label,
-          children = itemData.children;
-      var attrs = pickAttrs(itemData, true);
-      var mergedLabel = childrenAsData ? children : label;
-      return item ? /*#__PURE__*/React.createElement("div", _extends$1({
-        "aria-label": typeof mergedLabel === 'string' ? mergedLabel : null
-      }, attrs, {
-        key: index,
-        role: "option",
-        id: "".concat(id, "_list_").concat(index),
-        "aria-selected": values.has(value)
-      }), value) : null;
-    }
-
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      role: "listbox",
-      id: "".concat(id, "_list"),
-      style: {
-        height: 0,
-        width: 0,
-        overflow: 'hidden'
-      }
-    }, renderItem(activeIndex - 1), renderItem(activeIndex), renderItem(activeIndex + 1)), /*#__PURE__*/React.createElement(List$1, {
-      itemKey: "key",
-      ref: listRef,
-      data: memoFlattenOptions,
-      height: height,
-      itemHeight: itemHeight,
-      fullHeight: false,
-      onMouseDown: onListMouseDown,
-      onScroll: onScroll,
-      virtual: virtual,
-      onMouseEnter: onMouseEnter
-    }, function (_ref3, itemIndex) {
-      var _classNames;
-
-      var group = _ref3.group,
-          groupOption = _ref3.groupOption,
-          data = _ref3.data;
-      var label = data.label,
-          key = data.key; // Group
-
-      if (group) {
-        return /*#__PURE__*/React.createElement("div", {
-          className: classnames(itemPrefixCls, "".concat(itemPrefixCls, "-group"))
-        }, label !== undefined ? label : key);
-      }
-
-      var disabled = data.disabled,
-          value = data.value,
-          title = data.title,
-          children = data.children,
-          style = data.style,
-          className = data.className,
-          otherProps = _objectWithoutProperties(data, ["disabled", "value", "title", "children", "style", "className"]); // Option
-
-
-      var selected = values.has(value);
-      var optionPrefixCls = "".concat(itemPrefixCls, "-option");
-      var optionClassName = classnames(itemPrefixCls, optionPrefixCls, className, (_classNames = {}, _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-grouped"), groupOption), _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-active"), activeIndex === itemIndex && !disabled), _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-disabled"), disabled), _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-selected"), selected), _classNames));
-      var mergedLabel = childrenAsData ? children : label;
-      var iconVisible = !menuItemSelectedIcon || typeof menuItemSelectedIcon === 'function' || selected;
-      var content = mergedLabel || value; // https://github.com/ant-design/ant-design/issues/26717
-
-      var optionTitle = typeof content === 'string' || typeof content === 'number' ? content.toString() : undefined;
-
-      if (title !== undefined) {
-        optionTitle = title;
-      }
-
-      return /*#__PURE__*/React.createElement("div", _extends$1({}, otherProps, {
-        "aria-selected": selected,
-        className: optionClassName,
-        title: optionTitle,
-        onMouseMove: function onMouseMove() {
-          if (activeIndex === itemIndex || disabled) {
-            return;
-          }
-
-          setActive(itemIndex);
-        },
-        onClick: function onClick() {
-          if (!disabled) {
-            onSelectValue(value);
-          }
-        },
-        style: style
-      }), /*#__PURE__*/React.createElement("div", {
-        className: "".concat(optionPrefixCls, "-content")
-      }, content), /*#__PURE__*/React.isValidElement(menuItemSelectedIcon) || selected, iconVisible && /*#__PURE__*/React.createElement(TransBtn, {
-        className: "".concat(itemPrefixCls, "-option-state"),
-        customizeIcon: menuItemSelectedIcon,
-        customizeIconProps: {
-          isSelected: selected
-        }
-      }, selected ? '✓' : null));
-    }));
-  };
-
-  var RefOptionList = /*#__PURE__*/React.forwardRef(OptionList);
-  RefOptionList.displayName = 'OptionList';
-
-  /** This is a placeholder, not real render in dom */
-  var Option$1 = function Option() {
-    return null;
-  };
-
-  Option$1.isSelectOption = true;
-
-  /** This is a placeholder, not real render in dom */
-  var OptGroup = function OptGroup() {
-    return null;
-  };
-
-  OptGroup.isSelectOptGroup = true;
-
-  function convertNodeToOption(node) {
-    var key = node.key,
-        _node$props = node.props,
-        children = _node$props.children,
-        value = _node$props.value,
-        restProps = _objectWithoutProperties(_node$props, ["children", "value"]);
-
-    return _objectSpread2$1({
-      key: key,
-      value: value !== undefined ? value : key,
-      children: children
-    }, restProps);
-  }
-
-  function convertChildrenToData(nodes) {
-    var optionOnly = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-    return toArray(nodes).map(function (node, index) {
-      if (! /*#__PURE__*/React.isValidElement(node) || !node.type) {
-        return null;
-      }
-
-      var isSelectOptGroup = node.type.isSelectOptGroup,
-          key = node.key,
-          _node$props2 = node.props,
-          children = _node$props2.children,
-          restProps = _objectWithoutProperties(_node$props2, ["children"]);
-
-      if (optionOnly || !isSelectOptGroup) {
-        return convertNodeToOption(node);
-      }
-
-      return _objectSpread2$1(_objectSpread2$1({
-        key: "__RC_SELECT_GRP__".concat(key === null ? index : key, "__"),
-        label: key
-      }, restProps), {}, {
-        options: convertChildrenToData(children)
-      });
-    }).filter(function (data) {
-      return data;
-    });
-  }
-
   function toArray$2(value) {
     if (Array.isArray(value)) {
       return value;
@@ -40268,33 +40496,58 @@
 
     return "rc-index-key-".concat(index);
   }
+
+  function fillFieldNames(fieldNames) {
+    var _ref = fieldNames || {},
+        label = _ref.label,
+        value = _ref.value,
+        options = _ref.options;
+
+    return {
+      label: label || 'label',
+      value: value || 'value',
+      options: options || 'options'
+    };
+  }
   /**
    * Flat options into flatten list.
    * We use `optionOnly` here is aim to avoid user use nested option group.
    * Here is simply set `key` to the index if not provided.
    */
 
-
   function flattenOptions(options) {
+    var _ref2 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+        fieldNames = _ref2.fieldNames;
+
     var flattenList = [];
+
+    var _fillFieldNames = fillFieldNames(fieldNames),
+        fieldLabel = _fillFieldNames.label,
+        fieldValue = _fillFieldNames.value,
+        fieldOptions = _fillFieldNames.options;
 
     function dig(list, isGroupOption) {
       list.forEach(function (data) {
-        if (isGroupOption || !('options' in data)) {
+        var label = data[fieldLabel];
+
+        if (isGroupOption || !(fieldOptions in data)) {
           // Option
           flattenList.push({
             key: getKey(data, flattenList.length),
             groupOption: isGroupOption,
-            data: data
+            data: data,
+            label: label,
+            value: data[fieldValue]
           });
         } else {
           // Option Group
           flattenList.push({
             key: getKey(data, flattenList.length),
             group: true,
-            data: data
+            data: data,
+            label: label
           });
-          dig(data.options, true);
+          dig(data[fieldOptions], true);
         }
       });
     }
@@ -40322,16 +40575,19 @@
   }
 
   function findValueOption(values, options) {
-    var _ref = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
-        _ref$prevValueOptions = _ref.prevValueOptions,
-        prevValueOptions = _ref$prevValueOptions === void 0 ? [] : _ref$prevValueOptions;
+    var _ref3 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
+        _ref3$prevValueOption = _ref3.prevValueOptions,
+        prevValueOptions = _ref3$prevValueOption === void 0 ? [] : _ref3$prevValueOption;
 
     var optionMap = new Map();
-    options.forEach(function (flattenItem) {
-      if (!flattenItem.group) {
-        var data = flattenItem.data; // Check if match
+    options.forEach(function (_ref4) {
+      var data = _ref4.data,
+          group = _ref4.group,
+          value = _ref4.value;
 
-        optionMap.set(data.value, data);
+      if (!group) {
+        // Check if match
+        optionMap.set(value, data);
       }
     });
     return values.map(function (val) {
@@ -40346,11 +40602,11 @@
       return injectPropsWithOption(option);
     });
   }
-  var getLabeledValue = function getLabeledValue(value, _ref2) {
-    var options = _ref2.options,
-        prevValueMap = _ref2.prevValueMap,
-        labelInValue = _ref2.labelInValue,
-        optionLabelProp = _ref2.optionLabelProp;
+  var getLabeledValue = function getLabeledValue(value, _ref5) {
+    var options = _ref5.options,
+        prevValueMap = _ref5.prevValueMap,
+        labelInValue = _ref5.labelInValue,
+        optionLabelProp = _ref5.optionLabelProp;
     var item = findValueOption([value], options)[0];
     var result = {
       value: value
@@ -40398,9 +40654,9 @@
   /** Filter options and return a new options by the search text */
 
 
-  function filterOptions(searchValue, options, _ref3) {
-    var optionFilterProp = _ref3.optionFilterProp,
-        filterOption = _ref3.filterOption;
+  function filterOptions(searchValue, options, _ref6) {
+    var optionFilterProp = _ref6.optionFilterProp,
+        filterOption = _ref6.filterOption;
     var filteredOptions = [];
     var filterFunc;
 
@@ -40451,10 +40707,10 @@
 
     var match = false;
 
-    function separate(str, _ref4) {
-      var _ref5 = _toArray(_ref4),
-          token = _ref5[0],
-          restTokens = _ref5.slice(1);
+    function separate(str, _ref7) {
+      var _ref8 = _toArray(_ref7),
+          token = _ref8[0],
+          restTokens = _ref8.slice(1);
 
       if (!token) {
         return [str];
@@ -40501,14 +40757,412 @@
       var val = labelInValue ? item.value : item;
 
       if (!optionValues.has(val)) {
-        var _ref6;
+        var _ref9;
 
-        cloneOptions.push(labelInValue ? (_ref6 = {}, _defineProperty$1(_ref6, optionLabelProp, item.label), _defineProperty$1(_ref6, "value", val), _ref6) : {
+        cloneOptions.push(labelInValue ? (_ref9 = {}, _defineProperty$1(_ref9, optionLabelProp, item.label), _defineProperty$1(_ref9, "value", val), _ref9) : {
           value: val
         });
       }
     });
     return cloneOptions;
+  }
+
+  /* istanbul ignore file */
+  function isPlatformMac() {
+    return /(mac\sos|macintosh)/i.test(navigator.appVersion);
+  }
+
+  var _excluded$6 = ["disabled", "title", "children", "style", "className"];
+  /**
+   * Using virtual list of option display.
+   * Will fallback to dom if use customize render.
+   */
+
+  var OptionList = function OptionList(_ref, ref) {
+    var prefixCls = _ref.prefixCls,
+        id = _ref.id,
+        fieldNames = _ref.fieldNames,
+        flattenOptions = _ref.flattenOptions,
+        childrenAsData = _ref.childrenAsData,
+        values = _ref.values,
+        searchValue = _ref.searchValue,
+        multiple = _ref.multiple,
+        defaultActiveFirstOption = _ref.defaultActiveFirstOption,
+        height = _ref.height,
+        itemHeight = _ref.itemHeight,
+        notFoundContent = _ref.notFoundContent,
+        open = _ref.open,
+        menuItemSelectedIcon = _ref.menuItemSelectedIcon,
+        virtual = _ref.virtual,
+        onSelect = _ref.onSelect,
+        onToggleOpen = _ref.onToggleOpen,
+        onActiveValue = _ref.onActiveValue,
+        onScroll = _ref.onScroll,
+        onMouseEnter = _ref.onMouseEnter;
+    var itemPrefixCls = "".concat(prefixCls, "-item");
+    var memoFlattenOptions = useMemo(function () {
+      return flattenOptions;
+    }, [open, flattenOptions], function (prev, next) {
+      return next[0] && prev[1] !== next[1];
+    }); // =========================== List ===========================
+
+    var listRef = React.useRef(null);
+
+    var onListMouseDown = function onListMouseDown(event) {
+      event.preventDefault();
+    };
+
+    var scrollIntoView = function scrollIntoView(index) {
+      if (listRef.current) {
+        listRef.current.scrollTo({
+          index: index
+        });
+      }
+    }; // ========================== Active ==========================
+
+
+    var getEnabledActiveIndex = function getEnabledActiveIndex(index) {
+      var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+      var len = memoFlattenOptions.length;
+
+      for (var i = 0; i < len; i += 1) {
+        var current = (index + i * offset + len) % len;
+        var _memoFlattenOptions$c = memoFlattenOptions[current],
+            group = _memoFlattenOptions$c.group,
+            data = _memoFlattenOptions$c.data;
+
+        if (!group && !data.disabled) {
+          return current;
+        }
+      }
+
+      return -1;
+    };
+
+    var _React$useState = React.useState(function () {
+      return getEnabledActiveIndex(0);
+    }),
+        _React$useState2 = _slicedToArray$1(_React$useState, 2),
+        activeIndex = _React$useState2[0],
+        setActiveIndex = _React$useState2[1];
+
+    var setActive = function setActive(index) {
+      var fromKeyboard = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      setActiveIndex(index);
+      var info = {
+        source: fromKeyboard ? 'keyboard' : 'mouse'
+      }; // Trigger active event
+
+      var flattenItem = memoFlattenOptions[index];
+
+      if (!flattenItem) {
+        onActiveValue(null, -1, info);
+        return;
+      }
+
+      onActiveValue(flattenItem.data.value, index, info);
+    }; // Auto active first item when list length or searchValue changed
+
+
+    React.useEffect(function () {
+      setActive(defaultActiveFirstOption !== false ? getEnabledActiveIndex(0) : -1);
+    }, [memoFlattenOptions.length, searchValue]); // Auto scroll to item position in single mode
+
+    React.useEffect(function () {
+      /**
+       * React will skip `onChange` when component update.
+       * `setActive` function will call root accessibility state update which makes re-render.
+       * So we need to delay to let Input component trigger onChange first.
+       */
+      var timeoutId = setTimeout(function () {
+        if (!multiple && open && values.size === 1) {
+          var value = Array.from(values)[0];
+          var index = memoFlattenOptions.findIndex(function (_ref2) {
+            var data = _ref2.data;
+            return data.value === value;
+          });
+
+          if (index !== -1) {
+            setActive(index);
+            scrollIntoView(index);
+          }
+        }
+      }); // Force trigger scrollbar visible when open
+
+      if (open) {
+        var _listRef$current;
+
+        (_listRef$current = listRef.current) === null || _listRef$current === void 0 ? void 0 : _listRef$current.scrollTo(undefined);
+      }
+
+      return function () {
+        return clearTimeout(timeoutId);
+      };
+    }, [open, searchValue]); // ========================== Values ==========================
+
+    var onSelectValue = function onSelectValue(value) {
+      if (value !== undefined) {
+        onSelect(value, {
+          selected: !values.has(value)
+        });
+      } // Single mode should always close by select
+
+
+      if (!multiple) {
+        onToggleOpen(false);
+      }
+    }; // ========================= Keyboard =========================
+
+
+    React.useImperativeHandle(ref, function () {
+      return {
+        onKeyDown: function onKeyDown(event) {
+          var which = event.which,
+              ctrlKey = event.ctrlKey;
+
+          switch (which) {
+            // >>> Arrow keys & ctrl + n/p on Mac
+            case KeyCode.N:
+            case KeyCode.P:
+            case KeyCode.UP:
+            case KeyCode.DOWN:
+              {
+                var offset = 0;
+
+                if (which === KeyCode.UP) {
+                  offset = -1;
+                } else if (which === KeyCode.DOWN) {
+                  offset = 1;
+                } else if (isPlatformMac() && ctrlKey) {
+                  if (which === KeyCode.N) {
+                    offset = 1;
+                  } else if (which === KeyCode.P) {
+                    offset = -1;
+                  }
+                }
+
+                if (offset !== 0) {
+                  var nextActiveIndex = getEnabledActiveIndex(activeIndex + offset, offset);
+                  scrollIntoView(nextActiveIndex);
+                  setActive(nextActiveIndex, true);
+                }
+
+                break;
+              }
+            // >>> Select
+
+            case KeyCode.ENTER:
+              {
+                // value
+                var item = memoFlattenOptions[activeIndex];
+
+                if (item && !item.data.disabled) {
+                  onSelectValue(item.data.value);
+                } else {
+                  onSelectValue(undefined);
+                }
+
+                if (open) {
+                  event.preventDefault();
+                }
+
+                break;
+              }
+            // >>> Close
+
+            case KeyCode.ESC:
+              {
+                onToggleOpen(false);
+
+                if (open) {
+                  event.stopPropagation();
+                }
+              }
+          }
+        },
+        onKeyUp: function onKeyUp() {},
+        scrollTo: function scrollTo(index) {
+          scrollIntoView(index);
+        }
+      };
+    }); // ========================== Render ==========================
+
+    if (memoFlattenOptions.length === 0) {
+      return /*#__PURE__*/React.createElement("div", {
+        role: "listbox",
+        id: "".concat(id, "_list"),
+        className: "".concat(itemPrefixCls, "-empty"),
+        onMouseDown: onListMouseDown
+      }, notFoundContent);
+    }
+
+    var omitFieldNameList = Object.values(fillFieldNames(fieldNames));
+
+    var renderItem = function renderItem(index) {
+      var item = memoFlattenOptions[index];
+      if (!item) return null;
+      var itemData = item.data || {};
+      var value = itemData.value,
+          label = itemData.label,
+          children = itemData.children;
+      var attrs = pickAttrs(itemData, true);
+      var mergedLabel = childrenAsData ? children : label;
+      return item ? /*#__PURE__*/React.createElement("div", _extends$1({
+        "aria-label": typeof mergedLabel === 'string' ? mergedLabel : null
+      }, attrs, {
+        key: index,
+        role: "option",
+        id: "".concat(id, "_list_").concat(index),
+        "aria-selected": values.has(value)
+      }), value) : null;
+    };
+
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      role: "listbox",
+      id: "".concat(id, "_list"),
+      style: {
+        height: 0,
+        width: 0,
+        overflow: 'hidden'
+      }
+    }, renderItem(activeIndex - 1), renderItem(activeIndex), renderItem(activeIndex + 1)), /*#__PURE__*/React.createElement(List$1, {
+      itemKey: "key",
+      ref: listRef,
+      data: memoFlattenOptions,
+      height: height,
+      itemHeight: itemHeight,
+      fullHeight: false,
+      onMouseDown: onListMouseDown,
+      onScroll: onScroll,
+      virtual: virtual,
+      onMouseEnter: onMouseEnter
+    }, function (_ref3, itemIndex) {
+      var _classNames;
+
+      var group = _ref3.group,
+          groupOption = _ref3.groupOption,
+          data = _ref3.data,
+          label = _ref3.label,
+          value = _ref3.value;
+      var key = data.key; // Group
+
+      if (group) {
+        return /*#__PURE__*/React.createElement("div", {
+          className: classnames(itemPrefixCls, "".concat(itemPrefixCls, "-group"))
+        }, label !== undefined ? label : key);
+      }
+
+      var disabled = data.disabled,
+          title = data.title,
+          children = data.children,
+          style = data.style,
+          className = data.className,
+          otherProps = _objectWithoutProperties(data, _excluded$6);
+
+      var passedProps = omit(otherProps, omitFieldNameList); // Option
+
+      var selected = values.has(value);
+      var optionPrefixCls = "".concat(itemPrefixCls, "-option");
+      var optionClassName = classnames(itemPrefixCls, optionPrefixCls, className, (_classNames = {}, _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-grouped"), groupOption), _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-active"), activeIndex === itemIndex && !disabled), _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-disabled"), disabled), _defineProperty$1(_classNames, "".concat(optionPrefixCls, "-selected"), selected), _classNames));
+      var mergedLabel = childrenAsData ? children : label;
+      var iconVisible = !menuItemSelectedIcon || typeof menuItemSelectedIcon === 'function' || selected;
+      var content = mergedLabel || value; // https://github.com/ant-design/ant-design/issues/26717
+
+      var optionTitle = typeof content === 'string' || typeof content === 'number' ? content.toString() : undefined;
+
+      if (title !== undefined) {
+        optionTitle = title;
+      }
+
+      return /*#__PURE__*/React.createElement("div", _extends$1({}, passedProps, {
+        "aria-selected": selected,
+        className: optionClassName,
+        title: optionTitle,
+        onMouseMove: function onMouseMove() {
+          if (activeIndex === itemIndex || disabled) {
+            return;
+          }
+
+          setActive(itemIndex);
+        },
+        onClick: function onClick() {
+          if (!disabled) {
+            onSelectValue(value);
+          }
+        },
+        style: style
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "".concat(optionPrefixCls, "-content")
+      }, content), /*#__PURE__*/React.isValidElement(menuItemSelectedIcon) || selected, iconVisible && /*#__PURE__*/React.createElement(TransBtn, {
+        className: "".concat(itemPrefixCls, "-option-state"),
+        customizeIcon: menuItemSelectedIcon,
+        customizeIconProps: {
+          isSelected: selected
+        }
+      }, selected ? '✓' : null));
+    }));
+  };
+
+  var RefOptionList = /*#__PURE__*/React.forwardRef(OptionList);
+  RefOptionList.displayName = 'OptionList';
+
+  /** This is a placeholder, not real render in dom */
+  var Option$1 = function Option() {
+    return null;
+  };
+
+  Option$1.isSelectOption = true;
+
+  /** This is a placeholder, not real render in dom */
+  var OptGroup = function OptGroup() {
+    return null;
+  };
+
+  OptGroup.isSelectOptGroup = true;
+
+  var _excluded$7 = ["children", "value"],
+      _excluded2 = ["children"];
+
+  function convertNodeToOption(node) {
+    var key = node.key,
+        _node$props = node.props,
+        children = _node$props.children,
+        value = _node$props.value,
+        restProps = _objectWithoutProperties(_node$props, _excluded$7);
+
+    return _objectSpread2$1({
+      key: key,
+      value: value !== undefined ? value : key,
+      children: children
+    }, restProps);
+  }
+
+  function convertChildrenToData(nodes) {
+    var optionOnly = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    return toArray(nodes).map(function (node, index) {
+      if (! /*#__PURE__*/React.isValidElement(node) || !node.type) {
+        return null;
+      }
+
+      var isSelectOptGroup = node.type.isSelectOptGroup,
+          key = node.key,
+          _node$props2 = node.props,
+          children = _node$props2.children,
+          restProps = _objectWithoutProperties(_node$props2, _excluded2);
+
+      if (optionOnly || !isSelectOptGroup) {
+        return convertNodeToOption(node);
+      }
+
+      return _objectSpread2$1(_objectSpread2$1({
+        key: "__RC_SELECT_GRP__".concat(key === null ? index : key, "__"),
+        label: key
+      }, restProps), {}, {
+        options: convertChildrenToData(children)
+      });
+    }).filter(function (data) {
+      return data;
+    });
   }
 
   var isMobile = (function () {
@@ -41205,9 +41859,10 @@
     }, [inputValue]); // ===================== Render ======================
     // >>> Render Selector Node. Includes Item & Rest
 
-    function defaultRenderSelector(content, itemDisabled, closable, onClose) {
+    function defaultRenderSelector(title, content, itemDisabled, closable, onClose) {
       return /*#__PURE__*/React.createElement("span", {
-        className: classnames("".concat(selectionPrefixCls, "-item"), _defineProperty$1({}, "".concat(selectionPrefixCls, "-item-disabled"), itemDisabled))
+        className: classnames("".concat(selectionPrefixCls, "-item"), _defineProperty$1({}, "".concat(selectionPrefixCls, "-item-disabled"), itemDisabled)),
+        title: typeof title === 'string' || typeof title === 'number' ? title.toString() : undefined
       }, /*#__PURE__*/React.createElement("span", {
         className: "".concat(selectionPrefixCls, "-item-content")
       }, content), closable && /*#__PURE__*/React.createElement(TransBtn, {
@@ -41259,12 +41914,12 @@
         });
       };
 
-      return typeof tagRender === 'function' ? customizeRenderSelector(value, displayLabel, itemDisabled, closable, onClose) : defaultRenderSelector(displayLabel, itemDisabled, closable, onClose);
+      return typeof tagRender === 'function' ? customizeRenderSelector(value, displayLabel, itemDisabled, closable, onClose) : defaultRenderSelector(label, displayLabel, itemDisabled, closable, onClose);
     }
 
     function renderRest(omittedValues) {
       var content = typeof maxTagPlaceholder === 'function' ? maxTagPlaceholder(omittedValues) : maxTagPlaceholder;
-      return defaultRenderSelector(content, false);
+      return defaultRenderSelector(content, content, false);
     } // >>> Input Node
 
 
@@ -43625,11 +44280,11 @@
    * @param {string} key The key of the property to get.
    * @returns {*} Returns the property value.
    */
-  function getValue$2(object, key) {
+  function getValue$3(object, key) {
     return object == null ? undefined : object[key];
   }
 
-  var _getValue = getValue$2;
+  var _getValue = getValue$3;
 
   /**
    * Gets the native function at `key` of `object`.
@@ -45898,11 +46553,11 @@
   });
   MobilePopupInner.displayName = 'MobilePopupInner';
 
-  var _excluded$3 = ["visible", "mobile"];
+  var _excluded$8 = ["visible", "mobile"];
   var Popup = /*#__PURE__*/React.forwardRef(function (_ref, ref) {
     var visible = _ref.visible,
         mobile = _ref.mobile,
-        props = _objectWithoutProperties(_ref, _excluded$3);
+        props = _objectWithoutProperties(_ref, _excluded$8);
 
     var _useState = React.useState(visible),
         _useState2 = _slicedToArray$1(_useState, 2),
@@ -46726,6 +47381,8 @@
   }
   var Trigger = generateTrigger(Portal);
 
+  var _excluded$9 = ["prefixCls", "disabled", "visible", "children", "popupElement", "containerWidth", "animation", "transitionName", "dropdownStyle", "dropdownClassName", "direction", "placement", "dropdownMatchSelectWidth", "dropdownRender", "dropdownAlign", "getPopupContainer", "empty", "getTriggerDOMNode", "onPopupVisibleChange"];
+
   var getBuiltInPlacements = function getBuiltInPlacements(dropdownMatchSelectWidth) {
     // Enable horizontal overflow auto-adjustment when a custom dropdown width is provided
     var adjustX = typeof dropdownMatchSelectWidth !== 'number' ? 0 : 1;
@@ -46778,6 +47435,7 @@
         dropdownClassName = props.dropdownClassName,
         _props$direction = props.direction,
         direction = _props$direction === void 0 ? 'ltr' : _props$direction,
+        placement = props.placement,
         _props$dropdownMatchS = props.dropdownMatchSelectWidth,
         dropdownMatchSelectWidth = _props$dropdownMatchS === void 0 ? true : _props$dropdownMatchS,
         dropdownRender = props.dropdownRender,
@@ -46786,7 +47444,7 @@
         empty = props.empty,
         getTriggerDOMNode = props.getTriggerDOMNode,
         onPopupVisibleChange = props.onPopupVisibleChange,
-        restProps = _objectWithoutProperties(props, ["prefixCls", "disabled", "visible", "children", "popupElement", "containerWidth", "animation", "transitionName", "dropdownStyle", "dropdownClassName", "direction", "dropdownMatchSelectWidth", "dropdownRender", "dropdownAlign", "getPopupContainer", "empty", "getTriggerDOMNode", "onPopupVisibleChange"]);
+        restProps = _objectWithoutProperties(props, _excluded$9);
 
     var dropdownPrefixCls = "".concat(prefixCls, "-dropdown");
     var popupNode = popupElement;
@@ -46823,7 +47481,7 @@
     return /*#__PURE__*/React.createElement(Trigger, _extends$1({}, restProps, {
       showAction: onPopupVisibleChange ? ['click'] : [],
       hideAction: onPopupVisibleChange ? ['click'] : [],
-      popupPlacement: direction === 'rtl' ? 'bottomRight' : 'bottomLeft',
+      popupPlacement: placement || (direction === 'rtl' ? 'bottomRight' : 'bottomLeft'),
       builtinPlacements: builtInPlacements,
       prefixCls: dropdownPrefixCls,
       popupTransitionName: mergedTransitionName,
@@ -46948,15 +47606,15 @@
     var optionMap = React.useMemo(function () {
       var map = new Map();
       options.forEach(function (item) {
-        var value = item.data.value;
+        var value = item.value;
         map.set(value, item);
       });
       return map;
     }, [options]);
     prevOptionMapRef.current = optionMap;
 
-    var getValueOption = function getValueOption(vals) {
-      return vals.map(function (value) {
+    var getValueOption = function getValueOption(valueList) {
+      return valueList.map(function (value) {
         return prevOptionMapRef.current.get(value);
       }).filter(Boolean);
     };
@@ -46964,6 +47622,7 @@
     return getValueOption;
   }
 
+  var _excluded$a = ["prefixCls", "className", "id", "open", "defaultOpen", "options", "children", "mode", "value", "defaultValue", "labelInValue", "showSearch", "inputValue", "searchValue", "filterOption", "filterSort", "optionFilterProp", "autoClearSearchValue", "onSearch", "fieldNames", "allowClear", "clearIcon", "showArrow", "inputIcon", "menuItemSelectedIcon", "disabled", "loading", "defaultActiveFirstOption", "notFoundContent", "optionLabelProp", "backfill", "tabIndex", "getInputElement", "getRawInputElement", "getPopupContainer", "placement", "listHeight", "listItemHeight", "animation", "transitionName", "virtual", "dropdownStyle", "dropdownClassName", "dropdownMatchSelectWidth", "dropdownRender", "dropdownAlign", "showAction", "direction", "tokenSeparators", "tagRender", "onPopupScroll", "onDropdownVisibleChange", "onFocus", "onBlur", "onKeyUp", "onKeyDown", "onMouseDown", "onChange", "onSelect", "onDeselect", "onClear", "internalProps"];
   var DEFAULT_OMIT_PROPS = ['removeIcon', 'placeholder', 'autoFocus', 'maxTagCount', 'maxTagTextLength', 'maxTagPlaceholder', 'choiceTransitionName', 'onInputKeyDown', 'tabIndex'];
   /**
    * This function is in internal usage.
@@ -47008,6 +47667,7 @@
           _props$autoClearSearc = props.autoClearSearchValue,
           autoClearSearchValue = _props$autoClearSearc === void 0 ? true : _props$autoClearSearc,
           onSearch = props.onSearch,
+          fieldNames = props.fieldNames,
           allowClear = props.allowClear,
           clearIcon = props.clearIcon,
           showArrow = props.showArrow,
@@ -47024,6 +47684,7 @@
           getInputElement = props.getInputElement,
           getRawInputElement = props.getRawInputElement,
           getPopupContainer = props.getPopupContainer,
+          placement = props.placement,
           _props$listHeight = props.listHeight,
           listHeight = _props$listHeight === void 0 ? 200 : _props$listHeight,
           _props$listItemHeight = props.listItemHeight,
@@ -47054,7 +47715,7 @@
           onClear = props.onClear,
           _props$internalProps = props.internalProps,
           internalProps = _props$internalProps === void 0 ? {} : _props$internalProps,
-          restProps = _objectWithoutProperties(props, ["prefixCls", "className", "id", "open", "defaultOpen", "options", "children", "mode", "value", "defaultValue", "labelInValue", "showSearch", "inputValue", "searchValue", "filterOption", "filterSort", "optionFilterProp", "autoClearSearchValue", "onSearch", "allowClear", "clearIcon", "showArrow", "inputIcon", "menuItemSelectedIcon", "disabled", "loading", "defaultActiveFirstOption", "notFoundContent", "optionLabelProp", "backfill", "tabIndex", "getInputElement", "getRawInputElement", "getPopupContainer", "listHeight", "listItemHeight", "animation", "transitionName", "virtual", "dropdownStyle", "dropdownClassName", "dropdownMatchSelectWidth", "dropdownRender", "dropdownAlign", "showAction", "direction", "tokenSeparators", "tagRender", "onPopupScroll", "onDropdownVisibleChange", "onFocus", "onBlur", "onKeyUp", "onKeyDown", "onMouseDown", "onChange", "onSelect", "onDeselect", "onClear", "internalProps"]);
+          restProps = _objectWithoutProperties(props, _excluded$a);
 
       var useInternalProps = internalProps.mark === INTERNAL_PROPS_MARK;
       var domProps = omitDOMProps ? omitDOMProps(restProps) : restProps;
@@ -47252,7 +47913,9 @@
 
       var triggerSelect = function triggerSelect(newValue, isSelect, source) {
         var newValueOption = getValueOption([newValue]);
-        var outOption = findValueOption([newValue], newValueOption)[0];
+        var outOption = findValueOption([newValue], newValueOption, {
+          props: props
+        })[0];
 
         if (!internalProps.skipTriggerSelect) {
           // Skip trigger `onSelect` or `onDeselect` if configured
@@ -47303,7 +47966,8 @@
 
         if (onChange && (mergedRawValue.length !== 0 || outValues.length !== 0)) {
           var outOptions = findValueOption(newRawValues, newRawValuesOptions, {
-            prevValueOptions: prevValueOptions
+            prevValueOptions: prevValueOptions,
+            props: props
           }); // We will cache option in case it removed by ajax
 
           setPrevValueOptions(outOptions.map(function (option, index) {
@@ -47488,12 +48152,16 @@
           triggerSelect(newRawValue, true, 'input');
         });
         setInnerSearchValue('');
-      }; // Close dropdown when disabled change
+      }; // Close dropdown & remove focus state when disabled change
 
 
       React.useEffect(function () {
-        if (innerOpen && !!disabled) {
+        if (innerOpen && disabled) {
           setInnerOpen(false);
+        }
+
+        if (disabled) {
+          setMockFocused(false);
         }
       }, [disabled]); // Close will clean up single mode search text
 
@@ -47720,6 +48388,7 @@
         open: mergedOpen,
         childrenAsData: !options,
         options: displayOptions,
+        fieldNames: fieldNames,
         flattenOptions: displayFlattenOptions,
         multiple: isMultiple,
         values: rawValues,
@@ -47734,7 +48403,8 @@
         searchValue: mergedSearchValue,
         menuItemSelectedIcon: menuItemSelectedIcon,
         virtual: virtual !== false && dropdownMatchSelectWidth !== false,
-        onMouseEnter: onPopupMouseEnter
+        onMouseEnter: onPopupMouseEnter,
+        direction: direction
       }); // ============================= Clear ==============================
 
       var clearNode;
@@ -47801,6 +48471,7 @@
         dropdownMatchSelectWidth: dropdownMatchSelectWidth,
         dropdownRender: dropdownRender,
         dropdownAlign: dropdownAlign,
+        placement: placement,
         getPopupContainer: getPopupContainer,
         empty: !mergedOptions.length,
         getTriggerDOMNode: function getTriggerDOMNode() {
@@ -47992,7 +48663,11 @@
 
       _classCallCheck(this, Select);
 
-      _this = _super.apply(this, arguments);
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _super.call.apply(_super, [this].concat(args));
       _this.selectRef = /*#__PURE__*/React.createRef();
 
       _this.focus = function () {
@@ -48139,8 +48814,9 @@
   };
 
   var getRealHeight = function getRealHeight(node) {
+    var scrollHeight = node.scrollHeight;
     return {
-      height: node.scrollHeight,
+      height: scrollHeight,
       opacity: 1
     };
   };
@@ -49005,11 +49681,14 @@
       _this.onClick = function (node, waveColor) {
         var _a, _b;
 
-        if (!node || isHidden(node) || node.className.indexOf('-leave') >= 0) {
+        var _this$props = _this.props,
+            insertExtraNode = _this$props.insertExtraNode,
+            disabled = _this$props.disabled;
+
+        if (disabled || !node || isHidden(node) || node.className.indexOf('-leave') >= 0) {
           return;
         }
 
-        var insertExtraNode = _this.props.insertExtraNode;
         _this.extraNode = document.createElement('div');
 
         var _assertThisInitialize = _assertThisInitialized(_this),
@@ -49317,7 +49996,7 @@
   }
 
   var ButtonTypes = tuple('default', 'primary', 'ghost', 'dashed', 'link', 'text');
-  var ButtonShapes = tuple('circle', 'round');
+  var ButtonShapes = tuple('default', 'circle', 'round');
   var ButtonHTMLTypes = tuple('submit', 'button', 'reset');
   function convertLegacyProps(type) {
     if (type === 'danger') {
@@ -49339,7 +50018,8 @@
         customizePrefixCls = props.prefixCls,
         type = props.type,
         danger = props.danger,
-        shape = props.shape,
+        _props$shape = props.shape,
+        shape = _props$shape === void 0 ? 'default' : _props$shape,
         customizeSize = props.size,
         className = props.className,
         children = props.children,
@@ -49448,7 +50128,7 @@
     }
 
     var iconType = innerLoading ? 'loading' : icon;
-    var classes = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(type), type), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(shape), shape), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(sizeCls), sizeCls), _defineProperty$1(_classNames, "".concat(prefixCls, "-icon-only"), !children && children !== 0 && !!iconType), _defineProperty$1(_classNames, "".concat(prefixCls, "-background-ghost"), ghost && !isUnborderedButtonType(type)), _defineProperty$1(_classNames, "".concat(prefixCls, "-loading"), innerLoading), _defineProperty$1(_classNames, "".concat(prefixCls, "-two-chinese-chars"), hasTwoCNChar && autoInsertSpace), _defineProperty$1(_classNames, "".concat(prefixCls, "-block"), block), _defineProperty$1(_classNames, "".concat(prefixCls, "-dangerous"), !!danger), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className);
+    var classes = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(type), type), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(shape), shape !== 'default' && shape), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(sizeCls), sizeCls), _defineProperty$1(_classNames, "".concat(prefixCls, "-icon-only"), !children && children !== 0 && !!iconType), _defineProperty$1(_classNames, "".concat(prefixCls, "-background-ghost"), ghost && !isUnborderedButtonType(type)), _defineProperty$1(_classNames, "".concat(prefixCls, "-loading"), innerLoading), _defineProperty$1(_classNames, "".concat(prefixCls, "-two-chinese-chars"), hasTwoCNChar && autoInsertSpace), _defineProperty$1(_classNames, "".concat(prefixCls, "-block"), block), _defineProperty$1(_classNames, "".concat(prefixCls, "-dangerous"), !!danger), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className);
     var iconNode = icon && !innerLoading ? icon : /*#__PURE__*/React.createElement(LoadingIcon, {
       existIcon: !!icon,
       prefixCls: prefixCls,
@@ -49476,7 +50156,9 @@
       return buttonNode;
     }
 
-    return /*#__PURE__*/React.createElement(Wave, null, buttonNode);
+    return /*#__PURE__*/React.createElement(Wave, {
+      disabled: !!innerLoading
+    }, buttonNode);
   };
 
   var Button = /*#__PURE__*/React.forwardRef(InternalButton);
@@ -56282,11 +56964,11 @@
     });
     return retProps;
   }
-  function getValue$3(values, index) {
+  function getValue$4(values, index) {
     return values ? values[index] : null;
   }
   function updateValues(values, value, index) {
-    var newValues = [getValue$3(values, 0), getValue$3(values, 1)];
+    var newValues = [getValue$4(values, 0), getValue$4(values, 1)];
     newValues[index] = typeof value === 'function' ? value(newValues[index]) : value;
 
     if (!newValues[0] && !newValues[1]) {
@@ -56580,10 +57262,10 @@
 
       var prevDate = offsetCell(currentDate, -1);
       var nextDate = offsetCell(currentDate, 1);
-      var rangeStart = getValue$3(rangedValue, 0);
-      var rangeEnd = getValue$3(rangedValue, 1);
-      var hoverStart = getValue$3(hoverRangedValue, 0);
-      var hoverEnd = getValue$3(hoverRangedValue, 1);
+      var rangeStart = getValue$4(rangedValue, 0);
+      var rangeEnd = getValue$4(rangedValue, 1);
+      var hoverStart = getValue$4(hoverRangedValue, 0);
+      var hoverEnd = getValue$4(hoverRangedValue, 1);
       var isRangeHovered = isInRange(generateConfig, hoverStart, hoverEnd, currentDate);
 
       function isRangeStart(date) {
@@ -58687,8 +59369,8 @@
         disabledDate = _ref.disabledDate,
         disabled = _ref.disabled,
         generateConfig = _ref.generateConfig;
-    var startDate = getValue$3(selectedValue, 0);
-    var endDate = getValue$3(selectedValue, 1);
+    var startDate = getValue$4(selectedValue, 0);
+    var endDate = getValue$4(selectedValue, 1);
 
     function weekFirstDate(date) {
       return generateConfig.locale.getWeekFirstDate(locale.locale, date);
@@ -58802,8 +59484,8 @@
   }
 
   function getRangeViewDate(values, index, picker, generateConfig) {
-    var startDate = getValue$3(values, 0);
-    var endDate = getValue$3(values, 1);
+    var startDate = getValue$4(values, 0);
+    var endDate = getValue$4(values, 1);
 
     if (index === 0) {
       return startDate;
@@ -58834,7 +59516,7 @@
         generateConfig = _ref.generateConfig;
 
     var _React$useState = React.useState(function () {
-      return [getValue$3(defaultDates, 0), getValue$3(defaultDates, 1)];
+      return [getValue$4(defaultDates, 0), getValue$4(defaultDates, 1)];
     }),
         _React$useState2 = _slicedToArray$1(_React$useState, 2),
         defaultViewDates = _React$useState2[0],
@@ -58845,8 +59527,8 @@
         viewDates = _React$useState4[0],
         setInternalViewDates = _React$useState4[1];
 
-    var startDate = getValue$3(values, 0);
-    var endDate = getValue$3(values, 1);
+    var startDate = getValue$4(values, 0);
+    var endDate = getValue$4(values, 1);
 
     function getViewDate(index) {
       // If set default view date, use it
@@ -58854,7 +59536,7 @@
         return defaultViewDates[index];
       }
 
-      return getValue$3(viewDates, index) || getRangeViewDate(values, index, picker, generateConfig) || startDate || endDate || generateConfig.getNow();
+      return getValue$4(viewDates, index) || getRangeViewDate(values, index, picker, generateConfig) || startDate || endDate || generateConfig.getNow();
     }
 
     function setViewDate(viewDate, index) {
@@ -58866,7 +59548,7 @@
 
         var anotherIndex = (index + 1) % 2;
 
-        if (!getValue$3(values, anotherIndex)) {
+        if (!getValue$4(values, anotherIndex)) {
           newViewDates = updateValues(newViewDates, viewDate, anotherIndex);
         }
 
@@ -59028,7 +59710,7 @@
 
         // Fill disabled unit
         for (var i = 0; i < 2; i += 1) {
-          if (mergedDisabled[i] && !getValue$3(postValues, i) && !getValue$3(allowEmpty, i)) {
+          if (mergedDisabled[i] && !getValue$4(postValues, i) && !getValue$4(allowEmpty, i)) {
             postValues = updateValues(postValues, generateConfig.getNow(), i);
           }
         }
@@ -59149,8 +59831,8 @@
 
     function triggerChange(newValue, sourceIndex) {
       var values = newValue;
-      var startValue = getValue$3(values, 0);
-      var endValue = getValue$3(values, 1); // >>>>> Format start & end values
+      var startValue = getValue$4(values, 0);
+      var endValue = getValue$4(values, 1); // >>>>> Format start & end values
 
       if (startValue && endValue && generateConfig.isAfter(startValue, endValue)) {
         if ( // WeekPicker only compare week
@@ -59202,7 +59884,7 @@
         // Trigger onChange only when value is validate
         setInnerValue(values);
 
-        if (onChange && (!isEqual$1(generateConfig, getValue$3(mergedValue, 0), startValue) || !isEqual$1(generateConfig, getValue$3(mergedValue, 1), endValue))) {
+        if (onChange && (!isEqual$1(generateConfig, getValue$4(mergedValue, 0), startValue) || !isEqual$1(generateConfig, getValue$4(mergedValue, 1), endValue))) {
           onChange(values, [startStr, endStr]);
         }
       } // >>>>> Open picker when
@@ -59217,7 +59899,7 @@
         nextOpenIndex = 0;
       }
 
-      if (nextOpenIndex !== null && nextOpenIndex !== mergedActivePickerIndex && (!openRecordsRef.current[nextOpenIndex] || !getValue$3(values, nextOpenIndex)) && getValue$3(values, sourceIndex)) {
+      if (nextOpenIndex !== null && nextOpenIndex !== mergedActivePickerIndex && (!openRecordsRef.current[nextOpenIndex] || !getValue$4(values, nextOpenIndex)) && getValue$4(values, sourceIndex)) {
         // Delay to focus to avoid input blur trigger expired selectedValues
         triggerOpenAndFocus(nextOpenIndex);
       } else {
@@ -59248,12 +59930,12 @@
       locale: locale
     };
 
-    var _useValueTexts = useValueTexts(getValue$3(selectedValue, 0), sharedTextHooksProps),
+    var _useValueTexts = useValueTexts(getValue$4(selectedValue, 0), sharedTextHooksProps),
         _useValueTexts2 = _slicedToArray$1(_useValueTexts, 2),
         startValueTexts = _useValueTexts2[0],
         firstStartValueText = _useValueTexts2[1];
 
-    var _useValueTexts3 = useValueTexts(getValue$3(selectedValue, 1), sharedTextHooksProps),
+    var _useValueTexts3 = useValueTexts(getValue$4(selectedValue, 1), sharedTextHooksProps),
         _useValueTexts4 = _slicedToArray$1(_useValueTexts3, 2),
         endValueTexts = _useValueTexts4[0],
         firstEndValueText = _useValueTexts4[1];
@@ -59458,7 +60140,7 @@
     }, [startStr, endStr]); // ============================ Warning ============================
 
     {
-      if (value && Array.isArray(disabled) && (getValue$3(disabled, 0) && !getValue$3(value, 0) || getValue$3(disabled, 1) && !getValue$3(value, 1))) {
+      if (value && Array.isArray(disabled) && (getValue$4(disabled, 0) && !getValue$4(value, 0) || getValue$4(disabled, 1) && !getValue$4(value, 1))) {
         warningOnce(false, '`disabled` should not set with empty `value`. You should set `allowEmpty` or `value` instead.');
       }
     } // ============================ Private ============================
@@ -59518,7 +60200,7 @@
       if (showTime && _typeof$1(showTime) === 'object' && showTime.defaultValue) {
         var timeDefaultValues = showTime.defaultValue;
         panelShowTime = _objectSpread2$1(_objectSpread2$1({}, showTime), {}, {
-          defaultValue: getValue$3(timeDefaultValues, mergedActivePickerIndex) || undefined
+          defaultValue: getValue$4(timeDefaultValues, mergedActivePickerIndex) || undefined
         });
       }
 
@@ -59555,7 +60237,7 @@
           return false;
         },
         className: classnames(_defineProperty$1({}, "".concat(prefixCls, "-panel-focused"), mergedActivePickerIndex === 0 ? !startTyping : !endTyping)),
-        value: getValue$3(selectedValue, mergedActivePickerIndex),
+        value: getValue$4(selectedValue, mergedActivePickerIndex),
         locale: locale,
         tabIndex: -1,
         onPanelChange: function onPanelChange(date, newMode) {
@@ -59580,7 +60262,7 @@
         onOk: null,
         onSelect: undefined,
         onChange: undefined,
-        defaultValue: mergedActivePickerIndex === 0 ? getValue$3(selectedValue, 1) : getValue$3(selectedValue, 0)
+        defaultValue: mergedActivePickerIndex === 0 ? getValue$4(selectedValue, 1) : getValue$4(selectedValue, 0)
       })));
     }
 
@@ -59609,11 +60291,11 @@
         prefixCls: prefixCls,
         components: components,
         needConfirmButton: needConfirmButton,
-        okDisabled: !getValue$3(selectedValue, mergedActivePickerIndex) || disabledDate && disabledDate(selectedValue[mergedActivePickerIndex]),
+        okDisabled: !getValue$4(selectedValue, mergedActivePickerIndex) || disabledDate && disabledDate(selectedValue[mergedActivePickerIndex]),
         locale: locale,
         rangeList: rangeList,
         onOk: function onOk() {
-          if (getValue$3(selectedValue, mergedActivePickerIndex)) {
+          if (getValue$4(selectedValue, mergedActivePickerIndex)) {
             // triggerChangeOld(selectedValue);
             triggerChange(selectedValue, mergedActivePickerIndex);
 
@@ -59693,7 +60375,7 @@
 
     var clearNode;
 
-    if (allowClear && (getValue$3(mergedValue, 0) && !mergedDisabled[0] || getValue$3(mergedValue, 1) && !mergedDisabled[1])) {
+    if (allowClear && (getValue$4(mergedValue, 0) && !mergedDisabled[0] || getValue$4(mergedValue, 1) && !mergedDisabled[1])) {
       clearNode = /*#__PURE__*/React.createElement("span", {
         onMouseDown: function onMouseDown(e) {
           e.preventDefault();
@@ -59801,7 +60483,7 @@
         triggerStartTextChange(e.target.value);
       },
       autoFocus: autoFocus,
-      placeholder: getValue$3(placeholder, 0) || '',
+      placeholder: getValue$4(placeholder, 0) || '',
       ref: startInputRef
     }, startInputProps, inputSharedProps, {
       autoComplete: autoComplete
@@ -59818,7 +60500,7 @@
       onChange: function onChange(e) {
         triggerEndTextChange(e.target.value);
       },
-      placeholder: getValue$3(placeholder, 1) || '',
+      placeholder: getValue$4(placeholder, 1) || '',
       ref: endInputRef
     }, endInputProps, inputSharedProps, {
       autoComplete: autoComplete
@@ -60098,6 +60780,7 @@
         onMouseEnter: props.onMouseEnter,
         onMouseLeave: props.onMouseLeave
       }, /*#__PURE__*/React.createElement(Checkbox, _extends$1({}, radioProps, {
+        type: "radio",
         prefixCls: prefixCls,
         ref: mergedRef
       })), children !== undefined ? /*#__PURE__*/React.createElement("span", null, children) : null)
@@ -60106,9 +60789,6 @@
 
   var Radio = /*#__PURE__*/React.forwardRef(InternalRadio);
   Radio.displayName = 'Radio';
-  Radio.defaultProps = {
-    type: 'radio'
-  };
 
   var RadioGroup = /*#__PURE__*/React.forwardRef(function (props, ref) {
     var _React$useContext = React.useContext(ConfigContext),
@@ -60515,7 +61195,7 @@
       mergedStyle.flex = parseFlex(flex); // Hack for Firefox to avoid size issue
       // https://github.com/ant-design/ant-design/pull/20023#issuecomment-564389553
 
-      if (flex === 'auto' && wrap === false && !mergedStyle.minWidth) {
+      if (wrap === false && !mergedStyle.minWidth) {
         mergedStyle.minWidth = 0;
       }
     }
@@ -60528,1339 +61208,7 @@
   });
   Col.displayName = 'Col';
 
-  function getInputClassName(prefixCls, bordered, size, disabled, direction) {
-    var _classNames;
-
-    return classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-sm"), size === 'small'), _defineProperty$1(_classNames, "".concat(prefixCls, "-lg"), size === 'large'), _defineProperty$1(_classNames, "".concat(prefixCls, "-disabled"), disabled), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _classNames));
-  }
-  function hasPrefixSuffix(props) {
-    return !!(props.prefix || props.suffix || props.allowClear);
-  }
-
-  var ClearableInputType = tuple('text', 'input');
-
-  function hasAddon(props) {
-    return !!(props.addonBefore || props.addonAfter);
-  }
-
-  var ClearableLabeledInput = /*#__PURE__*/function (_React$Component) {
-    _inherits(ClearableLabeledInput, _React$Component);
-
-    var _super = _createSuper(ClearableLabeledInput);
-
-    function ClearableLabeledInput() {
-      var _this;
-
-      _classCallCheck(this, ClearableLabeledInput);
-
-      _this = _super.apply(this, arguments);
-      /** @private Do Not use out of this class. We do not promise this is always keep. */
-
-      _this.containerRef = /*#__PURE__*/React.createRef();
-
-      _this.onInputMouseUp = function (e) {
-        var _a;
-
-        if ((_a = _this.containerRef.current) === null || _a === void 0 ? void 0 : _a.contains(e.target)) {
-          var triggerFocus = _this.props.triggerFocus;
-          triggerFocus === null || triggerFocus === void 0 ? void 0 : triggerFocus();
-        }
-      };
-
-      return _this;
-    }
-
-    _createClass(ClearableLabeledInput, [{
-      key: "renderClearIcon",
-      value: function renderClearIcon(prefixCls) {
-        var _classNames;
-
-        var _this$props = this.props,
-            allowClear = _this$props.allowClear,
-            value = _this$props.value,
-            disabled = _this$props.disabled,
-            readOnly = _this$props.readOnly,
-            handleReset = _this$props.handleReset,
-            suffix = _this$props.suffix;
-
-        if (!allowClear) {
-          return null;
-        }
-
-        var needClear = !disabled && !readOnly && value;
-        var className = "".concat(prefixCls, "-clear-icon");
-        return /*#__PURE__*/React.createElement(CloseCircleFilled$2, {
-          onClick: handleReset // Do not trigger onBlur when clear input
-          // https://github.com/ant-design/ant-design/issues/31200
-          ,
-          onMouseDown: function onMouseDown(e) {
-            return e.preventDefault();
-          },
-          className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(className, "-hidden"), !needClear), _defineProperty$1(_classNames, "".concat(className, "-has-suffix"), !!suffix), _classNames), className),
-          role: "button"
-        });
-      }
-    }, {
-      key: "renderSuffix",
-      value: function renderSuffix(prefixCls) {
-        var _this$props2 = this.props,
-            suffix = _this$props2.suffix,
-            allowClear = _this$props2.allowClear;
-
-        if (suffix || allowClear) {
-          return /*#__PURE__*/React.createElement("span", {
-            className: "".concat(prefixCls, "-suffix")
-          }, this.renderClearIcon(prefixCls), suffix);
-        }
-
-        return null;
-      }
-    }, {
-      key: "renderLabeledIcon",
-      value: function renderLabeledIcon(prefixCls, element) {
-        var _classNames2;
-
-        var _this$props3 = this.props,
-            focused = _this$props3.focused,
-            value = _this$props3.value,
-            prefix = _this$props3.prefix,
-            className = _this$props3.className,
-            size = _this$props3.size,
-            suffix = _this$props3.suffix,
-            disabled = _this$props3.disabled,
-            allowClear = _this$props3.allowClear,
-            direction = _this$props3.direction,
-            style = _this$props3.style,
-            readOnly = _this$props3.readOnly,
-            bordered = _this$props3.bordered;
-        var suffixNode = this.renderSuffix(prefixCls);
-
-        if (!hasPrefixSuffix(this.props)) {
-          return cloneElement(element, {
-            value: value
-          });
-        }
-
-        var prefixNode = prefix ? /*#__PURE__*/React.createElement("span", {
-          className: "".concat(prefixCls, "-prefix")
-        }, prefix) : null;
-        var affixWrapperCls = classnames("".concat(prefixCls, "-affix-wrapper"), (_classNames2 = {}, _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-focused"), focused), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-disabled"), disabled), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-sm"), size === 'small'), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-lg"), size === 'large'), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-input-with-clear-btn"), suffix && allowClear && value), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-rtl"), direction === 'rtl'), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-readonly"), readOnly), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-borderless"), !bordered), _defineProperty$1(_classNames2, "".concat(className), !hasAddon(this.props) && className), _classNames2));
-        return /*#__PURE__*/React.createElement("span", {
-          ref: this.containerRef,
-          className: affixWrapperCls,
-          style: style,
-          onMouseUp: this.onInputMouseUp
-        }, prefixNode, cloneElement(element, {
-          style: null,
-          value: value,
-          className: getInputClassName(prefixCls, bordered, size, disabled)
-        }), suffixNode);
-      }
-    }, {
-      key: "renderInputWithLabel",
-      value: function renderInputWithLabel(prefixCls, labeledElement) {
-        var _classNames4;
-
-        var _this$props4 = this.props,
-            addonBefore = _this$props4.addonBefore,
-            addonAfter = _this$props4.addonAfter,
-            style = _this$props4.style,
-            size = _this$props4.size,
-            className = _this$props4.className,
-            direction = _this$props4.direction; // Not wrap when there is not addons
-
-        if (!hasAddon(this.props)) {
-          return labeledElement;
-        }
-
-        var wrapperClassName = "".concat(prefixCls, "-group");
-        var addonClassName = "".concat(wrapperClassName, "-addon");
-        var addonBeforeNode = addonBefore ? /*#__PURE__*/React.createElement("span", {
-          className: addonClassName
-        }, addonBefore) : null;
-        var addonAfterNode = addonAfter ? /*#__PURE__*/React.createElement("span", {
-          className: addonClassName
-        }, addonAfter) : null;
-        var mergedWrapperClassName = classnames("".concat(prefixCls, "-wrapper"), wrapperClassName, _defineProperty$1({}, "".concat(wrapperClassName, "-rtl"), direction === 'rtl'));
-        var mergedGroupClassName = classnames("".concat(prefixCls, "-group-wrapper"), (_classNames4 = {}, _defineProperty$1(_classNames4, "".concat(prefixCls, "-group-wrapper-sm"), size === 'small'), _defineProperty$1(_classNames4, "".concat(prefixCls, "-group-wrapper-lg"), size === 'large'), _defineProperty$1(_classNames4, "".concat(prefixCls, "-group-wrapper-rtl"), direction === 'rtl'), _classNames4), className); // Need another wrapper for changing display:table to display:inline-block
-        // and put style prop in wrapper
-
-        return /*#__PURE__*/React.createElement("span", {
-          className: mergedGroupClassName,
-          style: style
-        }, /*#__PURE__*/React.createElement("span", {
-          className: mergedWrapperClassName
-        }, addonBeforeNode, cloneElement(labeledElement, {
-          style: null
-        }), addonAfterNode));
-      }
-    }, {
-      key: "renderTextAreaWithClearIcon",
-      value: function renderTextAreaWithClearIcon(prefixCls, element) {
-        var _classNames5;
-
-        var _this$props5 = this.props,
-            value = _this$props5.value,
-            allowClear = _this$props5.allowClear,
-            className = _this$props5.className,
-            style = _this$props5.style,
-            direction = _this$props5.direction,
-            bordered = _this$props5.bordered;
-
-        if (!allowClear) {
-          return cloneElement(element, {
-            value: value
-          });
-        }
-
-        var affixWrapperCls = classnames("".concat(prefixCls, "-affix-wrapper"), "".concat(prefixCls, "-affix-wrapper-textarea-with-clear-btn"), (_classNames5 = {}, _defineProperty$1(_classNames5, "".concat(prefixCls, "-affix-wrapper-rtl"), direction === 'rtl'), _defineProperty$1(_classNames5, "".concat(prefixCls, "-affix-wrapper-borderless"), !bordered), _defineProperty$1(_classNames5, "".concat(className), !hasAddon(this.props) && className), _classNames5));
-        return /*#__PURE__*/React.createElement("span", {
-          className: affixWrapperCls,
-          style: style
-        }, cloneElement(element, {
-          style: null,
-          value: value
-        }), this.renderClearIcon(prefixCls));
-      }
-    }, {
-      key: "render",
-      value: function render() {
-        var _this$props6 = this.props,
-            prefixCls = _this$props6.prefixCls,
-            inputType = _this$props6.inputType,
-            element = _this$props6.element;
-
-        if (inputType === ClearableInputType[0]) {
-          return this.renderTextAreaWithClearIcon(prefixCls, element);
-        }
-
-        return this.renderInputWithLabel(prefixCls, this.renderLabeledIcon(prefixCls, element));
-      }
-    }]);
-
-    return ClearableLabeledInput;
-  }(React.Component);
-
-  function fixControlledValue(value) {
-    if (typeof value === 'undefined' || value === null) {
-      return '';
-    }
-
-    return value;
-  }
-  function resolveOnChange(target, e, onChange, targetValue) {
-    if (!onChange) {
-      return;
-    }
-
-    var event = e;
-    var originalInputValue = target.value;
-
-    if (e.type === 'click') {
-      // click clear icon
-      event = Object.create(e);
-      event.target = target;
-      event.currentTarget = target; // change target ref value cause e.target.value should be '' when clear input
-
-      target.value = '';
-      onChange(event); // reset target ref value
-
-      target.value = originalInputValue;
-      return;
-    } // Trigger by composition event, this means we need force change the input value
-
-
-    if (targetValue !== undefined) {
-      event = Object.create(e);
-      event.target = target;
-      event.currentTarget = target;
-      target.value = targetValue;
-      onChange(event);
-      return;
-    }
-
-    onChange(event);
-  }
-  function triggerFocus(element, option) {
-    if (!element) return;
-    element.focus(option); // Selection content
-
-    var _ref = option || {},
-        cursor = _ref.cursor;
-
-    if (cursor) {
-      var len = element.value.length;
-
-      switch (cursor) {
-        case 'start':
-          element.setSelectionRange(0, 0);
-          break;
-
-        case 'end':
-          element.setSelectionRange(len, len);
-          break;
-
-        default:
-          element.setSelectionRange(0, len);
-      }
-    }
-  }
-
-  var Input$1 = /*#__PURE__*/function (_React$Component) {
-    _inherits(Input, _React$Component);
-
-    var _super = _createSuper(Input);
-
-    function Input(props) {
-      var _this;
-
-      _classCallCheck(this, Input);
-
-      _this = _super.call(this, props);
-      _this.direction = 'ltr';
-
-      _this.focus = function (option) {
-        triggerFocus(_this.input, option);
-      };
-
-      _this.saveClearableInput = function (input) {
-        _this.clearableInput = input;
-      };
-
-      _this.saveInput = function (input) {
-        _this.input = input;
-      };
-
-      _this.onFocus = function (e) {
-        var onFocus = _this.props.onFocus;
-
-        _this.setState({
-          focused: true
-        }, _this.clearPasswordValueAttribute);
-
-        onFocus === null || onFocus === void 0 ? void 0 : onFocus(e);
-      };
-
-      _this.onBlur = function (e) {
-        var onBlur = _this.props.onBlur;
-
-        _this.setState({
-          focused: false
-        }, _this.clearPasswordValueAttribute);
-
-        onBlur === null || onBlur === void 0 ? void 0 : onBlur(e);
-      };
-
-      _this.handleReset = function (e) {
-        _this.setValue('', function () {
-          _this.focus();
-        });
-
-        resolveOnChange(_this.input, e, _this.props.onChange);
-      };
-
-      _this.renderInput = function (prefixCls, size, bordered) {
-        var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-        var _this$props = _this.props,
-            className = _this$props.className,
-            addonBefore = _this$props.addonBefore,
-            addonAfter = _this$props.addonAfter,
-            customizeSize = _this$props.size,
-            disabled = _this$props.disabled; // Fix https://fb.me/react-unknown-prop
-
-        var otherProps = omit(_this.props, ['prefixCls', 'onPressEnter', 'addonBefore', 'addonAfter', 'prefix', 'suffix', 'allowClear', // Input elements must be either controlled or uncontrolled,
-        // specify either the value prop, or the defaultValue prop, but not both.
-        'defaultValue', 'size', 'inputType', 'bordered']);
-        return /*#__PURE__*/React.createElement("input", _extends$1({
-          autoComplete: input.autoComplete
-        }, otherProps, {
-          onChange: _this.handleChange,
-          onFocus: _this.onFocus,
-          onBlur: _this.onBlur,
-          onKeyDown: _this.handleKeyDown,
-          className: classnames(getInputClassName(prefixCls, bordered, customizeSize || size, disabled, _this.direction), _defineProperty$1({}, className, className && !addonBefore && !addonAfter)),
-          ref: _this.saveInput
-        }));
-      };
-
-      _this.clearPasswordValueAttribute = function () {
-        // https://github.com/ant-design/ant-design/issues/20541
-        _this.removePasswordTimeout = setTimeout(function () {
-          if (_this.input && _this.input.getAttribute('type') === 'password' && _this.input.hasAttribute('value')) {
-            _this.input.removeAttribute('value');
-          }
-        });
-      };
-
-      _this.handleChange = function (e) {
-        _this.setValue(e.target.value, _this.clearPasswordValueAttribute);
-
-        resolveOnChange(_this.input, e, _this.props.onChange);
-      };
-
-      _this.handleKeyDown = function (e) {
-        var _this$props2 = _this.props,
-            onPressEnter = _this$props2.onPressEnter,
-            onKeyDown = _this$props2.onKeyDown;
-
-        if (onPressEnter && e.keyCode === 13) {
-          onPressEnter(e);
-        }
-
-        onKeyDown === null || onKeyDown === void 0 ? void 0 : onKeyDown(e);
-      };
-
-      _this.renderComponent = function (_ref2) {
-        var getPrefixCls = _ref2.getPrefixCls,
-            direction = _ref2.direction,
-            input = _ref2.input;
-        var _this$state = _this.state,
-            value = _this$state.value,
-            focused = _this$state.focused;
-        var _this$props3 = _this.props,
-            customizePrefixCls = _this$props3.prefixCls,
-            _this$props3$bordered = _this$props3.bordered,
-            bordered = _this$props3$bordered === void 0 ? true : _this$props3$bordered;
-        var prefixCls = getPrefixCls('input', customizePrefixCls);
-        _this.direction = direction;
-        return /*#__PURE__*/React.createElement(SizeContext.Consumer, null, function (size) {
-          return /*#__PURE__*/React.createElement(ClearableLabeledInput, _extends$1({
-            size: size
-          }, _this.props, {
-            prefixCls: prefixCls,
-            inputType: "input",
-            value: fixControlledValue(value),
-            element: _this.renderInput(prefixCls, size, bordered, input),
-            handleReset: _this.handleReset,
-            ref: _this.saveClearableInput,
-            direction: direction,
-            focused: focused,
-            triggerFocus: _this.focus,
-            bordered: bordered
-          }));
-        });
-      };
-
-      var value = typeof props.value === 'undefined' ? props.defaultValue : props.value;
-      _this.state = {
-        value: value,
-        focused: false,
-        // eslint-disable-next-line react/no-unused-state
-        prevValue: props.value
-      };
-      return _this;
-    }
-
-    _createClass(Input, [{
-      key: "componentDidMount",
-      value: function componentDidMount() {
-        this.clearPasswordValueAttribute();
-      } // Since polyfill `getSnapshotBeforeUpdate` need work with `componentDidUpdate`.
-      // We keep an empty function here.
-
-    }, {
-      key: "componentDidUpdate",
-      value: function componentDidUpdate() {}
-    }, {
-      key: "getSnapshotBeforeUpdate",
-      value: function getSnapshotBeforeUpdate(prevProps) {
-        if (hasPrefixSuffix(prevProps) !== hasPrefixSuffix(this.props)) {
-          devWarning(this.input !== document.activeElement, 'Input', "When Input is focused, dynamic add or remove prefix / suffix will make it lose focus caused by dom structure change. Read more: https://ant.design/components/input/#FAQ");
-        }
-
-        return null;
-      }
-    }, {
-      key: "componentWillUnmount",
-      value: function componentWillUnmount() {
-        if (this.removePasswordTimeout) {
-          clearTimeout(this.removePasswordTimeout);
-        }
-      }
-    }, {
-      key: "blur",
-      value: function blur() {
-        this.input.blur();
-      }
-    }, {
-      key: "setSelectionRange",
-      value: function setSelectionRange(start, end, direction) {
-        this.input.setSelectionRange(start, end, direction);
-      }
-    }, {
-      key: "select",
-      value: function select() {
-        this.input.select();
-      }
-    }, {
-      key: "setValue",
-      value: function setValue(value, callback) {
-        if (this.props.value === undefined) {
-          this.setState({
-            value: value
-          }, callback);
-        } else {
-          callback === null || callback === void 0 ? void 0 : callback();
-        }
-      }
-    }, {
-      key: "render",
-      value: function render() {
-        return /*#__PURE__*/React.createElement(ConfigConsumer, null, this.renderComponent);
-      }
-    }], [{
-      key: "getDerivedStateFromProps",
-      value: function getDerivedStateFromProps(nextProps, _ref3) {
-        var prevValue = _ref3.prevValue;
-        var newState = {
-          prevValue: nextProps.value
-        };
-
-        if (nextProps.value !== undefined || prevValue !== nextProps.value) {
-          newState.value = nextProps.value;
-        }
-
-        return newState;
-      }
-    }]);
-
-    return Input;
-  }(React.Component);
-
-  Input$1.defaultProps = {
-    type: 'text'
-  };
-
-  var Group$1 = function Group(props) {
-    return /*#__PURE__*/React.createElement(ConfigConsumer, null, function (_ref) {
-      var _classNames;
-
-      var getPrefixCls = _ref.getPrefixCls,
-          direction = _ref.direction;
-      var customizePrefixCls = props.prefixCls,
-          _props$className = props.className,
-          className = _props$className === void 0 ? '' : _props$className;
-      var prefixCls = getPrefixCls('input-group', customizePrefixCls);
-      var cls = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-lg"), props.size === 'large'), _defineProperty$1(_classNames, "".concat(prefixCls, "-sm"), props.size === 'small'), _defineProperty$1(_classNames, "".concat(prefixCls, "-compact"), props.compact), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className);
-      return /*#__PURE__*/React.createElement("span", {
-        className: cls,
-        style: props.style,
-        onMouseEnter: props.onMouseEnter,
-        onMouseLeave: props.onMouseLeave,
-        onFocus: props.onFocus,
-        onBlur: props.onBlur
-      }, props.children);
-    });
-  };
-
   var __rest$9 = undefined && undefined.__rest || function (s, e) {
-    var t = {};
-
-    for (var p in s) {
-      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
-    }
-
-    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
-    }
-    return t;
-  };
-  var Search = /*#__PURE__*/React.forwardRef(function (props, ref) {
-    var _classNames;
-
-    var customizePrefixCls = props.prefixCls,
-        customizeInputPrefixCls = props.inputPrefixCls,
-        className = props.className,
-        customizeSize = props.size,
-        suffix = props.suffix,
-        _props$enterButton = props.enterButton,
-        enterButton = _props$enterButton === void 0 ? false : _props$enterButton,
-        addonAfter = props.addonAfter,
-        loading = props.loading,
-        disabled = props.disabled,
-        customOnSearch = props.onSearch,
-        customOnChange = props.onChange,
-        restProps = __rest$9(props, ["prefixCls", "inputPrefixCls", "className", "size", "suffix", "enterButton", "addonAfter", "loading", "disabled", "onSearch", "onChange"]);
-
-    var _React$useContext = React.useContext(ConfigContext),
-        getPrefixCls = _React$useContext.getPrefixCls,
-        direction = _React$useContext.direction;
-
-    var contextSize = React.useContext(SizeContext);
-    var size = customizeSize || contextSize;
-    var inputRef = React.useRef(null);
-
-    var onChange = function onChange(e) {
-      if (e && e.target && e.type === 'click' && customOnSearch) {
-        customOnSearch(e.target.value, e);
-      }
-
-      if (customOnChange) {
-        customOnChange(e);
-      }
-    };
-
-    var onMouseDown = function onMouseDown(e) {
-      var _a;
-
-      if (document.activeElement === ((_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.input)) {
-        e.preventDefault();
-      }
-    };
-
-    var onSearch = function onSearch(e) {
-      var _a;
-
-      if (customOnSearch) {
-        customOnSearch((_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.input.value, e);
-      }
-    };
-
-    var prefixCls = getPrefixCls('input-search', customizePrefixCls);
-    var inputPrefixCls = getPrefixCls('input', customizeInputPrefixCls);
-    var searchIcon = typeof enterButton === 'boolean' ? /*#__PURE__*/React.createElement(SearchOutlined$2, null) : null;
-    var btnClassName = "".concat(prefixCls, "-button");
-    var button;
-    var enterButtonAsElement = enterButton || {};
-    var isAntdButton = enterButtonAsElement.type && enterButtonAsElement.type.__ANT_BUTTON === true;
-
-    if (isAntdButton || enterButtonAsElement.type === 'button') {
-      button = cloneElement(enterButtonAsElement, _extends$1({
-        onMouseDown: onMouseDown,
-        onClick: onSearch,
-        key: 'enterButton'
-      }, isAntdButton ? {
-        className: btnClassName,
-        size: size
-      } : {}));
-    } else {
-      button = /*#__PURE__*/React.createElement(Button, {
-        className: btnClassName,
-        type: enterButton ? 'primary' : undefined,
-        size: size,
-        disabled: disabled,
-        key: "enterButton",
-        onMouseDown: onMouseDown,
-        onClick: onSearch,
-        loading: loading,
-        icon: searchIcon
-      }, enterButton);
-    }
-
-    if (addonAfter) {
-      button = [button, cloneElement(addonAfter, {
-        key: 'addonAfter'
-      })];
-    }
-
-    var cls = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(size), !!size), _defineProperty$1(_classNames, "".concat(prefixCls, "-with-button"), !!enterButton), _classNames), className);
-    return /*#__PURE__*/React.createElement(Input$1, _extends$1({
-      ref: composeRef(inputRef, ref),
-      onPressEnter: onSearch
-    }, restProps, {
-      size: size,
-      prefixCls: inputPrefixCls,
-      addonAfter: button,
-      suffix: suffix,
-      onChange: onChange,
-      className: cls,
-      disabled: disabled
-    }));
-  });
-  Search.displayName = 'Search';
-
-  // Thanks to https://github.com/andreypopp/react-textarea-autosize/
-
-  /**
-   * calculateNodeHeight(uiTextNode, useCache = false)
-   */
-  var HIDDEN_TEXTAREA_STYLE = "\n  min-height:0 !important;\n  max-height:none !important;\n  height:0 !important;\n  visibility:hidden !important;\n  overflow:hidden !important;\n  position:absolute !important;\n  z-index:-1000 !important;\n  top:0 !important;\n  right:0 !important\n";
-  var SIZING_STYLE = ['letter-spacing', 'line-height', 'padding-top', 'padding-bottom', 'font-family', 'font-weight', 'font-size', 'font-variant', 'text-rendering', 'text-transform', 'width', 'text-indent', 'padding-left', 'padding-right', 'border-width', 'box-sizing', 'word-break'];
-  var computedStyleCache = {};
-  var hiddenTextarea;
-  function calculateNodeStyling(node) {
-    var useCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-    var nodeRef = node.getAttribute('id') || node.getAttribute('data-reactid') || node.getAttribute('name');
-
-    if (useCache && computedStyleCache[nodeRef]) {
-      return computedStyleCache[nodeRef];
-    }
-
-    var style = window.getComputedStyle(node);
-    var boxSizing = style.getPropertyValue('box-sizing') || style.getPropertyValue('-moz-box-sizing') || style.getPropertyValue('-webkit-box-sizing');
-    var paddingSize = parseFloat(style.getPropertyValue('padding-bottom')) + parseFloat(style.getPropertyValue('padding-top'));
-    var borderSize = parseFloat(style.getPropertyValue('border-bottom-width')) + parseFloat(style.getPropertyValue('border-top-width'));
-    var sizingStyle = SIZING_STYLE.map(function (name) {
-      return "".concat(name, ":").concat(style.getPropertyValue(name));
-    }).join(';');
-    var nodeInfo = {
-      sizingStyle: sizingStyle,
-      paddingSize: paddingSize,
-      borderSize: borderSize,
-      boxSizing: boxSizing
-    };
-
-    if (useCache && nodeRef) {
-      computedStyleCache[nodeRef] = nodeInfo;
-    }
-
-    return nodeInfo;
-  }
-  function calculateNodeHeight(uiTextNode) {
-    var useCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-    var minRows = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-    var maxRows = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-
-    if (!hiddenTextarea) {
-      hiddenTextarea = document.createElement('textarea');
-      hiddenTextarea.setAttribute('tab-index', '-1');
-      hiddenTextarea.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(hiddenTextarea);
-    } // Fix wrap="off" issue
-    // https://github.com/ant-design/ant-design/issues/6577
-
-
-    if (uiTextNode.getAttribute('wrap')) {
-      hiddenTextarea.setAttribute('wrap', uiTextNode.getAttribute('wrap'));
-    } else {
-      hiddenTextarea.removeAttribute('wrap');
-    } // Copy all CSS properties that have an impact on the height of the content in
-    // the textbox
-
-
-    var _calculateNodeStyling = calculateNodeStyling(uiTextNode, useCache),
-        paddingSize = _calculateNodeStyling.paddingSize,
-        borderSize = _calculateNodeStyling.borderSize,
-        boxSizing = _calculateNodeStyling.boxSizing,
-        sizingStyle = _calculateNodeStyling.sizingStyle; // Need to have the overflow attribute to hide the scrollbar otherwise
-    // text-lines will not calculated properly as the shadow will technically be
-    // narrower for content
-
-
-    hiddenTextarea.setAttribute('style', "".concat(sizingStyle, ";").concat(HIDDEN_TEXTAREA_STYLE));
-    hiddenTextarea.value = uiTextNode.value || uiTextNode.placeholder || '';
-    var minHeight = Number.MIN_SAFE_INTEGER;
-    var maxHeight = Number.MAX_SAFE_INTEGER;
-    var height = hiddenTextarea.scrollHeight;
-    var overflowY;
-
-    if (boxSizing === 'border-box') {
-      // border-box: add border, since height = content + padding + border
-      height += borderSize;
-    } else if (boxSizing === 'content-box') {
-      // remove padding, since height = content
-      height -= paddingSize;
-    }
-
-    if (minRows !== null || maxRows !== null) {
-      // measure height of a textarea with a single row
-      hiddenTextarea.value = ' ';
-      var singleRowHeight = hiddenTextarea.scrollHeight - paddingSize;
-
-      if (minRows !== null) {
-        minHeight = singleRowHeight * minRows;
-
-        if (boxSizing === 'border-box') {
-          minHeight = minHeight + paddingSize + borderSize;
-        }
-
-        height = Math.max(minHeight, height);
-      }
-
-      if (maxRows !== null) {
-        maxHeight = singleRowHeight * maxRows;
-
-        if (boxSizing === 'border-box') {
-          maxHeight = maxHeight + paddingSize + borderSize;
-        }
-
-        overflowY = height > maxHeight ? '' : 'hidden';
-        height = Math.min(maxHeight, height);
-      }
-    }
-
-    return {
-      height: height,
-      minHeight: minHeight,
-      maxHeight: maxHeight,
-      overflowY: overflowY,
-      resize: 'none'
-    };
-  }
-
-  var RESIZE_STATUS;
-
-  (function (RESIZE_STATUS) {
-    RESIZE_STATUS[RESIZE_STATUS["NONE"] = 0] = "NONE";
-    RESIZE_STATUS[RESIZE_STATUS["RESIZING"] = 1] = "RESIZING";
-    RESIZE_STATUS[RESIZE_STATUS["RESIZED"] = 2] = "RESIZED";
-  })(RESIZE_STATUS || (RESIZE_STATUS = {}));
-
-  var ResizableTextArea = /*#__PURE__*/function (_React$Component) {
-    _inherits(ResizableTextArea, _React$Component);
-
-    var _super = _createSuper(ResizableTextArea);
-
-    function ResizableTextArea(props) {
-      var _this;
-
-      _classCallCheck(this, ResizableTextArea);
-
-      _this = _super.call(this, props);
-      _this.nextFrameActionId = void 0;
-      _this.resizeFrameId = void 0;
-      _this.textArea = void 0;
-
-      _this.saveTextArea = function (textArea) {
-        _this.textArea = textArea;
-      };
-
-      _this.handleResize = function (size) {
-        var resizeStatus = _this.state.resizeStatus;
-        var _this$props = _this.props,
-            autoSize = _this$props.autoSize,
-            onResize = _this$props.onResize;
-
-        if (resizeStatus !== RESIZE_STATUS.NONE) {
-          return;
-        }
-
-        if (typeof onResize === 'function') {
-          onResize(size);
-        }
-
-        if (autoSize) {
-          _this.resizeOnNextFrame();
-        }
-      };
-
-      _this.resizeOnNextFrame = function () {
-        cancelAnimationFrame(_this.nextFrameActionId);
-        _this.nextFrameActionId = requestAnimationFrame(_this.resizeTextarea);
-      };
-
-      _this.resizeTextarea = function () {
-        var autoSize = _this.props.autoSize;
-
-        if (!autoSize || !_this.textArea) {
-          return;
-        }
-
-        var minRows = autoSize.minRows,
-            maxRows = autoSize.maxRows;
-        var textareaStyles = calculateNodeHeight(_this.textArea, false, minRows, maxRows);
-
-        _this.setState({
-          textareaStyles: textareaStyles,
-          resizeStatus: RESIZE_STATUS.RESIZING
-        }, function () {
-          cancelAnimationFrame(_this.resizeFrameId);
-          _this.resizeFrameId = requestAnimationFrame(function () {
-            _this.setState({
-              resizeStatus: RESIZE_STATUS.RESIZED
-            }, function () {
-              _this.resizeFrameId = requestAnimationFrame(function () {
-                _this.setState({
-                  resizeStatus: RESIZE_STATUS.NONE
-                });
-
-                _this.fixFirefoxAutoScroll();
-              });
-            });
-          });
-        });
-      };
-
-      _this.renderTextArea = function () {
-        var _this$props2 = _this.props,
-            _this$props2$prefixCl = _this$props2.prefixCls,
-            prefixCls = _this$props2$prefixCl === void 0 ? 'rc-textarea' : _this$props2$prefixCl,
-            autoSize = _this$props2.autoSize,
-            onResize = _this$props2.onResize,
-            className = _this$props2.className,
-            disabled = _this$props2.disabled;
-        var _this$state = _this.state,
-            textareaStyles = _this$state.textareaStyles,
-            resizeStatus = _this$state.resizeStatus;
-        var otherProps = omit(_this.props, ['prefixCls', 'onPressEnter', 'autoSize', 'defaultValue', 'onResize']);
-        var cls = classnames(prefixCls, className, _defineProperty$1({}, "".concat(prefixCls, "-disabled"), disabled)); // Fix https://github.com/ant-design/ant-design/issues/6776
-        // Make sure it could be reset when using form.getFieldDecorator
-
-        if ('value' in otherProps) {
-          otherProps.value = otherProps.value || '';
-        }
-
-        var style = _objectSpread2$1(_objectSpread2$1(_objectSpread2$1({}, _this.props.style), textareaStyles), resizeStatus === RESIZE_STATUS.RESIZING ? // React will warning when mix `overflow` & `overflowY`.
-        // We need to define this separately.
-        {
-          overflowX: 'hidden',
-          overflowY: 'hidden'
-        } : null);
-
-        return /*#__PURE__*/React.createElement(ReactResizeObserver, {
-          onResize: _this.handleResize,
-          disabled: !(autoSize || onResize)
-        }, /*#__PURE__*/React.createElement("textarea", _extends$1({}, otherProps, {
-          className: cls,
-          style: style,
-          ref: _this.saveTextArea
-        })));
-      };
-
-      _this.state = {
-        textareaStyles: {},
-        resizeStatus: RESIZE_STATUS.NONE
-      };
-      return _this;
-    }
-
-    _createClass(ResizableTextArea, [{
-      key: "componentDidMount",
-      value: function componentDidMount() {
-        this.resizeTextarea();
-      }
-    }, {
-      key: "componentDidUpdate",
-      value: function componentDidUpdate(prevProps) {
-        // Re-render with the new content then recalculate the height as required.
-        if (prevProps.value !== this.props.value) {
-          this.resizeTextarea();
-        }
-      }
-    }, {
-      key: "componentWillUnmount",
-      value: function componentWillUnmount() {
-        cancelAnimationFrame(this.nextFrameActionId);
-        cancelAnimationFrame(this.resizeFrameId);
-      } // https://github.com/ant-design/ant-design/issues/21870
-
-    }, {
-      key: "fixFirefoxAutoScroll",
-      value: function fixFirefoxAutoScroll() {
-        try {
-          if (document.activeElement === this.textArea) {
-            var currentStart = this.textArea.selectionStart;
-            var currentEnd = this.textArea.selectionEnd;
-            this.textArea.setSelectionRange(currentStart, currentEnd);
-          }
-        } catch (e) {// Fix error in Chrome:
-          // Failed to read the 'selectionStart' property from 'HTMLInputElement'
-          // http://stackoverflow.com/q/21177489/3040605
-        }
-      }
-    }, {
-      key: "render",
-      value: function render() {
-        return this.renderTextArea();
-      }
-    }]);
-
-    return ResizableTextArea;
-  }(React.Component);
-
-  var TextArea = /*#__PURE__*/function (_React$Component) {
-    _inherits(TextArea, _React$Component);
-
-    var _super = _createSuper(TextArea);
-
-    function TextArea(props) {
-      var _this;
-
-      _classCallCheck(this, TextArea);
-
-      _this = _super.call(this, props);
-      _this.resizableTextArea = void 0;
-
-      _this.focus = function () {
-        _this.resizableTextArea.textArea.focus();
-      };
-
-      _this.saveTextArea = function (resizableTextArea) {
-        _this.resizableTextArea = resizableTextArea;
-      };
-
-      _this.handleChange = function (e) {
-        var onChange = _this.props.onChange;
-
-        _this.setValue(e.target.value, function () {
-          _this.resizableTextArea.resizeTextarea();
-        });
-
-        if (onChange) {
-          onChange(e);
-        }
-      };
-
-      _this.handleKeyDown = function (e) {
-        var _this$props = _this.props,
-            onPressEnter = _this$props.onPressEnter,
-            onKeyDown = _this$props.onKeyDown;
-
-        if (e.keyCode === 13 && onPressEnter) {
-          onPressEnter(e);
-        }
-
-        if (onKeyDown) {
-          onKeyDown(e);
-        }
-      };
-
-      var value = typeof props.value === 'undefined' || props.value === null ? props.defaultValue : props.value;
-      _this.state = {
-        value: value
-      };
-      return _this;
-    }
-
-    _createClass(TextArea, [{
-      key: "setValue",
-      value: function setValue(value, callback) {
-        if (!('value' in this.props)) {
-          this.setState({
-            value: value
-          }, callback);
-        }
-      }
-    }, {
-      key: "blur",
-      value: function blur() {
-        this.resizableTextArea.textArea.blur();
-      }
-    }, {
-      key: "render",
-      value: function render() {
-        return /*#__PURE__*/React.createElement(ResizableTextArea, _extends$1({}, this.props, {
-          value: this.state.value,
-          onKeyDown: this.handleKeyDown,
-          onChange: this.handleChange,
-          ref: this.saveTextArea
-        }));
-      }
-    }], [{
-      key: "getDerivedStateFromProps",
-      value: function getDerivedStateFromProps(nextProps) {
-        if ('value' in nextProps) {
-          return {
-            value: nextProps.value
-          };
-        }
-
-        return null;
-      }
-    }]);
-
-    return TextArea;
-  }(React.Component);
-
-  var __rest$a = undefined && undefined.__rest || function (s, e) {
-    var t = {};
-
-    for (var p in s) {
-      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
-    }
-
-    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
-    }
-    return t;
-  };
-
-  function fixEmojiLength(value, maxLength) {
-    return _toConsumableArray$1(value || '').slice(0, maxLength).join('');
-  }
-
-  var TextArea$1 = /*#__PURE__*/React.forwardRef(function (_a, ref) {
-    var _classNames;
-
-    var customizePrefixCls = _a.prefixCls,
-        _a$bordered = _a.bordered,
-        bordered = _a$bordered === void 0 ? true : _a$bordered,
-        _a$showCount = _a.showCount,
-        showCount = _a$showCount === void 0 ? false : _a$showCount,
-        maxLength = _a.maxLength,
-        className = _a.className,
-        style = _a.style,
-        customizeSize = _a.size,
-        onCompositionStart = _a.onCompositionStart,
-        onCompositionEnd = _a.onCompositionEnd,
-        onChange = _a.onChange,
-        props = __rest$a(_a, ["prefixCls", "bordered", "showCount", "maxLength", "className", "style", "size", "onCompositionStart", "onCompositionEnd", "onChange"]);
-
-    var _React$useContext = React.useContext(ConfigContext),
-        getPrefixCls = _React$useContext.getPrefixCls,
-        direction = _React$useContext.direction;
-
-    var size = React.useContext(SizeContext);
-    var innerRef = React.useRef(null);
-    var clearableInputRef = React.useRef(null);
-
-    var _React$useState = React.useState(false),
-        _React$useState2 = _slicedToArray$1(_React$useState, 2),
-        compositing = _React$useState2[0],
-        setCompositing = _React$useState2[1];
-
-    var _useMergedState = useControlledState(props.defaultValue, {
-      value: props.value
-    }),
-        _useMergedState2 = _slicedToArray$1(_useMergedState, 2),
-        value = _useMergedState2[0],
-        setValue = _useMergedState2[1];
-
-    var handleSetValue = function handleSetValue(val, callback) {
-      if (props.value === undefined) {
-        setValue(val);
-        callback === null || callback === void 0 ? void 0 : callback();
-      }
-    }; // =========================== Value Update ===========================
-    // Max length value
-
-
-    var hasMaxLength = Number(maxLength) > 0;
-
-    var onInternalCompositionStart = function onInternalCompositionStart(e) {
-      setCompositing(true);
-      onCompositionStart === null || onCompositionStart === void 0 ? void 0 : onCompositionStart(e);
-    };
-
-    var onInternalCompositionEnd = function onInternalCompositionEnd(e) {
-      setCompositing(false);
-      var triggerValue = e.currentTarget.value;
-
-      if (hasMaxLength) {
-        triggerValue = fixEmojiLength(triggerValue, maxLength);
-      } // Patch composition onChange when value changed
-
-
-      if (triggerValue !== value) {
-        handleSetValue(triggerValue);
-        resolveOnChange(e.currentTarget, e, onChange, triggerValue);
-      }
-
-      onCompositionEnd === null || onCompositionEnd === void 0 ? void 0 : onCompositionEnd(e);
-    };
-
-    var handleChange = function handleChange(e) {
-      var triggerValue = e.target.value;
-
-      if (!compositing && hasMaxLength) {
-        triggerValue = fixEmojiLength(triggerValue, maxLength);
-      }
-
-      handleSetValue(triggerValue);
-      resolveOnChange(e.currentTarget, e, onChange, triggerValue);
-    }; // ============================== Reset ===============================
-
-
-    var handleReset = function handleReset(e) {
-      var _a, _b;
-
-      handleSetValue('', function () {
-        var _a;
-
-        (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.focus();
-      });
-      resolveOnChange((_b = (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.resizableTextArea) === null || _b === void 0 ? void 0 : _b.textArea, e, onChange);
-    };
-
-    var prefixCls = getPrefixCls('input', customizePrefixCls);
-    React.useImperativeHandle(ref, function () {
-      var _a;
-
-      return {
-        resizableTextArea: (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.resizableTextArea,
-        focus: function focus(option) {
-          var _a, _b;
-
-          triggerFocus((_b = (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.resizableTextArea) === null || _b === void 0 ? void 0 : _b.textArea, option);
-        },
-        blur: function blur() {
-          var _a;
-
-          return (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.blur();
-        }
-      };
-    });
-    var textArea = /*#__PURE__*/React.createElement(TextArea, _extends$1({}, omit(props, ['allowClear']), {
-      className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _defineProperty$1(_classNames, className, className && !showCount), _defineProperty$1(_classNames, "".concat(prefixCls, "-sm"), size === 'small' || customizeSize === 'small'), _defineProperty$1(_classNames, "".concat(prefixCls, "-lg"), size === 'large' || customizeSize === 'large'), _classNames)),
-      style: showCount ? undefined : style,
-      prefixCls: prefixCls,
-      onCompositionStart: onInternalCompositionStart,
-      onChange: handleChange,
-      onCompositionEnd: onInternalCompositionEnd,
-      ref: innerRef
-    }));
-    var val = fixControlledValue(value);
-
-    if (!compositing && hasMaxLength && (props.value === null || props.value === undefined)) {
-      // fix #27612 将value转为数组进行截取，解决 '😂'.length === 2 等emoji表情导致的截取乱码的问题
-      val = fixEmojiLength(val, maxLength);
-    } // TextArea
-
-
-    var textareaNode = /*#__PURE__*/React.createElement(ClearableLabeledInput, _extends$1({}, props, {
-      prefixCls: prefixCls,
-      direction: direction,
-      inputType: "text",
-      value: val,
-      element: textArea,
-      handleReset: handleReset,
-      ref: clearableInputRef,
-      bordered: bordered,
-      style: showCount ? undefined : style
-    })); // Only show text area wrapper when needed
-
-    if (showCount) {
-      var valueLength = _toConsumableArray$1(val).length;
-
-      var dataCount = '';
-
-      if (_typeof$1(showCount) === 'object') {
-        dataCount = showCount.formatter({
-          count: valueLength,
-          maxLength: maxLength
-        });
-      } else {
-        dataCount = "".concat(valueLength).concat(hasMaxLength ? " / ".concat(maxLength) : '');
-      }
-
-      return /*#__PURE__*/React.createElement("div", {
-        className: classnames("".concat(prefixCls, "-textarea"), _defineProperty$1({}, "".concat(prefixCls, "-textarea-rtl"), direction === 'rtl'), "".concat(prefixCls, "-textarea-show-count"), className),
-        style: style,
-        "data-count": dataCount
-      }, textareaNode);
-    }
-
-    return textareaNode;
-  });
-
-  // This icon file is generated automatically.
-  var EyeOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M942.2 486.2C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 000 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3 7.7-16.2 7.7-35 0-51.5zM512 766c-161.3 0-279.4-81.8-362.7-254C232.6 339.8 350.7 258 512 258c161.3 0 279.4 81.8 362.7 254C791.5 684.2 673.4 766 512 766zm-4-430c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176-78.8-176-176-176zm0 288c-61.9 0-112-50.1-112-112s50.1-112 112-112 112 50.1 112 112-50.1 112-112 112z" } }] }, "name": "eye", "theme": "outlined" };
-
-  var EyeOutlined$1 = function EyeOutlined$1(props, ref) {
-    return /*#__PURE__*/React.createElement(Icon, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
-      ref: ref,
-      icon: EyeOutlined
-    }));
-  };
-
-  EyeOutlined$1.displayName = 'EyeOutlined';
-  var EyeOutlined$2 = /*#__PURE__*/React.forwardRef(EyeOutlined$1);
-
-  // This icon file is generated automatically.
-  var EyeInvisibleOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M942.2 486.2Q889.47 375.11 816.7 305l-50.88 50.88C807.31 395.53 843.45 447.4 874.7 512 791.5 684.2 673.4 766 512 766q-72.67 0-133.87-22.38L323 798.75Q408 838 512 838q288.3 0 430.2-300.3a60.29 60.29 0 000-51.5zm-63.57-320.64L836 122.88a8 8 0 00-11.32 0L715.31 232.2Q624.86 186 512 186q-288.3 0-430.2 300.3a60.3 60.3 0 000 51.5q56.69 119.4 136.5 191.41L112.48 835a8 8 0 000 11.31L155.17 889a8 8 0 0011.31 0l712.15-712.12a8 8 0 000-11.32zM149.3 512C232.6 339.8 350.7 258 512 258c54.54 0 104.13 9.36 149.12 28.39l-70.3 70.3a176 176 0 00-238.13 238.13l-83.42 83.42C223.1 637.49 183.3 582.28 149.3 512zm246.7 0a112.11 112.11 0 01146.2-106.69L401.31 546.2A112 112 0 01396 512z" } }, { "tag": "path", "attrs": { "d": "M508 624c-3.46 0-6.87-.16-10.25-.47l-52.82 52.82a176.09 176.09 0 00227.42-227.42l-52.82 52.82c.31 3.38.47 6.79.47 10.25a111.94 111.94 0 01-112 112z" } }] }, "name": "eye-invisible", "theme": "outlined" };
-
-  var EyeInvisibleOutlined$1 = function EyeInvisibleOutlined$1(props, ref) {
-    return /*#__PURE__*/React.createElement(Icon, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
-      ref: ref,
-      icon: EyeInvisibleOutlined
-    }));
-  };
-
-  EyeInvisibleOutlined$1.displayName = 'EyeInvisibleOutlined';
-  var EyeInvisibleOutlined$2 = /*#__PURE__*/React.forwardRef(EyeInvisibleOutlined$1);
-
-  var __rest$b = undefined && undefined.__rest || function (s, e) {
-    var t = {};
-
-    for (var p in s) {
-      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
-    }
-
-    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
-    }
-    return t;
-  };
-  var ActionMap = {
-    click: 'onClick',
-    hover: 'onMouseOver'
-  };
-  var Password = /*#__PURE__*/React.forwardRef(function (props, ref) {
-    var _useState = React.useState(false),
-        _useState2 = _slicedToArray$1(_useState, 2),
-        visible = _useState2[0],
-        setVisible = _useState2[1];
-
-    var onVisibleChange = function onVisibleChange() {
-      var disabled = props.disabled;
-
-      if (disabled) {
-        return;
-      }
-
-      setVisible(!visible);
-    };
-
-    var getIcon = function getIcon(prefixCls) {
-      var _iconProps;
-
-      var action = props.action,
-          _props$iconRender = props.iconRender,
-          iconRender = _props$iconRender === void 0 ? function () {
-        return null;
-      } : _props$iconRender;
-      var iconTrigger = ActionMap[action] || '';
-      var icon = iconRender(visible);
-      var iconProps = (_iconProps = {}, _defineProperty$1(_iconProps, iconTrigger, onVisibleChange), _defineProperty$1(_iconProps, "className", "".concat(prefixCls, "-icon")), _defineProperty$1(_iconProps, "key", 'passwordIcon'), _defineProperty$1(_iconProps, "onMouseDown", function onMouseDown(e) {
-        // Prevent focused state lost
-        // https://github.com/ant-design/ant-design/issues/15173
-        e.preventDefault();
-      }), _defineProperty$1(_iconProps, "onMouseUp", function onMouseUp(e) {
-        // Prevent caret position change
-        // https://github.com/ant-design/ant-design/issues/23524
-        e.preventDefault();
-      }), _iconProps);
-      return /*#__PURE__*/React.cloneElement( /*#__PURE__*/React.isValidElement(icon) ? icon : /*#__PURE__*/React.createElement("span", null, icon), iconProps);
-    };
-
-    var renderPassword = function renderPassword(_ref) {
-      var getPrefixCls = _ref.getPrefixCls;
-
-      var className = props.className,
-          customizePrefixCls = props.prefixCls,
-          customizeInputPrefixCls = props.inputPrefixCls,
-          size = props.size,
-          visibilityToggle = props.visibilityToggle,
-          restProps = __rest$b(props, ["className", "prefixCls", "inputPrefixCls", "size", "visibilityToggle"]);
-
-      var inputPrefixCls = getPrefixCls('input', customizeInputPrefixCls);
-      var prefixCls = getPrefixCls('input-password', customizePrefixCls);
-      var suffixIcon = visibilityToggle && getIcon(prefixCls);
-      var inputClassName = classnames(prefixCls, className, _defineProperty$1({}, "".concat(prefixCls, "-").concat(size), !!size));
-
-      var omittedProps = _extends$1(_extends$1({}, omit(restProps, ['suffix', 'iconRender'])), {
-        type: visible ? 'text' : 'password',
-        className: inputClassName,
-        prefixCls: inputPrefixCls,
-        suffix: suffixIcon
-      });
-
-      if (size) {
-        omittedProps.size = size;
-      }
-
-      return /*#__PURE__*/React.createElement(Input$1, _extends$1({
-        ref: ref
-      }, omittedProps));
-    };
-
-    return /*#__PURE__*/React.createElement(ConfigConsumer, null, renderPassword);
-  });
-  Password.defaultProps = {
-    action: 'click',
-    visibilityToggle: true,
-    iconRender: function iconRender(visible) {
-      return visible ? /*#__PURE__*/React.createElement(EyeOutlined$2, null) : /*#__PURE__*/React.createElement(EyeInvisibleOutlined$2, null);
-    }
-  };
-  Password.displayName = 'Password';
-
-  Input$1.Group = Group$1;
-  Input$1.Search = Search;
-  Input$1.TextArea = TextArea$1;
-  Input$1.Password = Password;
-
-  var __rest$c = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -61883,7 +61231,7 @@
         className = _a.className,
         style = _a.style,
         onChange = _a.onChange,
-        restProps = __rest$c(_a, ["defaultValue", "children", "options", "prefixCls", "className", "style", "onChange"]);
+        restProps = __rest$9(_a, ["defaultValue", "children", "options", "prefixCls", "className", "style", "onChange"]);
 
     var _React$useContext = React.useContext(ConfigContext),
         getPrefixCls = _React$useContext.getPrefixCls,
@@ -62001,9 +61349,9 @@
   };
 
   var CheckboxGroup = /*#__PURE__*/React.forwardRef(InternalCheckboxGroup);
-  var Group$2 = /*#__PURE__*/React.memo(CheckboxGroup);
+  var Group$1 = /*#__PURE__*/React.memo(CheckboxGroup);
 
-  var __rest$d = undefined && undefined.__rest || function (s, e) {
+  var __rest$a = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -62029,7 +61377,7 @@
         onMouseLeave = _a.onMouseLeave,
         _a$skipGroup = _a.skipGroup,
         skipGroup = _a$skipGroup === void 0 ? false : _a$skipGroup,
-        restProps = __rest$d(_a, ["prefixCls", "className", "children", "indeterminate", "style", "onMouseEnter", "onMouseLeave", "skipGroup"]);
+        restProps = __rest$a(_a, ["prefixCls", "className", "children", "indeterminate", "style", "onMouseEnter", "onMouseLeave", "skipGroup"]);
 
     var _React$useContext = React.useContext(ConfigContext),
         getPrefixCls = _React$useContext.getPrefixCls,
@@ -62100,7 +61448,7 @@
   Checkbox$1.displayName = 'Checkbox';
 
   var Checkbox$2 = Checkbox$1;
-  Checkbox$2.Group = Group$2;
+  Checkbox$2.Group = Group$1;
   Checkbox$2.__ANT_CHECKBOX = true;
 
   function PickerButton(props) {
@@ -62110,7 +61458,7 @@
     }, props));
   }
 
-  var __rest$e = undefined && undefined.__rest || function (s, e) {
+  var __rest$b = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -62131,7 +61479,7 @@
         checked = _a.checked,
         onChange = _a.onChange,
         onClick = _a.onClick,
-        restProps = __rest$e(_a, ["prefixCls", "className", "checked", "onChange", "onClick"]);
+        restProps = __rest$b(_a, ["prefixCls", "className", "checked", "onChange", "onClick"]);
 
     var _React$useContext = React.useContext(ConfigContext),
         getPrefixCls = _React$useContext.getPrefixCls;
@@ -62149,7 +61497,7 @@
     }));
   };
 
-  var __rest$f = undefined && undefined.__rest || function (s, e) {
+  var __rest$c = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -62177,7 +61525,7 @@
         closeIcon = _a.closeIcon,
         _a$closable = _a.closable,
         closable = _a$closable === void 0 ? false : _a$closable,
-        props = __rest$f(_a, ["prefixCls", "className", "style", "children", "icon", "color", "onClose", "closeIcon", "closable"]);
+        props = __rest$c(_a, ["prefixCls", "className", "style", "children", "icon", "color", "onClose", "closeIcon", "closable"]);
 
     var _React$useContext = React.useContext(ConfigContext),
         getPrefixCls = _React$useContext.getPrefixCls,
@@ -62336,7 +61684,7 @@
     return locale.lang.rangePlaceholder;
   }
 
-  var __rest$g = undefined && undefined.__rest || function (s, e) {
+  var __rest$d = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -62391,7 +61739,7 @@
                 _a$bordered = _a.bordered,
                 bordered = _a$bordered === void 0 ? true : _a$bordered,
                 placeholder = _a.placeholder,
-                restProps = __rest$g(_a, ["prefixCls", "getPopupContainer", "className", "size", "bordered", "placeholder"]);
+                restProps = __rest$d(_a, ["prefixCls", "getPopupContainer", "className", "size", "bordered", "placeholder"]);
 
             var _this$props = _this.props,
                 format = _this$props.format,
@@ -62425,14 +61773,6 @@
                 placeholder: getPlaceholder(mergedPicker, locale, placeholder),
                 suffixIcon: mergedPicker === 'time' ? /*#__PURE__*/React.createElement(ClockCircleOutlined$2, null) : /*#__PURE__*/React.createElement(CalendarOutlined$2, null),
                 clearIcon: /*#__PURE__*/React.createElement(CloseCircleFilled$2, null),
-                allowClear: true,
-                transitionName: "".concat(rootPrefixCls, "-slide-up")
-              }, additionalProps, restProps, additionalOverrideProps, {
-                locale: locale.lang,
-                className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(mergedSize), mergedSize), _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _classNames), className),
-                prefixCls: prefixCls,
-                getPopupContainer: customizeGetPopupContainer || getPopupContainer,
-                generateConfig: generateConfig,
                 prevIcon: /*#__PURE__*/React.createElement("span", {
                   className: "".concat(prefixCls, "-prev-icon")
                 }),
@@ -62445,6 +61785,14 @@
                 superNextIcon: /*#__PURE__*/React.createElement("span", {
                   className: "".concat(prefixCls, "-super-next-icon")
                 }),
+                allowClear: true,
+                transitionName: "".concat(rootPrefixCls, "-slide-up")
+              }, additionalProps, restProps, additionalOverrideProps, {
+                locale: locale.lang,
+                className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(mergedSize), mergedSize), _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _classNames), className),
+                prefixCls: prefixCls,
+                getPopupContainer: customizeGetPopupContainer || getPopupContainer,
+                generateConfig: generateConfig,
                 components: Components,
                 direction: direction
               }));
@@ -62506,7 +61854,7 @@
   SwapRightOutlined$1.displayName = 'SwapRightOutlined';
   var SwapRightOutlined$2 = /*#__PURE__*/React.forwardRef(SwapRightOutlined$1);
 
-  var __rest$h = undefined && undefined.__rest || function (s, e) {
+  var __rest$e = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -62560,7 +61908,7 @@
               _a$bordered = _a.bordered,
               bordered = _a$bordered === void 0 ? true : _a$bordered,
               placeholder = _a.placeholder,
-              restProps = __rest$h(_a, ["prefixCls", "getPopupContainer", "className", "size", "bordered", "placeholder"]);
+              restProps = __rest$e(_a, ["prefixCls", "getPopupContainer", "className", "size", "bordered", "placeholder"]);
 
           var _this$props = _this.props,
               format = _this$props.format,
@@ -62590,14 +61938,6 @@
               placeholder: getRangePlaceholder(picker, locale, placeholder),
               suffixIcon: picker === 'time' ? /*#__PURE__*/React.createElement(ClockCircleOutlined$2, null) : /*#__PURE__*/React.createElement(CalendarOutlined$2, null),
               clearIcon: /*#__PURE__*/React.createElement(CloseCircleFilled$2, null),
-              allowClear: true,
-              transitionName: "".concat(rootPrefixCls, "-slide-up")
-            }, restProps, additionalOverrideProps, {
-              className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(mergedSize), mergedSize), _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _classNames), className),
-              locale: locale.lang,
-              prefixCls: prefixCls,
-              getPopupContainer: customGetPopupContainer || getPopupContainer,
-              generateConfig: generateConfig,
               prevIcon: /*#__PURE__*/React.createElement("span", {
                 className: "".concat(prefixCls, "-prev-icon")
               }),
@@ -62610,6 +61950,14 @@
               superNextIcon: /*#__PURE__*/React.createElement("span", {
                 className: "".concat(prefixCls, "-super-next-icon")
               }),
+              allowClear: true,
+              transitionName: "".concat(rootPrefixCls, "-slide-up")
+            }, restProps, additionalOverrideProps, {
+              className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(mergedSize), mergedSize), _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _classNames), className),
+              locale: locale.lang,
+              prefixCls: prefixCls,
+              getPopupContainer: customGetPopupContainer || getPopupContainer,
+              generateConfig: generateConfig,
               components: Components,
               direction: direction
             }));
@@ -63197,9 +62545,7 @@
     vertical: false,
     itemRef: function itemRef() {}
   });
-  var FormItemContext = /*#__PURE__*/React.createContext({
-    updateItemErrors: function updateItemErrors() {}
-  });
+  var NoStyleItemContext = /*#__PURE__*/React.createContext(null);
   var FormProvider$1 = function FormProvider$1(props) {
     var providerProps = omit(props, ['prefixCls']);
     return /*#__PURE__*/React.createElement(FormProvider, providerProps);
@@ -63329,7 +62675,7 @@
     return [wrapForm];
   }
 
-  var __rest$i = undefined && undefined.__rest || function (s, e) {
+  var __rest$f = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -63369,7 +62715,7 @@
         requiredMark = props.requiredMark,
         onFinishFailed = props.onFinishFailed,
         name = props.name,
-        restFormProps = __rest$i(props, ["prefixCls", "className", "size", "form", "colon", "labelAlign", "labelCol", "wrapperCol", "hideRequiredMark", "layout", "scrollToFirstError", "requiredMark", "onFinishFailed", "name"]);
+        restFormProps = __rest$f(props, ["prefixCls", "className", "size", "form", "colon", "labelAlign", "labelCol", "wrapperCol", "hideRequiredMark", "layout", "scrollToFirstError", "requiredMark", "onFinishFailed", "name"]);
 
     var mergedRequiredMark = React.useMemo(function () {
       if (requiredMark !== undefined) {
@@ -63455,7 +62801,7 @@
   QuestionCircleOutlined$1.displayName = 'QuestionCircleOutlined';
   var QuestionCircleOutlined$2 = /*#__PURE__*/React.forwardRef(QuestionCircleOutlined$1);
 
-  var __rest$j = undefined && undefined.__rest || function (s, e) {
+  var __rest$g = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -63529,7 +62875,7 @@
       if (tooltipProps) {
         var _tooltipProps$icon = tooltipProps.icon,
             icon = _tooltipProps$icon === void 0 ? /*#__PURE__*/React.createElement(QuestionCircleOutlined$2, null) : _tooltipProps$icon,
-            restTooltipProps = __rest$j(tooltipProps, ["icon"]);
+            restTooltipProps = __rest$g(tooltipProps, ["icon"]);
 
         var tooltipNode = /*#__PURE__*/React.createElement(Tooltip$2, restTooltipProps, /*#__PURE__*/React.cloneElement(icon, {
           className: "".concat(prefixCls, "-item-tooltip"),
@@ -63557,120 +62903,80 @@
     });
   };
 
-  /** Always debounce error to avoid [error -> null -> error] blink */
+  var EMPTY_LIST = [];
 
-  function useCacheErrors(errors, changeTrigger, directly) {
-    var cacheRef = React.useRef({
-      errors: errors,
-      visible: !!errors.length
-    });
-    var forceUpdate = useForceUpdate();
-
-    var update = function update() {
-      var prevVisible = cacheRef.current.visible;
-      var newVisible = !!errors.length;
-      var prevErrors = cacheRef.current.errors;
-      cacheRef.current.errors = errors;
-      cacheRef.current.visible = newVisible;
-
-      if (prevVisible !== newVisible) {
-        changeTrigger(newVisible);
-      } else if (prevErrors.length !== errors.length || prevErrors.some(function (prevErr, index) {
-        return prevErr !== errors[index];
-      })) {
-        forceUpdate();
-      }
+  function toErrorEntity(error, errorStatus, prefix) {
+    var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+    return {
+      key: typeof error === 'string' ? error : "".concat(prefix, "-").concat(index),
+      error: error,
+      errorStatus: errorStatus
     };
-
-    React.useEffect(function () {
-      if (!directly) {
-        var timeout = setTimeout(update, 10);
-        return function () {
-          return clearTimeout(timeout);
-        };
-      }
-    }, [errors]);
-
-    if (directly) {
-      update();
-    }
-
-    return [cacheRef.current.visible, cacheRef.current.errors];
   }
 
-  var EMPTY_LIST = [];
   function ErrorList(_ref) {
-    var _ref$errors = _ref.errors,
+    var help = _ref.help,
+        helpStatus = _ref.helpStatus,
+        _ref$errors = _ref.errors,
         errors = _ref$errors === void 0 ? EMPTY_LIST : _ref$errors,
-        help = _ref.help,
-        onDomErrorVisibleChange = _ref.onDomErrorVisibleChange;
-    var forceUpdate = useForceUpdate();
+        _ref$warnings = _ref.warnings,
+        warnings = _ref$warnings === void 0 ? EMPTY_LIST : _ref$warnings,
+        rootClassName = _ref.className;
 
     var _React$useContext = React.useContext(FormItemPrefixContext),
-        prefixCls = _React$useContext.prefixCls,
-        status = _React$useContext.status;
+        prefixCls = _React$useContext.prefixCls;
 
     var _React$useContext2 = React.useContext(ConfigContext),
         getPrefixCls = _React$useContext2.getPrefixCls;
 
-    var _useCacheErrors = useCacheErrors(errors, function (changedVisible) {
-      if (changedVisible) {
-        /**
-         * We trigger in sync to avoid dom shaking but this get warning in react 16.13.
-         *
-         * So use Promise to keep in micro async to handle this.
-         * https://github.com/ant-design/ant-design/issues/21698#issuecomment-593743485
-         */
-        Promise.resolve().then(function () {
-          onDomErrorVisibleChange === null || onDomErrorVisibleChange === void 0 ? void 0 : onDomErrorVisibleChange(true);
-        });
-      }
-
-      forceUpdate();
-    }, !!help),
-        _useCacheErrors2 = _slicedToArray$1(_useCacheErrors, 2),
-        visible = _useCacheErrors2[0],
-        cacheErrors = _useCacheErrors2[1];
-
-    var memoErrors = useMemo(function () {
-      return cacheErrors;
-    }, visible, function (_, nextVisible) {
-      return nextVisible;
-    }); // Memo status in same visible
-
-    var _React$useState = React.useState(status),
-        _React$useState2 = _slicedToArray$1(_React$useState, 2),
-        innerStatus = _React$useState2[0],
-        setInnerStatus = _React$useState2[1];
-
-    React.useEffect(function () {
-      if (visible && status) {
-        setInnerStatus(status);
-      }
-    }, [visible, status]);
     var baseClassName = "".concat(prefixCls, "-item-explain");
     var rootPrefixCls = getPrefixCls();
-    return /*#__PURE__*/React.createElement(CSSMotion, {
-      motionDeadline: 500,
-      visible: visible,
-      motionName: "".concat(rootPrefixCls, "-show-help"),
-      onLeaveEnd: function onLeaveEnd() {
-        onDomErrorVisibleChange === null || onDomErrorVisibleChange === void 0 ? void 0 : onDomErrorVisibleChange(false);
+    var fullKeyList = React.useMemo(function () {
+      if (help !== undefined && help !== null) {
+        return [toErrorEntity(help, helpStatus, 'help')];
       }
-    }, function (_ref2) {
-      var motionClassName = _ref2.className;
+
+      return [].concat(_toConsumableArray$1(errors.map(function (error, index) {
+        return toErrorEntity(error, 'error', 'error', index);
+      })), _toConsumableArray$1(warnings.map(function (warning, index) {
+        return toErrorEntity(warning, 'warning', 'warning', index);
+      })));
+    }, [help, helpStatus, errors, warnings]);
+    return /*#__PURE__*/React.createElement(CSSMotion, _extends$1({}, collapseMotion, {
+      motionName: "".concat(rootPrefixCls, "-show-help"),
+      motionAppear: false,
+      motionEnter: false,
+      visible: !!fullKeyList.length,
+      onLeaveStart: function onLeaveStart(node) {
+        // Force disable css override style in index.less configured
+        node.style.height = 'auto';
+        return {
+          height: node.offsetHeight
+        };
+      }
+    }), function (holderProps) {
+      var holderClassName = holderProps.className,
+          holderStyle = holderProps.style;
       return /*#__PURE__*/React.createElement("div", {
-        className: classnames(baseClassName, _defineProperty$1({}, "".concat(baseClassName, "-").concat(innerStatus), innerStatus), motionClassName),
-        key: "help"
-      }, memoErrors.map(function (error, index) {
-        return (
-          /*#__PURE__*/
-          // eslint-disable-next-line react/no-array-index-key
-          React.createElement("div", {
-            key: index,
-            role: "alert"
-          }, error)
-        );
+        className: classnames(baseClassName, holderClassName, rootClassName),
+        style: holderStyle
+      }, /*#__PURE__*/React.createElement(CSSMotionList, _extends$1({
+        keys: fullKeyList
+      }, collapseMotion, {
+        motionName: "".concat(rootPrefixCls, "-show-help-item"),
+        component: false
+      }), function (itemProps) {
+        var key = itemProps.key,
+            error = itemProps.error,
+            errorStatus = itemProps.errorStatus,
+            itemClassName = itemProps.className,
+            itemStyle = itemProps.style;
+        return /*#__PURE__*/React.createElement("div", {
+          key: key,
+          role: "alert",
+          className: classnames(itemClassName, _defineProperty$1({}, "".concat(baseClassName, "-").concat(errorStatus), errorStatus)),
+          style: itemStyle
+        }, error);
       }));
     });
   }
@@ -63687,22 +62993,17 @@
         status = props.status,
         wrapperCol = props.wrapperCol,
         children = props.children,
-        help = props.help,
         errors = props.errors,
-        onDomErrorVisibleChange = props.onDomErrorVisibleChange,
+        warnings = props.warnings,
         hasFeedback = props.hasFeedback,
         formItemRender = props._internalItemRender,
         validateStatus = props.validateStatus,
-        extra = props.extra;
+        extra = props.extra,
+        help = props.help;
     var baseClassName = "".concat(prefixCls, "-item");
     var formContext = React.useContext(FormContext$1);
     var mergedWrapperCol = wrapperCol || formContext.wrapperCol || {};
-    var className = classnames("".concat(baseClassName, "-control"), mergedWrapperCol.className);
-    React.useEffect(function () {
-      return function () {
-        onDomErrorVisibleChange(false);
-      };
-    }, []); // Should provides additional icon if `hasFeedback`
+    var className = classnames("".concat(baseClassName, "-control"), mergedWrapperCol.className); // Should provides additional icon if `hasFeedback`
 
     var IconNode = validateStatus && iconMap[validateStatus];
     var icon = hasFeedback && IconNode ? /*#__PURE__*/React.createElement("span", {
@@ -63725,8 +63026,10 @@
       }
     }, /*#__PURE__*/React.createElement(ErrorList, {
       errors: errors,
+      warnings: warnings,
       help: help,
-      onDomErrorVisibleChange: onDomErrorVisibleChange
+      helpStatus: status,
+      className: "".concat(baseClassName, "-explain-connected")
     })); // If extra = 0, && will goes wrong
     // 0&&error -> 0
 
@@ -63786,6 +63089,23 @@
     return [value, setFrameValue];
   }
 
+  function useDebounce(value) {
+    var _React$useState = React.useState(value),
+        _React$useState2 = _slicedToArray$1(_React$useState, 2),
+        cacheValue = _React$useState2[0],
+        setCacheValue = _React$useState2[1];
+
+    React.useEffect(function () {
+      var timeout = setTimeout(function () {
+        setCacheValue(value);
+      }, value.length ? 0 : 10);
+      return function () {
+        clearTimeout(timeout);
+      };
+    }, [value]);
+    return cacheValue;
+  }
+
   function useItemRef() {
     var _React$useContext = React.useContext(FormContext$1),
         itemRef = _React$useContext.itemRef;
@@ -63808,7 +63128,7 @@
     return getRef;
   }
 
-  var __rest$k = undefined && undefined.__rest || function (s, e) {
+  var __rest$h = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -63837,6 +63157,16 @@
     return !(name === undefined || name === null);
   }
 
+  function genEmptyMeta() {
+    return {
+      errors: [],
+      warnings: [],
+      touched: false,
+      validating: false,
+      name: []
+    };
+  }
+
   function FormItem(props) {
     var name = props.name,
         fieldKey = props.fieldKey,
@@ -63858,9 +63188,7 @@
         trigger = _props$trigger === void 0 ? 'onChange' : _props$trigger,
         validateTrigger = props.validateTrigger,
         hidden = props.hidden,
-        restProps = __rest$k(props, ["name", "fieldKey", "noStyle", "dependencies", "prefixCls", "style", "className", "shouldUpdate", "hasFeedback", "help", "rules", "validateStatus", "children", "required", "label", "messageVariables", "trigger", "validateTrigger", "hidden"]);
-
-    var destroyRef = React.useRef(false);
+        restProps = __rest$h(props, ["name", "fieldKey", "noStyle", "dependencies", "prefixCls", "style", "className", "shouldUpdate", "hasFeedback", "help", "rules", "validateStatus", "children", "required", "label", "messageVariables", "trigger", "validateTrigger", "hidden"]);
 
     var _useContext = React.useContext(ConfigContext),
         getPrefixCls = _useContext.getPrefixCls;
@@ -63869,85 +63197,93 @@
         formName = _useContext2.name,
         requiredMark = _useContext2.requiredMark;
 
-    var _useContext3 = React.useContext(FormItemContext),
-        updateItemErrors = _useContext3.updateItemErrors;
+    var isRenderProps = typeof children === 'function';
+    var notifyParentMetaChange = React.useContext(NoStyleItemContext);
 
-    var _React$useState = React.useState(!!help),
-        _React$useState2 = _slicedToArray$1(_React$useState, 2),
-        domErrorVisible = _React$useState2[0],
-        innerSetDomErrorVisible = _React$useState2[1];
+    var _useContext3 = React.useContext(Context),
+        contextValidateTrigger = _useContext3.validateTrigger;
+
+    var mergedValidateTrigger = validateTrigger !== undefined ? validateTrigger : contextValidateTrigger;
+    var hasName = hasValidName(name);
+    var prefixCls = getPrefixCls('form', customizePrefixCls); // ======================== Errors ========================
+    // >>>>> Collect sub field errors
 
     var _useFrameState = useFrameState({}),
         _useFrameState2 = _slicedToArray$1(_useFrameState, 2),
-        inlineErrors = _useFrameState2[0],
-        setInlineErrors = _useFrameState2[1];
+        subFieldErrors = _useFrameState2[0],
+        setSubFieldErrors = _useFrameState2[1]; // >>>>> Current field errors
 
-    var _useContext4 = React.useContext(Context),
-        contextValidateTrigger = _useContext4.validateTrigger;
 
-    var mergedValidateTrigger = validateTrigger !== undefined ? validateTrigger : contextValidateTrigger;
+    var _React$useState = React.useState(function () {
+      return genEmptyMeta();
+    }),
+        _React$useState2 = _slicedToArray$1(_React$useState, 2),
+        meta = _React$useState2[0],
+        setMeta = _React$useState2[1];
 
-    function setDomErrorVisible(visible) {
-      if (!destroyRef.current) {
-        innerSetDomErrorVisible(visible);
+    var onMetaChange = function onMetaChange(nextMeta) {
+      // Destroy will reset all the meta
+      setMeta(nextMeta.destroy ? genEmptyMeta() : nextMeta); // Bump to parent since noStyle
+
+      if (noStyle && notifyParentMetaChange) {
+        var namePath = nextMeta.name;
+
+        if (fieldKey !== undefined) {
+          namePath = Array.isArray(fieldKey) ? fieldKey : [fieldKey];
+        }
+
+        notifyParentMetaChange(nextMeta, namePath);
       }
-    }
+    }; // >>>>> Collect noStyle Field error to the top FormItem
 
-    var hasName = hasValidName(name); // Cache Field NamePath
 
-    var nameRef = React.useRef([]); // Should clean up if Field removed
+    var onSubItemMetaChange = function onSubItemMetaChange(subMeta, uniqueKeys) {
+      // Only `noStyle` sub item will trigger
+      setSubFieldErrors(function (prevSubFieldErrors) {
+        var clone = _extends$1({}, prevSubFieldErrors); // name: ['user', 1] + key: [4] = ['user', 4]
 
-    React.useEffect(function () {
-      return function () {
-        destroyRef.current = true;
-        updateItemErrors(nameRef.current.join(NAME_SPLIT), []);
-      };
-    }, []);
-    var prefixCls = getPrefixCls('form', customizePrefixCls); // ======================== Errors ========================
-    // Collect noStyle Field error to the top FormItem
 
-    var updateChildItemErrors = noStyle ? updateItemErrors : function (subName, subErrors, originSubName) {
-      setInlineErrors(function () {
-        var prevInlineErrors = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var mergedNamePath = [].concat(_toConsumableArray$1(subMeta.name.slice(0, -1)), _toConsumableArray$1(uniqueKeys));
+        var mergedNameKey = mergedNamePath.join(NAME_SPLIT);
 
-        // Clean up origin error when name changed
-        if (originSubName && originSubName !== subName) {
-          delete prevInlineErrors[originSubName];
+        if (subMeta.destroy) {
+          // Remove
+          delete clone[mergedNameKey];
+        } else {
+          // Update
+          clone[mergedNameKey] = subMeta;
         }
 
-        if (!isEqual_1(prevInlineErrors[subName], subErrors)) {
-          return _extends$1(_extends$1({}, prevInlineErrors), _defineProperty$1({}, subName, subErrors));
-        }
-
-        return prevInlineErrors;
+        return clone;
       });
-    }; // ===================== Children Ref =====================
+    }; // >>>>> Get merged errors
 
-    var getItemRef = useItemRef();
 
-    function renderLayout(baseChildren, fieldId, meta, isRequired) {
+    var _React$useMemo = React.useMemo(function () {
+      var errorList = _toConsumableArray$1(meta.errors);
+
+      var warningList = _toConsumableArray$1(meta.warnings);
+
+      Object.values(subFieldErrors).forEach(function (subFieldError) {
+        errorList.push.apply(errorList, _toConsumableArray$1(subFieldError.errors || []));
+        warningList.push.apply(warningList, _toConsumableArray$1(subFieldError.warnings || []));
+      });
+      return [errorList, warningList];
+    }, [subFieldErrors, meta.errors, meta.warnings]),
+        _React$useMemo2 = _slicedToArray$1(_React$useMemo, 2),
+        mergedErrors = _React$useMemo2[0],
+        mergedWarnings = _React$useMemo2[1];
+
+    var debounceErrors = useDebounce(mergedErrors);
+    var debounceWarnings = useDebounce(mergedWarnings); // ===================== Children Ref =====================
+
+    var getItemRef = useItemRef(); // ======================== Render ========================
+
+    function renderLayout(baseChildren, fieldId, isRequired) {
       var _itemClassName;
-
-      var _a;
 
       if (noStyle && !hidden) {
         return baseChildren;
-      } // ======================== Errors ========================
-      // >>> collect sub errors
-
-
-      var subErrorList = [];
-      Object.keys(inlineErrors).forEach(function (subName) {
-        subErrorList = [].concat(_toConsumableArray$1(subErrorList), _toConsumableArray$1(inlineErrors[subName] || []));
-      }); // >>> merged errors
-
-      var mergedErrors;
-
-      if (help !== undefined && help !== null) {
-        mergedErrors = toArray$6(help);
-      } else {
-        mergedErrors = meta ? meta.errors : [];
-        mergedErrors = [].concat(_toConsumableArray$1(mergedErrors), _toConsumableArray$1(subErrorList));
       } // ======================== Status ========================
 
 
@@ -63957,13 +63293,15 @@
         mergedValidateStatus = validateStatus;
       } else if (meta === null || meta === void 0 ? void 0 : meta.validating) {
         mergedValidateStatus = 'validating';
-      } else if (((_a = meta === null || meta === void 0 ? void 0 : meta.errors) === null || _a === void 0 ? void 0 : _a.length) || subErrorList.length) {
+      } else if (debounceErrors.length) {
         mergedValidateStatus = 'error';
+      } else if (debounceWarnings.length) {
+        mergedValidateStatus = 'warning';
       } else if (meta === null || meta === void 0 ? void 0 : meta.touched) {
         mergedValidateStatus = 'success';
       }
 
-      var itemClassName = (_itemClassName = {}, _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item"), true), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-with-help"), domErrorVisible || !!help), _defineProperty$1(_itemClassName, "".concat(className), !!className), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-feedback"), mergedValidateStatus && hasFeedback), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-success"), mergedValidateStatus === 'success'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-warning"), mergedValidateStatus === 'warning'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-error"), mergedValidateStatus === 'error'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-is-validating"), mergedValidateStatus === 'validating'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-hidden"), hidden), _itemClassName); // ======================= Children =======================
+      var itemClassName = (_itemClassName = {}, _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item"), true), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-with-help"), help || debounceErrors.length || debounceWarnings.length), _defineProperty$1(_itemClassName, "".concat(className), !!className), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-feedback"), mergedValidateStatus && hasFeedback), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-success"), mergedValidateStatus === 'success'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-warning"), mergedValidateStatus === 'warning'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-has-error"), mergedValidateStatus === 'error'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-is-validating"), mergedValidateStatus === 'validating'), _defineProperty$1(_itemClassName, "".concat(prefixCls, "-item-hidden"), hidden), _itemClassName); // ======================= Children =======================
 
       return /*#__PURE__*/React.createElement(Row, _extends$1({
         className: classnames(itemClassName),
@@ -63976,22 +63314,16 @@
       }, props, {
         prefixCls: prefixCls
       })), /*#__PURE__*/React.createElement(FormItemInput, _extends$1({}, props, meta, {
-        errors: mergedErrors,
+        errors: debounceErrors,
+        warnings: debounceWarnings,
         prefixCls: prefixCls,
         status: mergedValidateStatus,
-        onDomErrorVisibleChange: setDomErrorVisible,
-        validateStatus: mergedValidateStatus
-      }), /*#__PURE__*/React.createElement(FormItemContext.Provider, {
-        value: {
-          updateItemErrors: updateChildItemErrors
-        }
+        validateStatus: mergedValidateStatus,
+        help: help
+      }), /*#__PURE__*/React.createElement(NoStyleItemContext.Provider, {
+        value: onSubItemMetaChange
       }, baseChildren)));
     }
-
-    var isRenderProps = typeof children === 'function'; // Record for real component render
-
-    var updateRef = React.useRef(0);
-    updateRef.current += 1;
 
     if (!hasName && !isRenderProps && !dependencies) {
       return renderLayout(children);
@@ -64007,41 +63339,25 @@
 
     if (messageVariables) {
       variables = _extends$1(_extends$1({}, variables), messageVariables);
-    }
+    } // >>>>> With Field
+
 
     return /*#__PURE__*/React.createElement(WrapperField, _extends$1({}, props, {
       messageVariables: variables,
       trigger: trigger,
       validateTrigger: mergedValidateTrigger,
-      onReset: function onReset() {
-        setDomErrorVisible(false);
-      }
-    }), function (control, meta, context) {
-      var errors = meta.errors;
-      var mergedName = toArray$6(name).length && meta ? meta.name : [];
+      onMetaChange: onMetaChange
+    }), function (control, renderMeta, context) {
+      var mergedName = toArray$6(name).length && renderMeta ? renderMeta.name : [];
       var fieldId = getFieldId(mergedName, formName);
-
-      if (noStyle) {
-        // Clean up origin one
-        var originErrorName = nameRef.current.join(NAME_SPLIT);
-        nameRef.current = _toConsumableArray$1(mergedName);
-
-        if (fieldKey) {
-          var fieldKeys = Array.isArray(fieldKey) ? fieldKey : [fieldKey];
-          nameRef.current = [].concat(_toConsumableArray$1(mergedName.slice(0, -1)), _toConsumableArray$1(fieldKeys));
-        }
-
-        updateItemErrors(nameRef.current.join(NAME_SPLIT), errors, originErrorName);
-      }
-
       var isRequired = required !== undefined ? required : !!(rules && rules.some(function (rule) {
-        if (rule && _typeof$1(rule) === 'object' && rule.required) {
+        if (rule && _typeof$1(rule) === 'object' && rule.required && !rule.warningOnly) {
           return true;
         }
 
         if (typeof rule === 'function') {
           var ruleEntity = rule(context);
-          return ruleEntity && ruleEntity.required;
+          return ruleEntity && ruleEntity.required && !ruleEntity.warningOnly;
         }
 
         return false;
@@ -64091,7 +63407,7 @@
         });
         childNode = /*#__PURE__*/React.createElement(MemoInput, {
           value: mergedControl[props.valuePropName || 'value'],
-          update: updateRef.current
+          update: children
         }, cloneElement(children, childProps));
       } else if (isRenderProps && (shouldUpdate || dependencies) && !hasName) {
         childNode = children(context);
@@ -64100,11 +63416,11 @@
         childNode = children;
       }
 
-      return renderLayout(childNode, fieldId, meta, isRequired);
+      return renderLayout(childNode, fieldId, isRequired);
     });
   }
 
-  var __rest$l = undefined && undefined.__rest || function (s, e) {
+  var __rest$i = undefined && undefined.__rest || function (s, e) {
     var t = {};
 
     for (var p in s) {
@@ -64120,7 +63436,7 @@
   var FormList = function FormList(_a) {
     var customizePrefixCls = _a.prefixCls,
         children = _a.children,
-        props = __rest$l(_a, ["prefixCls", "children"]);
+        props = __rest$i(_a, ["prefixCls", "children"]);
 
     devWarning(!!props.name, 'Form.List', 'Miss `name` prop.');
 
@@ -64139,7 +63455,8 @@
           fieldKey: field.key
         });
       }), operation, {
-        errors: meta.errors
+        errors: meta.errors,
+        warnings: meta.warnings
       }));
     });
   };
@@ -64154,6 +63471,1353 @@
   Form$2.create = function () {
     devWarning(false, 'Form', 'antd v4 removed `Form.create`. Please remove or use `@ant-design/compatible` instead.');
   };
+
+  function getInputClassName(prefixCls, bordered, size, disabled, direction) {
+    var _classNames;
+
+    return classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-sm"), size === 'small'), _defineProperty$1(_classNames, "".concat(prefixCls, "-lg"), size === 'large'), _defineProperty$1(_classNames, "".concat(prefixCls, "-disabled"), disabled), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _classNames));
+  }
+  function hasPrefixSuffix(props) {
+    return !!(props.prefix || props.suffix || props.allowClear);
+  }
+
+  var ClearableInputType = tuple('text', 'input');
+
+  function hasAddon(props) {
+    return !!(props.addonBefore || props.addonAfter);
+  }
+
+  var ClearableLabeledInput = /*#__PURE__*/function (_React$Component) {
+    _inherits(ClearableLabeledInput, _React$Component);
+
+    var _super = _createSuper(ClearableLabeledInput);
+
+    function ClearableLabeledInput() {
+      var _this;
+
+      _classCallCheck(this, ClearableLabeledInput);
+
+      _this = _super.apply(this, arguments);
+      /** @private Do Not use out of this class. We do not promise this is always keep. */
+
+      _this.containerRef = /*#__PURE__*/React.createRef();
+
+      _this.onInputMouseUp = function (e) {
+        var _a;
+
+        if ((_a = _this.containerRef.current) === null || _a === void 0 ? void 0 : _a.contains(e.target)) {
+          var triggerFocus = _this.props.triggerFocus;
+          triggerFocus === null || triggerFocus === void 0 ? void 0 : triggerFocus();
+        }
+      };
+
+      return _this;
+    }
+
+    _createClass(ClearableLabeledInput, [{
+      key: "renderClearIcon",
+      value: function renderClearIcon(prefixCls) {
+        var _classNames;
+
+        var _this$props = this.props,
+            allowClear = _this$props.allowClear,
+            value = _this$props.value,
+            disabled = _this$props.disabled,
+            readOnly = _this$props.readOnly,
+            handleReset = _this$props.handleReset,
+            suffix = _this$props.suffix;
+
+        if (!allowClear) {
+          return null;
+        }
+
+        var needClear = !disabled && !readOnly && value;
+        var className = "".concat(prefixCls, "-clear-icon");
+        return /*#__PURE__*/React.createElement(CloseCircleFilled$2, {
+          onClick: handleReset // Do not trigger onBlur when clear input
+          // https://github.com/ant-design/ant-design/issues/31200
+          ,
+          onMouseDown: function onMouseDown(e) {
+            return e.preventDefault();
+          },
+          className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(className, "-hidden"), !needClear), _defineProperty$1(_classNames, "".concat(className, "-has-suffix"), !!suffix), _classNames), className),
+          role: "button"
+        });
+      }
+    }, {
+      key: "renderSuffix",
+      value: function renderSuffix(prefixCls) {
+        var _this$props2 = this.props,
+            suffix = _this$props2.suffix,
+            allowClear = _this$props2.allowClear;
+
+        if (suffix || allowClear) {
+          return /*#__PURE__*/React.createElement("span", {
+            className: "".concat(prefixCls, "-suffix")
+          }, this.renderClearIcon(prefixCls), suffix);
+        }
+
+        return null;
+      }
+    }, {
+      key: "renderLabeledIcon",
+      value: function renderLabeledIcon(prefixCls, element) {
+        var _classNames2;
+
+        var _this$props3 = this.props,
+            focused = _this$props3.focused,
+            value = _this$props3.value,
+            prefix = _this$props3.prefix,
+            className = _this$props3.className,
+            size = _this$props3.size,
+            suffix = _this$props3.suffix,
+            disabled = _this$props3.disabled,
+            allowClear = _this$props3.allowClear,
+            direction = _this$props3.direction,
+            style = _this$props3.style,
+            readOnly = _this$props3.readOnly,
+            bordered = _this$props3.bordered;
+        var suffixNode = this.renderSuffix(prefixCls);
+
+        if (!hasPrefixSuffix(this.props)) {
+          return cloneElement(element, {
+            value: value
+          });
+        }
+
+        var prefixNode = prefix ? /*#__PURE__*/React.createElement("span", {
+          className: "".concat(prefixCls, "-prefix")
+        }, prefix) : null;
+        var affixWrapperCls = classnames("".concat(prefixCls, "-affix-wrapper"), (_classNames2 = {}, _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-focused"), focused), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-disabled"), disabled), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-sm"), size === 'small'), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-lg"), size === 'large'), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-input-with-clear-btn"), suffix && allowClear && value), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-rtl"), direction === 'rtl'), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-readonly"), readOnly), _defineProperty$1(_classNames2, "".concat(prefixCls, "-affix-wrapper-borderless"), !bordered), _defineProperty$1(_classNames2, "".concat(className), !hasAddon(this.props) && className), _classNames2));
+        return /*#__PURE__*/React.createElement("span", {
+          ref: this.containerRef,
+          className: affixWrapperCls,
+          style: style,
+          onMouseUp: this.onInputMouseUp
+        }, prefixNode, cloneElement(element, {
+          style: null,
+          value: value,
+          className: getInputClassName(prefixCls, bordered, size, disabled)
+        }), suffixNode);
+      }
+    }, {
+      key: "renderInputWithLabel",
+      value: function renderInputWithLabel(prefixCls, labeledElement) {
+        var _classNames4;
+
+        var _this$props4 = this.props,
+            addonBefore = _this$props4.addonBefore,
+            addonAfter = _this$props4.addonAfter,
+            style = _this$props4.style,
+            size = _this$props4.size,
+            className = _this$props4.className,
+            direction = _this$props4.direction; // Not wrap when there is not addons
+
+        if (!hasAddon(this.props)) {
+          return labeledElement;
+        }
+
+        var wrapperClassName = "".concat(prefixCls, "-group");
+        var addonClassName = "".concat(wrapperClassName, "-addon");
+        var addonBeforeNode = addonBefore ? /*#__PURE__*/React.createElement("span", {
+          className: addonClassName
+        }, addonBefore) : null;
+        var addonAfterNode = addonAfter ? /*#__PURE__*/React.createElement("span", {
+          className: addonClassName
+        }, addonAfter) : null;
+        var mergedWrapperClassName = classnames("".concat(prefixCls, "-wrapper"), wrapperClassName, _defineProperty$1({}, "".concat(wrapperClassName, "-rtl"), direction === 'rtl'));
+        var mergedGroupClassName = classnames("".concat(prefixCls, "-group-wrapper"), (_classNames4 = {}, _defineProperty$1(_classNames4, "".concat(prefixCls, "-group-wrapper-sm"), size === 'small'), _defineProperty$1(_classNames4, "".concat(prefixCls, "-group-wrapper-lg"), size === 'large'), _defineProperty$1(_classNames4, "".concat(prefixCls, "-group-wrapper-rtl"), direction === 'rtl'), _classNames4), className); // Need another wrapper for changing display:table to display:inline-block
+        // and put style prop in wrapper
+
+        return /*#__PURE__*/React.createElement("span", {
+          className: mergedGroupClassName,
+          style: style
+        }, /*#__PURE__*/React.createElement("span", {
+          className: mergedWrapperClassName
+        }, addonBeforeNode, cloneElement(labeledElement, {
+          style: null
+        }), addonAfterNode));
+      }
+    }, {
+      key: "renderTextAreaWithClearIcon",
+      value: function renderTextAreaWithClearIcon(prefixCls, element) {
+        var _classNames5;
+
+        var _this$props5 = this.props,
+            value = _this$props5.value,
+            allowClear = _this$props5.allowClear,
+            className = _this$props5.className,
+            style = _this$props5.style,
+            direction = _this$props5.direction,
+            bordered = _this$props5.bordered;
+
+        if (!allowClear) {
+          return cloneElement(element, {
+            value: value
+          });
+        }
+
+        var affixWrapperCls = classnames("".concat(prefixCls, "-affix-wrapper"), "".concat(prefixCls, "-affix-wrapper-textarea-with-clear-btn"), (_classNames5 = {}, _defineProperty$1(_classNames5, "".concat(prefixCls, "-affix-wrapper-rtl"), direction === 'rtl'), _defineProperty$1(_classNames5, "".concat(prefixCls, "-affix-wrapper-borderless"), !bordered), _defineProperty$1(_classNames5, "".concat(className), !hasAddon(this.props) && className), _classNames5));
+        return /*#__PURE__*/React.createElement("span", {
+          className: affixWrapperCls,
+          style: style
+        }, cloneElement(element, {
+          style: null,
+          value: value
+        }), this.renderClearIcon(prefixCls));
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        var _this$props6 = this.props,
+            prefixCls = _this$props6.prefixCls,
+            inputType = _this$props6.inputType,
+            element = _this$props6.element;
+
+        if (inputType === ClearableInputType[0]) {
+          return this.renderTextAreaWithClearIcon(prefixCls, element);
+        }
+
+        return this.renderInputWithLabel(prefixCls, this.renderLabeledIcon(prefixCls, element));
+      }
+    }]);
+
+    return ClearableLabeledInput;
+  }(React.Component);
+
+  function fixControlledValue(value) {
+    if (typeof value === 'undefined' || value === null) {
+      return '';
+    }
+
+    return value;
+  }
+  function resolveOnChange(target, e, onChange, targetValue) {
+    if (!onChange) {
+      return;
+    }
+
+    var event = e;
+
+    if (e.type === 'click') {
+      // click clear icon
+      event = Object.create(e); // Clone a new target for event.
+      // Avoid the following usage, the setQuery method gets the original value.
+      //
+      // const [query, setQuery] = React.useState('');
+      // <Input
+      //   allowClear
+      //   value={query}
+      //   onChange={(e)=> {
+      //     setQuery((prevStatus) => e.target.value);
+      //   }}
+      // />
+
+      var currentTarget = target.cloneNode(true);
+      event.target = currentTarget;
+      event.currentTarget = currentTarget;
+      currentTarget.value = '';
+      onChange(event);
+      return;
+    } // Trigger by composition event, this means we need force change the input value
+
+
+    if (targetValue !== undefined) {
+      event = Object.create(e);
+      event.target = target;
+      event.currentTarget = target;
+      target.value = targetValue;
+      onChange(event);
+      return;
+    }
+
+    onChange(event);
+  }
+  function triggerFocus(element, option) {
+    if (!element) return;
+    element.focus(option); // Selection content
+
+    var _ref = option || {},
+        cursor = _ref.cursor;
+
+    if (cursor) {
+      var len = element.value.length;
+
+      switch (cursor) {
+        case 'start':
+          element.setSelectionRange(0, 0);
+          break;
+
+        case 'end':
+          element.setSelectionRange(len, len);
+          break;
+
+        default:
+          element.setSelectionRange(0, len);
+      }
+    }
+  }
+
+  var Input$1 = /*#__PURE__*/function (_React$Component) {
+    _inherits(Input, _React$Component);
+
+    var _super = _createSuper(Input);
+
+    function Input(props) {
+      var _this;
+
+      _classCallCheck(this, Input);
+
+      _this = _super.call(this, props);
+      _this.direction = 'ltr';
+
+      _this.focus = function (option) {
+        triggerFocus(_this.input, option);
+      };
+
+      _this.saveClearableInput = function (input) {
+        _this.clearableInput = input;
+      };
+
+      _this.saveInput = function (input) {
+        _this.input = input;
+      };
+
+      _this.onFocus = function (e) {
+        var onFocus = _this.props.onFocus;
+
+        _this.setState({
+          focused: true
+        }, _this.clearPasswordValueAttribute);
+
+        onFocus === null || onFocus === void 0 ? void 0 : onFocus(e);
+      };
+
+      _this.onBlur = function (e) {
+        var onBlur = _this.props.onBlur;
+
+        _this.setState({
+          focused: false
+        }, _this.clearPasswordValueAttribute);
+
+        onBlur === null || onBlur === void 0 ? void 0 : onBlur(e);
+      };
+
+      _this.handleReset = function (e) {
+        _this.setValue('', function () {
+          _this.focus();
+        });
+
+        resolveOnChange(_this.input, e, _this.props.onChange);
+      };
+
+      _this.renderInput = function (prefixCls, size, bordered) {
+        var input = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+        var _this$props = _this.props,
+            className = _this$props.className,
+            addonBefore = _this$props.addonBefore,
+            addonAfter = _this$props.addonAfter,
+            customizeSize = _this$props.size,
+            disabled = _this$props.disabled,
+            htmlSize = _this$props.htmlSize; // Fix https://fb.me/react-unknown-prop
+
+        var otherProps = omit(_this.props, ['prefixCls', 'onPressEnter', 'addonBefore', 'addonAfter', 'prefix', 'suffix', 'allowClear', // Input elements must be either controlled or uncontrolled,
+        // specify either the value prop, or the defaultValue prop, but not both.
+        'defaultValue', 'size', 'inputType', 'bordered', 'htmlSize']);
+        return /*#__PURE__*/React.createElement("input", _extends$1({
+          autoComplete: input.autoComplete
+        }, otherProps, {
+          onChange: _this.handleChange,
+          onFocus: _this.onFocus,
+          onBlur: _this.onBlur,
+          onKeyDown: _this.handleKeyDown,
+          className: classnames(getInputClassName(prefixCls, bordered, customizeSize || size, disabled, _this.direction), _defineProperty$1({}, className, className && !addonBefore && !addonAfter)),
+          ref: _this.saveInput,
+          size: htmlSize
+        }));
+      };
+
+      _this.clearPasswordValueAttribute = function () {
+        // https://github.com/ant-design/ant-design/issues/20541
+        _this.removePasswordTimeout = setTimeout(function () {
+          if (_this.input && _this.input.getAttribute('type') === 'password' && _this.input.hasAttribute('value')) {
+            _this.input.removeAttribute('value');
+          }
+        });
+      };
+
+      _this.handleChange = function (e) {
+        _this.setValue(e.target.value, _this.clearPasswordValueAttribute);
+
+        resolveOnChange(_this.input, e, _this.props.onChange);
+      };
+
+      _this.handleKeyDown = function (e) {
+        var _this$props2 = _this.props,
+            onPressEnter = _this$props2.onPressEnter,
+            onKeyDown = _this$props2.onKeyDown;
+
+        if (onPressEnter && e.keyCode === 13) {
+          onPressEnter(e);
+        }
+
+        onKeyDown === null || onKeyDown === void 0 ? void 0 : onKeyDown(e);
+      };
+
+      _this.renderComponent = function (_ref2) {
+        var getPrefixCls = _ref2.getPrefixCls,
+            direction = _ref2.direction,
+            input = _ref2.input;
+        var _this$state = _this.state,
+            value = _this$state.value,
+            focused = _this$state.focused;
+        var _this$props3 = _this.props,
+            customizePrefixCls = _this$props3.prefixCls,
+            _this$props3$bordered = _this$props3.bordered,
+            bordered = _this$props3$bordered === void 0 ? true : _this$props3$bordered;
+        var prefixCls = getPrefixCls('input', customizePrefixCls);
+        _this.direction = direction;
+        return /*#__PURE__*/React.createElement(SizeContext.Consumer, null, function (size) {
+          return /*#__PURE__*/React.createElement(ClearableLabeledInput, _extends$1({
+            size: size
+          }, _this.props, {
+            prefixCls: prefixCls,
+            inputType: "input",
+            value: fixControlledValue(value),
+            element: _this.renderInput(prefixCls, size, bordered, input),
+            handleReset: _this.handleReset,
+            ref: _this.saveClearableInput,
+            direction: direction,
+            focused: focused,
+            triggerFocus: _this.focus,
+            bordered: bordered
+          }));
+        });
+      };
+
+      var value = typeof props.value === 'undefined' ? props.defaultValue : props.value;
+      _this.state = {
+        value: value,
+        focused: false,
+        // eslint-disable-next-line react/no-unused-state
+        prevValue: props.value
+      };
+      return _this;
+    }
+
+    _createClass(Input, [{
+      key: "componentDidMount",
+      value: function componentDidMount() {
+        this.clearPasswordValueAttribute();
+      } // Since polyfill `getSnapshotBeforeUpdate` need work with `componentDidUpdate`.
+      // We keep an empty function here.
+
+    }, {
+      key: "componentDidUpdate",
+      value: function componentDidUpdate() {}
+    }, {
+      key: "getSnapshotBeforeUpdate",
+      value: function getSnapshotBeforeUpdate(prevProps) {
+        if (hasPrefixSuffix(prevProps) !== hasPrefixSuffix(this.props)) {
+          devWarning(this.input !== document.activeElement, 'Input', "When Input is focused, dynamic add or remove prefix / suffix will make it lose focus caused by dom structure change. Read more: https://ant.design/components/input/#FAQ");
+        }
+
+        return null;
+      }
+    }, {
+      key: "componentWillUnmount",
+      value: function componentWillUnmount() {
+        if (this.removePasswordTimeout) {
+          clearTimeout(this.removePasswordTimeout);
+        }
+      }
+    }, {
+      key: "blur",
+      value: function blur() {
+        this.input.blur();
+      }
+    }, {
+      key: "setSelectionRange",
+      value: function setSelectionRange(start, end, direction) {
+        this.input.setSelectionRange(start, end, direction);
+      }
+    }, {
+      key: "select",
+      value: function select() {
+        this.input.select();
+      }
+    }, {
+      key: "setValue",
+      value: function setValue(value, callback) {
+        if (this.props.value === undefined) {
+          this.setState({
+            value: value
+          }, callback);
+        } else {
+          callback === null || callback === void 0 ? void 0 : callback();
+        }
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        return /*#__PURE__*/React.createElement(ConfigConsumer, null, this.renderComponent);
+      }
+    }], [{
+      key: "getDerivedStateFromProps",
+      value: function getDerivedStateFromProps(nextProps, _ref3) {
+        var prevValue = _ref3.prevValue;
+        var newState = {
+          prevValue: nextProps.value
+        };
+
+        if (nextProps.value !== undefined || prevValue !== nextProps.value) {
+          newState.value = nextProps.value;
+        }
+
+        if (nextProps.disabled) {
+          newState.focused = false;
+        }
+
+        return newState;
+      }
+    }]);
+
+    return Input;
+  }(React.Component);
+
+  Input$1.defaultProps = {
+    type: 'text'
+  };
+
+  var Group$2 = function Group(props) {
+    return /*#__PURE__*/React.createElement(ConfigConsumer, null, function (_ref) {
+      var _classNames;
+
+      var getPrefixCls = _ref.getPrefixCls,
+          direction = _ref.direction;
+      var customizePrefixCls = props.prefixCls,
+          _props$className = props.className,
+          className = _props$className === void 0 ? '' : _props$className;
+      var prefixCls = getPrefixCls('input-group', customizePrefixCls);
+      var cls = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-lg"), props.size === 'large'), _defineProperty$1(_classNames, "".concat(prefixCls, "-sm"), props.size === 'small'), _defineProperty$1(_classNames, "".concat(prefixCls, "-compact"), props.compact), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className);
+      return /*#__PURE__*/React.createElement("span", {
+        className: cls,
+        style: props.style,
+        onMouseEnter: props.onMouseEnter,
+        onMouseLeave: props.onMouseLeave,
+        onFocus: props.onFocus,
+        onBlur: props.onBlur
+      }, props.children);
+    });
+  };
+
+  var __rest$j = undefined && undefined.__rest || function (s, e) {
+    var t = {};
+
+    for (var p in s) {
+      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+    }
+
+    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+    }
+    return t;
+  };
+  var Search = /*#__PURE__*/React.forwardRef(function (props, ref) {
+    var _classNames;
+
+    var customizePrefixCls = props.prefixCls,
+        customizeInputPrefixCls = props.inputPrefixCls,
+        className = props.className,
+        customizeSize = props.size,
+        suffix = props.suffix,
+        _props$enterButton = props.enterButton,
+        enterButton = _props$enterButton === void 0 ? false : _props$enterButton,
+        addonAfter = props.addonAfter,
+        loading = props.loading,
+        disabled = props.disabled,
+        customOnSearch = props.onSearch,
+        customOnChange = props.onChange,
+        restProps = __rest$j(props, ["prefixCls", "inputPrefixCls", "className", "size", "suffix", "enterButton", "addonAfter", "loading", "disabled", "onSearch", "onChange"]);
+
+    var _React$useContext = React.useContext(ConfigContext),
+        getPrefixCls = _React$useContext.getPrefixCls,
+        direction = _React$useContext.direction;
+
+    var contextSize = React.useContext(SizeContext);
+    var size = customizeSize || contextSize;
+    var inputRef = React.useRef(null);
+
+    var onChange = function onChange(e) {
+      if (e && e.target && e.type === 'click' && customOnSearch) {
+        customOnSearch(e.target.value, e);
+      }
+
+      if (customOnChange) {
+        customOnChange(e);
+      }
+    };
+
+    var onMouseDown = function onMouseDown(e) {
+      var _a;
+
+      if (document.activeElement === ((_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.input)) {
+        e.preventDefault();
+      }
+    };
+
+    var onSearch = function onSearch(e) {
+      var _a;
+
+      if (customOnSearch) {
+        customOnSearch((_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.input.value, e);
+      }
+    };
+
+    var prefixCls = getPrefixCls('input-search', customizePrefixCls);
+    var inputPrefixCls = getPrefixCls('input', customizeInputPrefixCls);
+    var searchIcon = typeof enterButton === 'boolean' ? /*#__PURE__*/React.createElement(SearchOutlined$2, null) : null;
+    var btnClassName = "".concat(prefixCls, "-button");
+    var button;
+    var enterButtonAsElement = enterButton || {};
+    var isAntdButton = enterButtonAsElement.type && enterButtonAsElement.type.__ANT_BUTTON === true;
+
+    if (isAntdButton || enterButtonAsElement.type === 'button') {
+      button = cloneElement(enterButtonAsElement, _extends$1({
+        onMouseDown: onMouseDown,
+        onClick: onSearch,
+        key: 'enterButton'
+      }, isAntdButton ? {
+        className: btnClassName,
+        size: size
+      } : {}));
+    } else {
+      button = /*#__PURE__*/React.createElement(Button, {
+        className: btnClassName,
+        type: enterButton ? 'primary' : undefined,
+        size: size,
+        disabled: disabled,
+        key: "enterButton",
+        onMouseDown: onMouseDown,
+        onClick: onSearch,
+        loading: loading,
+        icon: searchIcon
+      }, enterButton);
+    }
+
+    if (addonAfter) {
+      button = [button, cloneElement(addonAfter, {
+        key: 'addonAfter'
+      })];
+    }
+
+    var cls = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(size), !!size), _defineProperty$1(_classNames, "".concat(prefixCls, "-with-button"), !!enterButton), _classNames), className);
+    return /*#__PURE__*/React.createElement(Input$1, _extends$1({
+      ref: composeRef(inputRef, ref),
+      onPressEnter: onSearch
+    }, restProps, {
+      size: size,
+      prefixCls: inputPrefixCls,
+      addonAfter: button,
+      suffix: suffix,
+      onChange: onChange,
+      className: cls,
+      disabled: disabled
+    }));
+  });
+  Search.displayName = 'Search';
+
+  // Thanks to https://github.com/andreypopp/react-textarea-autosize/
+
+  /**
+   * calculateNodeHeight(uiTextNode, useCache = false)
+   */
+  var HIDDEN_TEXTAREA_STYLE = "\n  min-height:0 !important;\n  max-height:none !important;\n  height:0 !important;\n  visibility:hidden !important;\n  overflow:hidden !important;\n  position:absolute !important;\n  z-index:-1000 !important;\n  top:0 !important;\n  right:0 !important\n";
+  var SIZING_STYLE = ['letter-spacing', 'line-height', 'padding-top', 'padding-bottom', 'font-family', 'font-weight', 'font-size', 'font-variant', 'text-rendering', 'text-transform', 'width', 'text-indent', 'padding-left', 'padding-right', 'border-width', 'box-sizing', 'word-break'];
+  var computedStyleCache = {};
+  var hiddenTextarea;
+  function calculateNodeStyling(node) {
+    var useCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    var nodeRef = node.getAttribute('id') || node.getAttribute('data-reactid') || node.getAttribute('name');
+
+    if (useCache && computedStyleCache[nodeRef]) {
+      return computedStyleCache[nodeRef];
+    }
+
+    var style = window.getComputedStyle(node);
+    var boxSizing = style.getPropertyValue('box-sizing') || style.getPropertyValue('-moz-box-sizing') || style.getPropertyValue('-webkit-box-sizing');
+    var paddingSize = parseFloat(style.getPropertyValue('padding-bottom')) + parseFloat(style.getPropertyValue('padding-top'));
+    var borderSize = parseFloat(style.getPropertyValue('border-bottom-width')) + parseFloat(style.getPropertyValue('border-top-width'));
+    var sizingStyle = SIZING_STYLE.map(function (name) {
+      return "".concat(name, ":").concat(style.getPropertyValue(name));
+    }).join(';');
+    var nodeInfo = {
+      sizingStyle: sizingStyle,
+      paddingSize: paddingSize,
+      borderSize: borderSize,
+      boxSizing: boxSizing
+    };
+
+    if (useCache && nodeRef) {
+      computedStyleCache[nodeRef] = nodeInfo;
+    }
+
+    return nodeInfo;
+  }
+  function calculateNodeHeight(uiTextNode) {
+    var useCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    var minRows = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+    var maxRows = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+
+    if (!hiddenTextarea) {
+      hiddenTextarea = document.createElement('textarea');
+      hiddenTextarea.setAttribute('tab-index', '-1');
+      hiddenTextarea.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(hiddenTextarea);
+    } // Fix wrap="off" issue
+    // https://github.com/ant-design/ant-design/issues/6577
+
+
+    if (uiTextNode.getAttribute('wrap')) {
+      hiddenTextarea.setAttribute('wrap', uiTextNode.getAttribute('wrap'));
+    } else {
+      hiddenTextarea.removeAttribute('wrap');
+    } // Copy all CSS properties that have an impact on the height of the content in
+    // the textbox
+
+
+    var _calculateNodeStyling = calculateNodeStyling(uiTextNode, useCache),
+        paddingSize = _calculateNodeStyling.paddingSize,
+        borderSize = _calculateNodeStyling.borderSize,
+        boxSizing = _calculateNodeStyling.boxSizing,
+        sizingStyle = _calculateNodeStyling.sizingStyle; // Need to have the overflow attribute to hide the scrollbar otherwise
+    // text-lines will not calculated properly as the shadow will technically be
+    // narrower for content
+
+
+    hiddenTextarea.setAttribute('style', "".concat(sizingStyle, ";").concat(HIDDEN_TEXTAREA_STYLE));
+    hiddenTextarea.value = uiTextNode.value || uiTextNode.placeholder || '';
+    var minHeight = Number.MIN_SAFE_INTEGER;
+    var maxHeight = Number.MAX_SAFE_INTEGER;
+    var height = hiddenTextarea.scrollHeight;
+    var overflowY;
+
+    if (boxSizing === 'border-box') {
+      // border-box: add border, since height = content + padding + border
+      height += borderSize;
+    } else if (boxSizing === 'content-box') {
+      // remove padding, since height = content
+      height -= paddingSize;
+    }
+
+    if (minRows !== null || maxRows !== null) {
+      // measure height of a textarea with a single row
+      hiddenTextarea.value = ' ';
+      var singleRowHeight = hiddenTextarea.scrollHeight - paddingSize;
+
+      if (minRows !== null) {
+        minHeight = singleRowHeight * minRows;
+
+        if (boxSizing === 'border-box') {
+          minHeight = minHeight + paddingSize + borderSize;
+        }
+
+        height = Math.max(minHeight, height);
+      }
+
+      if (maxRows !== null) {
+        maxHeight = singleRowHeight * maxRows;
+
+        if (boxSizing === 'border-box') {
+          maxHeight = maxHeight + paddingSize + borderSize;
+        }
+
+        overflowY = height > maxHeight ? '' : 'hidden';
+        height = Math.min(maxHeight, height);
+      }
+    }
+
+    return {
+      height: height,
+      minHeight: minHeight,
+      maxHeight: maxHeight,
+      overflowY: overflowY,
+      resize: 'none'
+    };
+  }
+
+  var RESIZE_STATUS;
+
+  (function (RESIZE_STATUS) {
+    RESIZE_STATUS[RESIZE_STATUS["NONE"] = 0] = "NONE";
+    RESIZE_STATUS[RESIZE_STATUS["RESIZING"] = 1] = "RESIZING";
+    RESIZE_STATUS[RESIZE_STATUS["RESIZED"] = 2] = "RESIZED";
+  })(RESIZE_STATUS || (RESIZE_STATUS = {}));
+
+  var ResizableTextArea = /*#__PURE__*/function (_React$Component) {
+    _inherits(ResizableTextArea, _React$Component);
+
+    var _super = _createSuper(ResizableTextArea);
+
+    function ResizableTextArea(props) {
+      var _this;
+
+      _classCallCheck(this, ResizableTextArea);
+
+      _this = _super.call(this, props);
+      _this.nextFrameActionId = void 0;
+      _this.resizeFrameId = void 0;
+      _this.textArea = void 0;
+
+      _this.saveTextArea = function (textArea) {
+        _this.textArea = textArea;
+      };
+
+      _this.handleResize = function (size) {
+        var resizeStatus = _this.state.resizeStatus;
+        var _this$props = _this.props,
+            autoSize = _this$props.autoSize,
+            onResize = _this$props.onResize;
+
+        if (resizeStatus !== RESIZE_STATUS.NONE) {
+          return;
+        }
+
+        if (typeof onResize === 'function') {
+          onResize(size);
+        }
+
+        if (autoSize) {
+          _this.resizeOnNextFrame();
+        }
+      };
+
+      _this.resizeOnNextFrame = function () {
+        cancelAnimationFrame(_this.nextFrameActionId);
+        _this.nextFrameActionId = requestAnimationFrame(_this.resizeTextarea);
+      };
+
+      _this.resizeTextarea = function () {
+        var autoSize = _this.props.autoSize;
+
+        if (!autoSize || !_this.textArea) {
+          return;
+        }
+
+        var minRows = autoSize.minRows,
+            maxRows = autoSize.maxRows;
+        var textareaStyles = calculateNodeHeight(_this.textArea, false, minRows, maxRows);
+
+        _this.setState({
+          textareaStyles: textareaStyles,
+          resizeStatus: RESIZE_STATUS.RESIZING
+        }, function () {
+          cancelAnimationFrame(_this.resizeFrameId);
+          _this.resizeFrameId = requestAnimationFrame(function () {
+            _this.setState({
+              resizeStatus: RESIZE_STATUS.RESIZED
+            }, function () {
+              _this.resizeFrameId = requestAnimationFrame(function () {
+                _this.setState({
+                  resizeStatus: RESIZE_STATUS.NONE
+                });
+
+                _this.fixFirefoxAutoScroll();
+              });
+            });
+          });
+        });
+      };
+
+      _this.renderTextArea = function () {
+        var _this$props2 = _this.props,
+            _this$props2$prefixCl = _this$props2.prefixCls,
+            prefixCls = _this$props2$prefixCl === void 0 ? 'rc-textarea' : _this$props2$prefixCl,
+            autoSize = _this$props2.autoSize,
+            onResize = _this$props2.onResize,
+            className = _this$props2.className,
+            disabled = _this$props2.disabled;
+        var _this$state = _this.state,
+            textareaStyles = _this$state.textareaStyles,
+            resizeStatus = _this$state.resizeStatus;
+        var otherProps = omit(_this.props, ['prefixCls', 'onPressEnter', 'autoSize', 'defaultValue', 'onResize']);
+        var cls = classnames(prefixCls, className, _defineProperty$1({}, "".concat(prefixCls, "-disabled"), disabled)); // Fix https://github.com/ant-design/ant-design/issues/6776
+        // Make sure it could be reset when using form.getFieldDecorator
+
+        if ('value' in otherProps) {
+          otherProps.value = otherProps.value || '';
+        }
+
+        var style = _objectSpread2$1(_objectSpread2$1(_objectSpread2$1({}, _this.props.style), textareaStyles), resizeStatus === RESIZE_STATUS.RESIZING ? // React will warning when mix `overflow` & `overflowY`.
+        // We need to define this separately.
+        {
+          overflowX: 'hidden',
+          overflowY: 'hidden'
+        } : null);
+
+        return /*#__PURE__*/React.createElement(ReactResizeObserver, {
+          onResize: _this.handleResize,
+          disabled: !(autoSize || onResize)
+        }, /*#__PURE__*/React.createElement("textarea", _extends$1({}, otherProps, {
+          className: cls,
+          style: style,
+          ref: _this.saveTextArea
+        })));
+      };
+
+      _this.state = {
+        textareaStyles: {},
+        resizeStatus: RESIZE_STATUS.NONE
+      };
+      return _this;
+    }
+
+    _createClass(ResizableTextArea, [{
+      key: "componentDidMount",
+      value: function componentDidMount() {
+        this.resizeTextarea();
+      }
+    }, {
+      key: "componentDidUpdate",
+      value: function componentDidUpdate(prevProps) {
+        // Re-render with the new content then recalculate the height as required.
+        if (prevProps.value !== this.props.value) {
+          this.resizeTextarea();
+        }
+      }
+    }, {
+      key: "componentWillUnmount",
+      value: function componentWillUnmount() {
+        cancelAnimationFrame(this.nextFrameActionId);
+        cancelAnimationFrame(this.resizeFrameId);
+      } // https://github.com/ant-design/ant-design/issues/21870
+
+    }, {
+      key: "fixFirefoxAutoScroll",
+      value: function fixFirefoxAutoScroll() {
+        try {
+          if (document.activeElement === this.textArea) {
+            var currentStart = this.textArea.selectionStart;
+            var currentEnd = this.textArea.selectionEnd;
+            this.textArea.setSelectionRange(currentStart, currentEnd);
+          }
+        } catch (e) {// Fix error in Chrome:
+          // Failed to read the 'selectionStart' property from 'HTMLInputElement'
+          // http://stackoverflow.com/q/21177489/3040605
+        }
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        return this.renderTextArea();
+      }
+    }]);
+
+    return ResizableTextArea;
+  }(React.Component);
+
+  var TextArea = /*#__PURE__*/function (_React$Component) {
+    _inherits(TextArea, _React$Component);
+
+    var _super = _createSuper(TextArea);
+
+    function TextArea(props) {
+      var _this;
+
+      _classCallCheck(this, TextArea);
+
+      _this = _super.call(this, props);
+      _this.resizableTextArea = void 0;
+
+      _this.focus = function () {
+        _this.resizableTextArea.textArea.focus();
+      };
+
+      _this.saveTextArea = function (resizableTextArea) {
+        _this.resizableTextArea = resizableTextArea;
+      };
+
+      _this.handleChange = function (e) {
+        var onChange = _this.props.onChange;
+
+        _this.setValue(e.target.value, function () {
+          _this.resizableTextArea.resizeTextarea();
+        });
+
+        if (onChange) {
+          onChange(e);
+        }
+      };
+
+      _this.handleKeyDown = function (e) {
+        var _this$props = _this.props,
+            onPressEnter = _this$props.onPressEnter,
+            onKeyDown = _this$props.onKeyDown;
+
+        if (e.keyCode === 13 && onPressEnter) {
+          onPressEnter(e);
+        }
+
+        if (onKeyDown) {
+          onKeyDown(e);
+        }
+      };
+
+      var value = typeof props.value === 'undefined' || props.value === null ? props.defaultValue : props.value;
+      _this.state = {
+        value: value
+      };
+      return _this;
+    }
+
+    _createClass(TextArea, [{
+      key: "setValue",
+      value: function setValue(value, callback) {
+        if (!('value' in this.props)) {
+          this.setState({
+            value: value
+          }, callback);
+        }
+      }
+    }, {
+      key: "blur",
+      value: function blur() {
+        this.resizableTextArea.textArea.blur();
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        return /*#__PURE__*/React.createElement(ResizableTextArea, _extends$1({}, this.props, {
+          value: this.state.value,
+          onKeyDown: this.handleKeyDown,
+          onChange: this.handleChange,
+          ref: this.saveTextArea
+        }));
+      }
+    }], [{
+      key: "getDerivedStateFromProps",
+      value: function getDerivedStateFromProps(nextProps) {
+        if ('value' in nextProps) {
+          return {
+            value: nextProps.value
+          };
+        }
+
+        return null;
+      }
+    }]);
+
+    return TextArea;
+  }(React.Component);
+
+  var __rest$k = undefined && undefined.__rest || function (s, e) {
+    var t = {};
+
+    for (var p in s) {
+      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+    }
+
+    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+    }
+    return t;
+  };
+
+  function fixEmojiLength(value, maxLength) {
+    return _toConsumableArray$1(value || '').slice(0, maxLength).join('');
+  }
+
+  var TextArea$1 = /*#__PURE__*/React.forwardRef(function (_a, ref) {
+    var _classNames;
+
+    var customizePrefixCls = _a.prefixCls,
+        _a$bordered = _a.bordered,
+        bordered = _a$bordered === void 0 ? true : _a$bordered,
+        _a$showCount = _a.showCount,
+        showCount = _a$showCount === void 0 ? false : _a$showCount,
+        maxLength = _a.maxLength,
+        className = _a.className,
+        style = _a.style,
+        customizeSize = _a.size,
+        onCompositionStart = _a.onCompositionStart,
+        onCompositionEnd = _a.onCompositionEnd,
+        onChange = _a.onChange,
+        props = __rest$k(_a, ["prefixCls", "bordered", "showCount", "maxLength", "className", "style", "size", "onCompositionStart", "onCompositionEnd", "onChange"]);
+
+    var _React$useContext = React.useContext(ConfigContext),
+        getPrefixCls = _React$useContext.getPrefixCls,
+        direction = _React$useContext.direction;
+
+    var size = React.useContext(SizeContext);
+    var innerRef = React.useRef(null);
+    var clearableInputRef = React.useRef(null);
+
+    var _React$useState = React.useState(false),
+        _React$useState2 = _slicedToArray$1(_React$useState, 2),
+        compositing = _React$useState2[0],
+        setCompositing = _React$useState2[1];
+
+    var _useMergedState = useControlledState(props.defaultValue, {
+      value: props.value
+    }),
+        _useMergedState2 = _slicedToArray$1(_useMergedState, 2),
+        value = _useMergedState2[0],
+        setValue = _useMergedState2[1];
+
+    var handleSetValue = function handleSetValue(val, callback) {
+      if (props.value === undefined) {
+        setValue(val);
+        callback === null || callback === void 0 ? void 0 : callback();
+      }
+    }; // =========================== Value Update ===========================
+    // Max length value
+
+
+    var hasMaxLength = Number(maxLength) > 0;
+
+    var onInternalCompositionStart = function onInternalCompositionStart(e) {
+      setCompositing(true);
+      onCompositionStart === null || onCompositionStart === void 0 ? void 0 : onCompositionStart(e);
+    };
+
+    var onInternalCompositionEnd = function onInternalCompositionEnd(e) {
+      setCompositing(false);
+      var triggerValue = e.currentTarget.value;
+
+      if (hasMaxLength) {
+        triggerValue = fixEmojiLength(triggerValue, maxLength);
+      } // Patch composition onChange when value changed
+
+
+      if (triggerValue !== value) {
+        handleSetValue(triggerValue);
+        resolveOnChange(e.currentTarget, e, onChange, triggerValue);
+      }
+
+      onCompositionEnd === null || onCompositionEnd === void 0 ? void 0 : onCompositionEnd(e);
+    };
+
+    var handleChange = function handleChange(e) {
+      var triggerValue = e.target.value;
+
+      if (!compositing && hasMaxLength) {
+        triggerValue = fixEmojiLength(triggerValue, maxLength);
+      }
+
+      handleSetValue(triggerValue);
+      resolveOnChange(e.currentTarget, e, onChange, triggerValue);
+    }; // ============================== Reset ===============================
+
+
+    var handleReset = function handleReset(e) {
+      var _a, _b;
+
+      handleSetValue('', function () {
+        var _a;
+
+        (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.focus();
+      });
+      resolveOnChange((_b = (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.resizableTextArea) === null || _b === void 0 ? void 0 : _b.textArea, e, onChange);
+    };
+
+    var prefixCls = getPrefixCls('input', customizePrefixCls);
+    React.useImperativeHandle(ref, function () {
+      var _a;
+
+      return {
+        resizableTextArea: (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.resizableTextArea,
+        focus: function focus(option) {
+          var _a, _b;
+
+          triggerFocus((_b = (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.resizableTextArea) === null || _b === void 0 ? void 0 : _b.textArea, option);
+        },
+        blur: function blur() {
+          var _a;
+
+          return (_a = innerRef.current) === null || _a === void 0 ? void 0 : _a.blur();
+        }
+      };
+    });
+    var textArea = /*#__PURE__*/React.createElement(TextArea, _extends$1({}, omit(props, ['allowClear']), {
+      className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _defineProperty$1(_classNames, className, className && !showCount), _defineProperty$1(_classNames, "".concat(prefixCls, "-sm"), size === 'small' || customizeSize === 'small'), _defineProperty$1(_classNames, "".concat(prefixCls, "-lg"), size === 'large' || customizeSize === 'large'), _classNames)),
+      style: showCount ? undefined : style,
+      prefixCls: prefixCls,
+      onCompositionStart: onInternalCompositionStart,
+      onChange: handleChange,
+      onCompositionEnd: onInternalCompositionEnd,
+      ref: innerRef,
+      maxLength: maxLength
+    }));
+    var val = fixControlledValue(value);
+
+    if (!compositing && hasMaxLength && (props.value === null || props.value === undefined)) {
+      // fix #27612 将value转为数组进行截取，解决 '😂'.length === 2 等emoji表情导致的截取乱码的问题
+      val = fixEmojiLength(val, maxLength);
+    } // TextArea
+
+
+    var textareaNode = /*#__PURE__*/React.createElement(ClearableLabeledInput, _extends$1({}, props, {
+      prefixCls: prefixCls,
+      direction: direction,
+      inputType: "text",
+      value: val,
+      element: textArea,
+      handleReset: handleReset,
+      ref: clearableInputRef,
+      bordered: bordered,
+      style: showCount ? undefined : style
+    })); // Only show text area wrapper when needed
+
+    if (showCount) {
+      var valueLength = _toConsumableArray$1(val).length;
+
+      var dataCount = '';
+
+      if (_typeof$1(showCount) === 'object') {
+        dataCount = showCount.formatter({
+          count: valueLength,
+          maxLength: maxLength
+        });
+      } else {
+        dataCount = "".concat(valueLength).concat(hasMaxLength ? " / ".concat(maxLength) : '');
+      }
+
+      return /*#__PURE__*/React.createElement("div", {
+        className: classnames("".concat(prefixCls, "-textarea"), _defineProperty$1({}, "".concat(prefixCls, "-textarea-rtl"), direction === 'rtl'), "".concat(prefixCls, "-textarea-show-count"), className),
+        style: style,
+        "data-count": dataCount
+      }, textareaNode);
+    }
+
+    return textareaNode;
+  });
+
+  // This icon file is generated automatically.
+  var EyeOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M942.2 486.2C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 000 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3 7.7-16.2 7.7-35 0-51.5zM512 766c-161.3 0-279.4-81.8-362.7-254C232.6 339.8 350.7 258 512 258c161.3 0 279.4 81.8 362.7 254C791.5 684.2 673.4 766 512 766zm-4-430c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176-78.8-176-176-176zm0 288c-61.9 0-112-50.1-112-112s50.1-112 112-112 112 50.1 112 112-50.1 112-112 112z" } }] }, "name": "eye", "theme": "outlined" };
+
+  var EyeOutlined$1 = function EyeOutlined$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+      ref: ref,
+      icon: EyeOutlined
+    }));
+  };
+
+  EyeOutlined$1.displayName = 'EyeOutlined';
+  var EyeOutlined$2 = /*#__PURE__*/React.forwardRef(EyeOutlined$1);
+
+  // This icon file is generated automatically.
+  var EyeInvisibleOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M942.2 486.2Q889.47 375.11 816.7 305l-50.88 50.88C807.31 395.53 843.45 447.4 874.7 512 791.5 684.2 673.4 766 512 766q-72.67 0-133.87-22.38L323 798.75Q408 838 512 838q288.3 0 430.2-300.3a60.29 60.29 0 000-51.5zm-63.57-320.64L836 122.88a8 8 0 00-11.32 0L715.31 232.2Q624.86 186 512 186q-288.3 0-430.2 300.3a60.3 60.3 0 000 51.5q56.69 119.4 136.5 191.41L112.48 835a8 8 0 000 11.31L155.17 889a8 8 0 0011.31 0l712.15-712.12a8 8 0 000-11.32zM149.3 512C232.6 339.8 350.7 258 512 258c54.54 0 104.13 9.36 149.12 28.39l-70.3 70.3a176 176 0 00-238.13 238.13l-83.42 83.42C223.1 637.49 183.3 582.28 149.3 512zm246.7 0a112.11 112.11 0 01146.2-106.69L401.31 546.2A112 112 0 01396 512z" } }, { "tag": "path", "attrs": { "d": "M508 624c-3.46 0-6.87-.16-10.25-.47l-52.82 52.82a176.09 176.09 0 00227.42-227.42l-52.82 52.82c.31 3.38.47 6.79.47 10.25a111.94 111.94 0 01-112 112z" } }] }, "name": "eye-invisible", "theme": "outlined" };
+
+  var EyeInvisibleOutlined$1 = function EyeInvisibleOutlined$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+      ref: ref,
+      icon: EyeInvisibleOutlined
+    }));
+  };
+
+  EyeInvisibleOutlined$1.displayName = 'EyeInvisibleOutlined';
+  var EyeInvisibleOutlined$2 = /*#__PURE__*/React.forwardRef(EyeInvisibleOutlined$1);
+
+  var __rest$l = undefined && undefined.__rest || function (s, e) {
+    var t = {};
+
+    for (var p in s) {
+      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+    }
+
+    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+    }
+    return t;
+  };
+  var ActionMap = {
+    click: 'onClick',
+    hover: 'onMouseOver'
+  };
+  var Password = /*#__PURE__*/React.forwardRef(function (props, ref) {
+    var _useState = React.useState(false),
+        _useState2 = _slicedToArray$1(_useState, 2),
+        visible = _useState2[0],
+        setVisible = _useState2[1];
+
+    var onVisibleChange = function onVisibleChange() {
+      var disabled = props.disabled;
+
+      if (disabled) {
+        return;
+      }
+
+      setVisible(!visible);
+    };
+
+    var getIcon = function getIcon(prefixCls) {
+      var _iconProps;
+
+      var action = props.action,
+          _props$iconRender = props.iconRender,
+          iconRender = _props$iconRender === void 0 ? function () {
+        return null;
+      } : _props$iconRender;
+      var iconTrigger = ActionMap[action] || '';
+      var icon = iconRender(visible);
+      var iconProps = (_iconProps = {}, _defineProperty$1(_iconProps, iconTrigger, onVisibleChange), _defineProperty$1(_iconProps, "className", "".concat(prefixCls, "-icon")), _defineProperty$1(_iconProps, "key", 'passwordIcon'), _defineProperty$1(_iconProps, "onMouseDown", function onMouseDown(e) {
+        // Prevent focused state lost
+        // https://github.com/ant-design/ant-design/issues/15173
+        e.preventDefault();
+      }), _defineProperty$1(_iconProps, "onMouseUp", function onMouseUp(e) {
+        // Prevent caret position change
+        // https://github.com/ant-design/ant-design/issues/23524
+        e.preventDefault();
+      }), _iconProps);
+      return /*#__PURE__*/React.cloneElement( /*#__PURE__*/React.isValidElement(icon) ? icon : /*#__PURE__*/React.createElement("span", null, icon), iconProps);
+    };
+
+    var renderPassword = function renderPassword(_ref) {
+      var getPrefixCls = _ref.getPrefixCls;
+
+      var className = props.className,
+          customizePrefixCls = props.prefixCls,
+          customizeInputPrefixCls = props.inputPrefixCls,
+          size = props.size,
+          visibilityToggle = props.visibilityToggle,
+          restProps = __rest$l(props, ["className", "prefixCls", "inputPrefixCls", "size", "visibilityToggle"]);
+
+      var inputPrefixCls = getPrefixCls('input', customizeInputPrefixCls);
+      var prefixCls = getPrefixCls('input-password', customizePrefixCls);
+      var suffixIcon = visibilityToggle && getIcon(prefixCls);
+      var inputClassName = classnames(prefixCls, className, _defineProperty$1({}, "".concat(prefixCls, "-").concat(size), !!size));
+
+      var omittedProps = _extends$1(_extends$1({}, omit(restProps, ['suffix', 'iconRender'])), {
+        type: visible ? 'text' : 'password',
+        className: inputClassName,
+        prefixCls: inputPrefixCls,
+        suffix: suffixIcon
+      });
+
+      if (size) {
+        omittedProps.size = size;
+      }
+
+      return /*#__PURE__*/React.createElement(Input$1, _extends$1({
+        ref: ref
+      }, omittedProps));
+    };
+
+    return /*#__PURE__*/React.createElement(ConfigConsumer, null, renderPassword);
+  });
+  Password.defaultProps = {
+    action: 'click',
+    visibilityToggle: true,
+    iconRender: function iconRender(visible) {
+      return visible ? /*#__PURE__*/React.createElement(EyeOutlined$2, null) : /*#__PURE__*/React.createElement(EyeInvisibleOutlined$2, null);
+    }
+  };
+  Password.displayName = 'Password';
+
+  Input$1.Group = Group$2;
+  Input$1.Search = Search;
+  Input$1.TextArea = TextArea$1;
+  Input$1.Password = Password;
 
   function Mask$1(props) {
     var prefixCls = props.prefixCls,
@@ -64745,6 +65409,8 @@
       _classCallCheck(this, NumberDecimal);
 
       this.origin = '';
+      this.number = void 0;
+      this.empty = void 0;
 
       if (!value && value !== 0 || !String(value).trim()) {
         this.empty = true;
@@ -64836,10 +65502,17 @@
     return NumberDecimal;
   }();
   var BigIntDecimal = /*#__PURE__*/function () {
+    /** BigInt will convert `0009` to `9`. We need record the len of decimal */
     function BigIntDecimal(value) {
       _classCallCheck(this, BigIntDecimal);
 
       this.origin = '';
+      this.negative = void 0;
+      this.integer = void 0;
+      this.decimal = void 0;
+      this.decimalLen = void 0;
+      this.empty = void 0;
+      this.nan = void 0;
 
       if (!value && value !== 0 || !String(value).trim()) {
         this.empty = true;
@@ -65016,7 +65689,7 @@
       var advancedNum = Number(decimalStr[precision]);
 
       if (advancedNum >= 5) {
-        var advancedDecimal = getMiniDecimal(numStr).add("0.".concat('0'.repeat(precision)).concat(10 - advancedNum));
+        var advancedDecimal = getMiniDecimal(numStr).add("".concat(negativeStr, "0.").concat('0'.repeat(precision)).concat(10 - advancedNum));
         return toFixed(advancedDecimal.toString(), separatorStr, precision);
       }
 
@@ -65202,6 +65875,29 @@
   }
 
   /**
+   * Always trigger latest once when call multiple time
+   */
+
+  var useFrame = (function () {
+    var idRef = React.useRef(0);
+
+    var cleanUp = function cleanUp() {
+      wrapperRaf.cancel(idRef.current);
+    };
+
+    React.useEffect(function () {
+      return cleanUp;
+    }, []);
+    return function (callback) {
+      cleanUp();
+      idRef.current = wrapperRaf(function () {
+        callback();
+      });
+    };
+  });
+
+  var _excluded$b = ["prefixCls", "className", "style", "min", "max", "step", "defaultValue", "value", "disabled", "readOnly", "upHandler", "downHandler", "keyboard", "controls", "stringMode", "parser", "formatter", "precision", "decimalSeparator", "onChange", "onInput", "onPressEnter", "onStep"];
+  /**
    * We support `stringMode` which need handle correct type when user call in onChange
    */
 
@@ -65236,6 +65932,8 @@
         upHandler = props.upHandler,
         downHandler = props.downHandler,
         keyboard = props.keyboard,
+        _props$controls = props.controls,
+        controls = _props$controls === void 0 ? true : _props$controls,
         stringMode = props.stringMode,
         parser = props.parser,
         formatter = props.formatter,
@@ -65245,7 +65943,7 @@
         onInput = props.onInput,
         onPressEnter = props.onPressEnter,
         onStep = props.onStep,
-        inputProps = _objectWithoutProperties(props, ["prefixCls", "className", "style", "min", "max", "step", "defaultValue", "value", "disabled", "readOnly", "upHandler", "downHandler", "keyboard", "stringMode", "parser", "formatter", "precision", "decimalSeparator", "onChange", "onInput", "onPressEnter", "onStep"]);
+        inputProps = _objectWithoutProperties(props, _excluded$b);
 
     var inputClassName = "".concat(prefixCls, "-input");
     var inputRef = React.useRef(null);
@@ -65314,9 +66012,13 @@
       return parsedStr.replace(/[^\w.-]+/g, '');
     }, [parser, decimalSeparator]); // >>> Formatter
 
+    var inputValueRef = React.useRef('');
     var mergedFormatter = React.useCallback(function (number, userTyping) {
       if (formatter) {
-        return formatter(number);
+        return formatter(number, {
+          userTyping: userTyping,
+          input: String(inputValueRef.current)
+        });
       }
 
       var str = typeof number === 'number' ? num2str(number) : number; // User typing will not auto format with precision directly
@@ -65355,8 +66057,9 @@
     }),
         _React$useState6 = _slicedToArray$1(_React$useState5, 2),
         inputValue = _React$useState6[0],
-        setInternalInputValue = _React$useState6[1]; // Should always be string
+        setInternalInputValue = _React$useState6[1];
 
+    inputValueRef.current = inputValue; // Should always be string
 
     function setInputValue(newValue, userTyping) {
       setInternalInputValue(mergedFormatter( // Invalidate number is sometime passed by external control, we should let it go
@@ -65463,8 +66166,9 @@
 
       return decimalValue;
     }; // ========================== User Input ==========================
-    // >>> Collect input value
 
+
+    var onNextPromise = useFrame(); // >>> Collect input value
 
     var collectInputValue = function collectInputValue(inputStr) {
       recordCursor(); // Update inputValue incase input can not parse as number
@@ -65478,7 +66182,23 @@
         if (!finalDecimal.isNaN()) {
           triggerValueUpdate(finalDecimal, true);
         }
-      }
+      } // Trigger onInput later to let user customize value if they want do handle something after onChange
+
+
+      onInput === null || onInput === void 0 ? void 0 : onInput(inputStr); // optimize for chinese input experience
+      // https://github.com/ant-design/ant-design/issues/8196
+
+      onNextPromise(function () {
+        var nextInputStr = inputStr;
+
+        if (!parser) {
+          nextInputStr = inputStr.replace(/。/g, '.');
+        }
+
+        if (nextInputStr !== inputStr) {
+          collectInputValue(nextInputStr);
+        }
+      });
     }; // >>> Composition
 
 
@@ -65493,16 +66213,7 @@
 
 
     var onInternalInput = function onInternalInput(e) {
-      var inputStr = e.target.value; // optimize for chinese input experience
-      // https://github.com/ant-design/ant-design/issues/8196
-
-      if (!parser) {
-        inputStr = inputStr.replace(/。/g, '.');
-      }
-
-      collectInputValue(inputStr); // Trigger onInput later to let user customize value if they want do handle something after onChange
-
-      onInput === null || onInput === void 0 ? void 0 : onInput(inputStr);
+      collectInputValue(e.target.value);
     }; // ============================= Step =============================
 
 
@@ -65567,7 +66278,7 @@
           userTypingRef.current = false;
         }
 
-        flushInputValue(true);
+        flushInputValue(false);
         onPressEnter === null || onPressEnter === void 0 ? void 0 : onPressEnter(event);
       }
 
@@ -65603,12 +66314,13 @@
 
     useUpdateEffect(function () {
       var newValue = getMiniDecimal(value);
-      setDecimalValue(newValue); // When user typing from `1.2` to `1.`, we should not convert to `1` immediately.
+      setDecimalValue(newValue);
+      var currentParsedValue = getMiniDecimal(mergedParser(inputValue)); // When user typing from `1.2` to `1.`, we should not convert to `1` immediately.
       // But let it go if user set `formatter`
 
-      if (newValue.isNaN() || !userTypingRef.current || formatter) {
+      if (!newValue.equals(currentParsedValue) || !userTypingRef.current || formatter) {
         // Update value as effect
-        setInputValue(newValue, false);
+        setInputValue(newValue, userTypingRef.current);
       }
     }, [value]); // ============================ Cursor ============================
 
@@ -65629,7 +66341,7 @@
       onKeyUp: onKeyUp,
       onCompositionStart: onCompositionStart,
       onCompositionEnd: onCompositionEnd
-    }, /*#__PURE__*/React.createElement(StepHandler, {
+    }, controls && /*#__PURE__*/React.createElement(StepHandler, {
       prefixCls: prefixCls,
       upNode: upHandler,
       downNode: downHandler,
@@ -65693,10 +66405,12 @@
     var className = props.className,
         customizeSize = props.size,
         customizePrefixCls = props.prefixCls,
+        addonBefore = props.addonBefore,
+        addonAfter = props.addonAfter,
         _props$bordered = props.bordered,
         bordered = _props$bordered === void 0 ? true : _props$bordered,
         readOnly = props.readOnly,
-        others = __rest$m(props, ["className", "size", "prefixCls", "bordered", "readOnly"]);
+        others = __rest$m(props, ["className", "size", "prefixCls", "addonBefore", "addonAfter", "bordered", "readOnly"]);
 
     var prefixCls = getPrefixCls('input-number', customizePrefixCls);
     var upIcon = /*#__PURE__*/React.createElement(UpOutlined$2, {
@@ -65707,7 +66421,7 @@
     });
     var mergeSize = customizeSize || size;
     var inputNumberClass = classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-lg"), mergeSize === 'large'), _defineProperty$1(_classNames, "".concat(prefixCls, "-sm"), mergeSize === 'small'), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _defineProperty$1(_classNames, "".concat(prefixCls, "-readonly"), readOnly), _defineProperty$1(_classNames, "".concat(prefixCls, "-borderless"), !bordered), _classNames), className);
-    return /*#__PURE__*/React.createElement(InputNumber, _extends$1({
+    var element = /*#__PURE__*/React.createElement(InputNumber, _extends$1({
       ref: ref,
       className: inputNumberClass,
       upHandler: upIcon,
@@ -65715,6 +66429,31 @@
       prefixCls: prefixCls,
       readOnly: readOnly
     }, others));
+
+    if (addonBefore != null || addonAfter != null) {
+      var _classNames3;
+
+      var wrapperClassName = "".concat(prefixCls, "-group");
+      var addonClassName = "".concat(wrapperClassName, "-addon");
+      var addonBeforeNode = addonBefore ? /*#__PURE__*/React.createElement("div", {
+        className: addonClassName
+      }, addonBefore) : null;
+      var addonAfterNode = addonAfter ? /*#__PURE__*/React.createElement("div", {
+        className: addonClassName
+      }, addonAfter) : null;
+      var mergedWrapperClassName = classnames("".concat(prefixCls, "-wrapper"), wrapperClassName, _defineProperty$1({}, "".concat(wrapperClassName, "-rtl"), direction === 'rtl'));
+      var mergedGroupClassName = classnames("".concat(prefixCls, "-group-wrapper"), (_classNames3 = {}, _defineProperty$1(_classNames3, "".concat(prefixCls, "-group-wrapper-sm"), size === 'small'), _defineProperty$1(_classNames3, "".concat(prefixCls, "-group-wrapper-lg"), size === 'large'), _defineProperty$1(_classNames3, "".concat(prefixCls, "-group-wrapper-rtl"), direction === 'rtl'), _classNames3), className);
+      return /*#__PURE__*/React.createElement("div", {
+        className: mergedGroupClassName,
+        style: props.style
+      }, /*#__PURE__*/React.createElement("div", {
+        className: mergedWrapperClassName
+      }, addonBeforeNode, cloneElement(element, {
+        style: null
+      }), addonAfterNode));
+    }
+
+    return element;
   });
 
   var __rest$n = undefined && undefined.__rest || function (s, e) {
@@ -65825,6 +66564,10 @@
     okType: 'primary'
   };
 
+  function isThenable(thing) {
+    return !!(thing && !!thing.then);
+  }
+
   var ActionButton = function ActionButton(props) {
     var clickedRef = React.useRef(false);
     var ref = React.useRef();
@@ -65852,17 +66595,17 @@
     }, []);
 
     var handlePromiseOnOk = function handlePromiseOnOk(returnValueOfOnOk) {
-      var closeModal = props.closeModal;
+      var close = props.close;
 
-      if (!returnValueOfOnOk || !returnValueOfOnOk.then) {
+      if (!isThenable(returnValueOfOnOk)) {
         return;
       }
 
       setLoading(true);
       returnValueOfOnOk.then(function () {
-        // It's unnecessary to set loading=false, for the Modal will be unmounted after close.
-        // setState({ loading: false });
-        closeModal.apply(void 0, arguments);
+        setLoading(false);
+        close.apply(void 0, arguments);
+        clickedRef.current = false;
       }, function (e) {
         // Emit error when catch promise reject
         // eslint-disable-next-line no-console
@@ -65873,9 +66616,9 @@
       });
     };
 
-    var onClick = function onClick() {
+    var onClick = function onClick(e) {
       var actionFn = props.actionFn,
-          closeModal = props.closeModal;
+          close = props.close;
 
       if (clickedRef.current) {
         return;
@@ -65884,21 +66627,29 @@
       clickedRef.current = true;
 
       if (!actionFn) {
-        closeModal();
+        close();
         return;
       }
 
       var returnValueOfOnOk;
 
-      if (actionFn.length) {
-        returnValueOfOnOk = actionFn(closeModal); // https://github.com/ant-design/ant-design/issues/23358
+      if (props.emitEvent) {
+        returnValueOfOnOk = actionFn(e);
+
+        if (props.quitOnNullishReturnValue && !isThenable(returnValueOfOnOk)) {
+          clickedRef.current = false;
+          close(e);
+          return;
+        }
+      } else if (actionFn.length) {
+        returnValueOfOnOk = actionFn(close); // https://github.com/ant-design/ant-design/issues/23358
 
         clickedRef.current = false;
       } else {
         returnValueOfOnOk = actionFn();
 
         if (!returnValueOfOnOk) {
-          closeModal();
+          close();
           return;
         }
       }
@@ -65938,6 +66689,7 @@
         direction = props.direction,
         prefixCls = props.prefixCls,
         rootPrefixCls = props.rootPrefixCls,
+        iconPrefixCls = props.iconPrefixCls,
         bodyStyle = props.bodyStyle,
         _props$closable = props.closable,
         closable = _props$closable === void 0 ? false : _props$closable,
@@ -65959,12 +66711,16 @@
     var classString = classnames(contentPrefixCls, "".concat(contentPrefixCls, "-").concat(props.type), _defineProperty$1({}, "".concat(contentPrefixCls, "-rtl"), direction === 'rtl'), props.className);
     var cancelButton = okCancel && /*#__PURE__*/React.createElement(ActionButton, {
       actionFn: onCancel,
-      closeModal: close,
+      close: close,
       autoFocus: autoFocusButton === 'cancel',
       buttonProps: cancelButtonProps,
       prefixCls: "".concat(rootPrefixCls, "-btn")
     }, cancelText);
-    return /*#__PURE__*/React.createElement(Modal, {
+    return /*#__PURE__*/React.createElement(ConfigProvider, {
+      prefixCls: rootPrefixCls,
+      iconPrefixCls: iconPrefixCls,
+      direction: direction
+    }, /*#__PURE__*/React.createElement(Modal, {
       prefixCls: prefixCls,
       className: classString,
       wrapClassName: classnames(_defineProperty$1({}, "".concat(contentPrefixCls, "-centered"), !!props.centered)),
@@ -65982,6 +66738,7 @@
       maskClosable: maskClosable,
       maskStyle: maskStyle,
       style: style,
+      bodyStyle: bodyStyle,
       width: width,
       zIndex: zIndex,
       afterClose: afterClose,
@@ -65994,26 +66751,22 @@
       focusTriggerAfterClose: focusTriggerAfterClose
     }, /*#__PURE__*/React.createElement("div", {
       className: "".concat(contentPrefixCls, "-body-wrapper")
-    }, /*#__PURE__*/React.createElement(ConfigProvider, {
-      prefixCls: rootPrefixCls,
-      direction: direction
     }, /*#__PURE__*/React.createElement("div", {
-      className: "".concat(contentPrefixCls, "-body"),
-      style: bodyStyle
+      className: "".concat(contentPrefixCls, "-body")
     }, icon, props.title === undefined ? null : /*#__PURE__*/React.createElement("span", {
       className: "".concat(contentPrefixCls, "-title")
     }, props.title), /*#__PURE__*/React.createElement("div", {
       className: "".concat(contentPrefixCls, "-content")
-    }, props.content))), /*#__PURE__*/React.createElement("div", {
+    }, props.content)), /*#__PURE__*/React.createElement("div", {
       className: "".concat(contentPrefixCls, "-btns")
     }, cancelButton, /*#__PURE__*/React.createElement(ActionButton, {
       type: okType,
       actionFn: onOk,
-      closeModal: close,
+      close: close,
       autoFocus: autoFocusButton === 'ok',
       buttonProps: okButtonProps,
       prefixCls: "".concat(rootPrefixCls, "-btn")
-    }, okText))));
+    }, okText)))));
   };
 
   var destroyFns = [];
@@ -66037,8 +66790,7 @@
   }
 
   function confirm(config) {
-    var div = document.createElement('div');
-    document.body.appendChild(div); // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    var container = document.createDocumentFragment(); // eslint-disable-next-line @typescript-eslint/no-use-before-define
 
     var currentConfig = _extends$1(_extends$1({}, config), {
       close: close,
@@ -66046,11 +66798,7 @@
     });
 
     function destroy() {
-      var unmountResult = reactDom.unmountComponentAtNode(div);
-
-      if (unmountResult && div.parentNode) {
-        div.parentNode.removeChild(div);
-      }
+      reactDom.unmountComponentAtNode(container);
 
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
         args[_key] = arguments[_key];
@@ -66090,17 +66838,20 @@
         var runtimeLocale = getConfirmLocale();
 
         var _globalConfig = globalConfig(),
-            getPrefixCls = _globalConfig.getPrefixCls; // because Modal.config  set rootPrefixCls, which is different from other components
+            getPrefixCls = _globalConfig.getPrefixCls,
+            getIconPrefixCls = _globalConfig.getIconPrefixCls; // because Modal.config  set rootPrefixCls, which is different from other components
 
 
         var rootPrefixCls = getPrefixCls(undefined, getRootPrefixCls());
         var prefixCls = customizePrefixCls || "".concat(rootPrefixCls, "-modal");
+        var iconPrefixCls = getIconPrefixCls();
         reactDom.render( /*#__PURE__*/React.createElement(ConfirmDialog, _extends$1({}, props, {
           prefixCls: prefixCls,
           rootPrefixCls: rootPrefixCls,
+          iconPrefixCls: iconPrefixCls,
           okText: okText || (props.okCancel ? runtimeLocale.okText : runtimeLocale.justOkText),
           cancelText: cancelText || runtimeLocale.cancelText
-        })), div);
+        })), container);
       });
     }
 
@@ -66232,7 +66983,7 @@
     var prefixCls = getPrefixCls('modal');
     var rootPrefixCls = getPrefixCls();
 
-    function close() {
+    var close = function close() {
       setVisible(false);
 
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -66246,7 +66997,7 @@
       if (innerConfig.onCancel && triggerCancel) {
         innerConfig.onCancel();
       }
-    }
+    };
 
     React.useImperativeHandle(ref, function () {
       return {
@@ -67252,7 +68003,7 @@
     });
   };
 
-  var _excluded$4 = ["component", "prefixCls", "className", "disabled", "id", "style", "multiple", "accept", "children", "directory", "openFileDialogOnClick", "onMouseEnter", "onMouseLeave", "capture"];
+  var _excluded$c = ["component", "prefixCls", "className", "disabled", "id", "style", "multiple", "accept", "children", "directory", "openFileDialogOnClick", "onMouseEnter", "onMouseLeave", "capture"];
 
   var AjaxUploader = /*#__PURE__*/function (_Component) {
     _inherits(AjaxUploader, _Component);
@@ -67608,7 +68359,7 @@
             onMouseEnter = _this$props4.onMouseEnter,
             onMouseLeave = _this$props4.onMouseLeave,
             capture = _this$props4.capture,
-            otherProps = _objectWithoutProperties(_this$props4, _excluded$4);
+            otherProps = _objectWithoutProperties(_this$props4, _excluded$c);
 
         var cls = classnames((_classNames = {}, _defineProperty$1(_classNames, prefixCls, true), _defineProperty$1(_classNames, "".concat(prefixCls, "-disabled"), disabled), _defineProperty$1(_classNames, className, className), _classNames)); // because input don't have directory/webkitdirectory type declaration
 
@@ -69102,7 +69853,13 @@
     type: "ApaasInput",
     name: COMPONENT_NAME,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$1 = '数字输入框';
@@ -69157,7 +69914,13 @@
     type: "ApaasInputNumber",
     name: COMPONENT_NAME$1,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$2 = '多行输入框';
@@ -69212,7 +69975,13 @@
     type: "ApaasTextArea",
     name: COMPONENT_NAME$2,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var ApaasForm = function ApaasForm(props) {
@@ -69332,7 +70101,13 @@
     type: "ApaasForm",
     name: "表单容器",
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_CONTAINER
+    __componentType__: COMPONENT_TYPE_CONTAINER,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$3 = '单选框';
@@ -69421,7 +70196,13 @@
     type: "ApaasRadio",
     name: COMPONENT_NAME$3,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$4 = '下拉选择';
@@ -69513,7 +70294,13 @@
     type: "ApaasSingleSelect",
     name: COMPONENT_NAME$4,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$5 = '多选框';
@@ -69584,7 +70371,13 @@
     type: "ApaasCheckBox",
     name: COMPONENT_NAME$5,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$6 = '下拉多选';
@@ -69671,7 +70464,13 @@
     type: "ApaasMultSelect",
     name: COMPONENT_NAME$6,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$7 = '日期';
@@ -69738,7 +70537,13 @@
     type: "ApaasDatePicker",
     name: COMPONENT_NAME$7,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var COMPONENT_NAME$8 = '图片上传';
@@ -69940,7 +70745,13 @@
     type: "ApaasImageUpload",
     name: COMPONENT_NAME$8,
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_FORM
+    __componentType__: COMPONENT_TYPE_FORM,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var ApaasText = function ApaasText(props) {
@@ -69988,14 +70799,19 @@
     __source__: CURRENT_PACKAGE_NAME,
     __componentType__: COMPONENT_TYPE_BASIC,
     __componentLayout__: COMPONENT_LAYOUT_INLINE,
-    __isNeedCommonStyleConfig__: true // 扩展字段，是否需要通用样式
+    __isNeedCommonStyleConfig__: true,
+    // 扩展字段，是否需要通用样式
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
 
   };
 
   var ApaasBox = function ApaasBox(props) {
     var children = props.children,
         styles = props.styles;
-    console.log('BOX', styles);
     return /*#__PURE__*/React__default['default'].createElement("div", {
       style: styles
     }, children);
@@ -70031,7 +70847,13 @@
     name: "Box",
     // 组件名称，组件展示时使用
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_CONTAINER
+    __componentType__: COMPONENT_TYPE_CONTAINER,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   function styleInject(css, ref) {
@@ -70244,7 +71066,13 @@
     type: "ApaasButton",
     name: "按钮",
     __source__: CURRENT_PACKAGE_NAME,
-    __componentType__: COMPONENT_TYPE_BASIC
+    __componentType__: COMPONENT_TYPE_BASIC,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
   };
 
   var index$2 = {
@@ -70259,10 +71087,10 @@
     ApaasMultSelect: ApaasMultSelect,
     ApaasDatePicker: ApaasDatePicker,
     ApaasImageUpload: ApaasImageUpload,
-    // ApaasIterator,
     ApaasModal: ApaasModal,
     ApaasForm: ApaasForm,
-    ApaasButton: ApaasButton
+    ApaasButton: ApaasButton,
+    showComponentList: [ApaasText, ApaasBox, ApaasInput, ApaasInputNumber, ApaasTextArea, ApaasRadio, ApaasCheckBox, ApaasSingleSelect, ApaasMultSelect, ApaasDatePicker, ApaasImageUpload, ApaasForm, ApaasButton]
   };
 
   return index$2;

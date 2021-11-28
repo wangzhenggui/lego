@@ -1,14 +1,8 @@
 import React from 'react';
 import FR from './Fr';
 
-const RenderChildren = ({ child = [] }) => {
-  return (
-    <>
-      {child.map((node) => {
-        return <FR key={node.id} id={node.id} />;
-      })}
-    </>
-  );
+const RenderChildren = ({ child }) => {
+  return <FR key={child.id} id={child.id} />;
 };
 
 export default RenderChildren;

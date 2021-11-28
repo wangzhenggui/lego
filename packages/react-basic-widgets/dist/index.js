@@ -503,7 +503,13 @@ ApaasInput.schema = {
   type: "ApaasInput",
   name: COMPONENT_NAME,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$1 = '数字输入框';
@@ -558,7 +564,13 @@ ApaasInputNumber.schema = {
   type: "ApaasInputNumber",
   name: COMPONENT_NAME$1,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$2 = '多行输入框';
@@ -613,7 +625,13 @@ ApaasTextArea.schema = {
   type: "ApaasTextArea",
   name: COMPONENT_NAME$2,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var ApaasForm = function ApaasForm(props) {
@@ -733,7 +751,13 @@ ApaasForm.schema = {
   type: "ApaasForm",
   name: "表单容器",
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_CONTAINER
+  __componentType__: COMPONENT_TYPE_CONTAINER,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$3 = '单选框';
@@ -822,7 +846,13 @@ ApaasRadio.schema = {
   type: "ApaasRadio",
   name: COMPONENT_NAME$3,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$4 = '下拉选择';
@@ -914,7 +944,13 @@ ApaasSingleSelect.schema = {
   type: "ApaasSingleSelect",
   name: COMPONENT_NAME$4,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$5 = '多选框';
@@ -985,7 +1021,13 @@ ApaasCheckBox.schema = {
   type: "ApaasCheckBox",
   name: COMPONENT_NAME$5,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$6 = '下拉多选';
@@ -1072,7 +1114,13 @@ ApaasMultSelect.schema = {
   type: "ApaasMultSelect",
   name: COMPONENT_NAME$6,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$7 = '日期';
@@ -1139,7 +1187,13 @@ ApaasDatePicker.schema = {
   type: "ApaasDatePicker",
   name: COMPONENT_NAME$7,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var COMPONENT_NAME$8 = '图片上传';
@@ -1341,7 +1395,13 @@ ApaasImageUpload.schema = {
   type: "ApaasImageUpload",
   name: COMPONENT_NAME$8,
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_FORM
+  __componentType__: COMPONENT_TYPE_FORM,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var ApaasText = function ApaasText(props) {
@@ -1389,14 +1449,19 @@ ApaasText.schema = {
   __source__: CURRENT_PACKAGE_NAME,
   __componentType__: COMPONENT_TYPE_BASIC,
   __componentLayout__: COMPONENT_LAYOUT_INLINE,
-  __isNeedCommonStyleConfig__: true // 扩展字段，是否需要通用样式
+  __isNeedCommonStyleConfig__: true,
+  // 扩展字段，是否需要通用样式
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
 
 };
 
 var ApaasBox = function ApaasBox(props) {
   var children = props.children,
       styles = props.styles;
-  console.log('BOX', styles);
   return /*#__PURE__*/React__default['default'].createElement("div", {
     style: styles
   }, children);
@@ -1432,7 +1497,13 @@ ApaasBox.schema = {
   name: "Box",
   // 组件名称，组件展示时使用
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_CONTAINER
+  __componentType__: COMPONENT_TYPE_CONTAINER,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 function styleInject(css, ref) {
@@ -1645,7 +1716,13 @@ ApaasButton.schema = {
   type: "ApaasButton",
   name: "按钮",
   __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_BASIC
+  __componentType__: COMPONENT_TYPE_BASIC,
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: true,
+  // 是否支持被复制
+  __canMove__: true // 是否支持被移动
+
 };
 
 var index = {
@@ -1660,10 +1737,10 @@ var index = {
   ApaasMultSelect: ApaasMultSelect,
   ApaasDatePicker: ApaasDatePicker,
   ApaasImageUpload: ApaasImageUpload,
-  // ApaasIterator,
   ApaasModal: ApaasModal,
   ApaasForm: ApaasForm,
-  ApaasButton: ApaasButton
+  ApaasButton: ApaasButton,
+  showComponentList: [ApaasText, ApaasBox, ApaasInput, ApaasInputNumber, ApaasTextArea, ApaasRadio, ApaasCheckBox, ApaasSingleSelect, ApaasMultSelect, ApaasDatePicker, ApaasImageUpload, ApaasForm, ApaasButton]
 };
 
 module.exports = index;

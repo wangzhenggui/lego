@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'dva';
-import { ROOT_NODE_FLAG } from '@/common/constant';
+import { ROOT_NODE_FLAG, NEED_SINGLE_RENDER_CHILDREN } from '@/common/constant';
 import Wrapper from '@/components/Wrapper';
 import RenderWidget from './RenderWidget';
 import RenderChildren from './RenderChild';
@@ -9,7 +9,6 @@ import styles from './index.less';
 
 const FR = (props) => {
   const { id = ROOT_NODE_FLAG, renderTree } = props;
-
   const currentNodeConfig = findNodeById([renderTree], id); // 在整棵树中找到当前id的那个节点
   // container组件为空的时候
   if (id === ROOT_NODE_FLAG && renderTree?.child?.length === 0) {
@@ -21,15 +20,18 @@ const FR = (props) => {
       </Wrapper>
     )
   }
-  return (
-    <Wrapper id={id} className={styles.rootWrapper}>
-      <RenderWidget {...currentNodeConfig}>
-        { currentNodeConfig?.child?.length > 0 && 
-          <RenderChildren child={currentNodeConfig.child} />
-        }
-      </RenderWidget>
-    </Wrapper>
-  )
+
+return (
+  <Wrapper id={id} className={styles.rootWrapper}>
+    <RenderWidget {...currentNodeConfig}>
+      {
+        currentNodeConfig?.child.length > 0 ? currentNodeConfig?.child?.map(c => {
+          return <RenderChildren child={c} />
+        }) : null
+      }
+    </RenderWidget>
+</Wrapper>
+)
 };
 
 export default connect((state) => {

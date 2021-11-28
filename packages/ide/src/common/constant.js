@@ -60,3 +60,4 @@ export const ROOT_NODE_FLAG = '#';
 // 节点来源
 export const NODE_FROM_ADD = 'add'; // 左侧添加
 export const NODE_FROM_MOVE = 'move'; // 容器类移动
+
