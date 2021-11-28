@@ -18,15 +18,16 @@ import {
   getInfoBySchema,
 } from '@/common/tools';
 import { nanoid } from 'nanoid';
-import { toLower, cloneDeep, findIndex, set, eq, get } from 'lodash';
+import { toLower, cloneDeep, findIndex, isEmpty, eq, get } from 'lodash';
 import styles from './index.less';
 
 const Wrapper = ({ children, id, renderTree, dispatch, currentNode }) => {
   const rootNode = isRootNode(id);
   const isSelected = currentNode?.id === id;
   const idToNode = findNodeById([renderTree], id);
+  const currentSchema = getInfoBySchema(idToNode?.sourcePackage, idToNode?.componentName)
   const isTextNode = eq(
-    getInfoBySchema(idToNode.sourcePackage, idToNode.componentName, '__componentLayout__'),
+    get(currentSchema, '__componentLayout__'),
     COMPONENT_LAYOUT_INLINE,
   );
   const wrapRef = useRef(null);
@@ -155,23 +156,6 @@ const Wrapper = ({ children, id, renderTree, dispatch, currentNode }) => {
 
         // 通过sourcePackage、componentName获取schema
         const resourceSchema = getInfoBySchema(item.sourcePackage, item.componentName)
-        // 为表单组件统一增加formItem的公共配置 TODO: 这一部分功能移动到元组件内部了，要不然后期维护可能会出现问题
-        // if (isFormType(resourceSchema?.__componentType__)) {
-        //   const newFormFieldSchema = cloneDeep(formFieldSchema);
-        //   set(newFormFieldSchema, 'label.default', resourceSchema?.name);
-        //   set(resourceSchema, 'basicSchema.properties', {
-        //     ...resourceSchema?.basicSchema?.properties,
-        //     ...newFormFieldSchema,
-        //   });
-        // }
-        // 为容器组件和基础组件统一的添加样式配置
-        // if (resourceSchema) {
-        //   const newStyleSchema = cloneDeep(styleSchema);
-        //   set(resourceSchema, 'styleSchema.properties', {
-        //     ...resourceSchema?.styleSchema?.properties,
-        //     ...newStyleSchema,
-        //   });
-        // }
         const basicProps = getPropsBySchema(resourceSchema?.basicSchema);
         const styleProps = getPropsByStyleSchema(resourceSchema?.styleSchema);
         const expandProps = getPropsBySchema(resourceSchema?.expandSchema);
@@ -184,6 +168,43 @@ const Wrapper = ({ children, id, renderTree, dispatch, currentNode }) => {
           __componentType__: resourceSchema?.__componentType__,
           child: [],
         };
+        /**
+         * child: []
+            componentName: "ApaasTabs"
+            componentZhName: "选项卡"
+            expandProps: {didMount: ''}
+            id: "apaastabs-7P-WyoGvrmTVGXfD"
+            props: {items: Array(3), id: 'apaastabs-7P-WyoGvrmTVGXfD'}
+            sourcePackage: "@apaas-lego/react-basic-widgets"
+            styleProps: {width: undefined, height: undefined, background: undefined, display: 'block', flexDirection: 'row', …}
+            __componentType__: "basic"
+         */
+        if (!isEmpty(get(resourceSchema, '__subContainer__'))) {
+          // TODO: 组件schema内部定义
+          const { packageName, slotContainerName, lengthDependencies } = get(resourceSchema, '__subContainer__', {});
+          const subContainerComp = get(window, `${packageName}.${slotContainerName}`)
+          const subContainerLength = lengthDependencies(newNode.props);
+          for (let i = 0; i < subContainerLength; i++) {
+            const subContainerSchema = get(subContainerComp, 'schema', {})
+            const { type, name, __componentType__, __source__ } = subContainerSchema;
+            const subComponentId = `${toLower(type)}-${nanoid(16)}`;
+            const basicProps = getPropsBySchema(subContainerSchema?.basicSchema);
+            const styleProps = getPropsByStyleSchema(subContainerSchema?.styleSchema);
+            const expandProps = getPropsBySchema(subContainerSchema?.expandSchema);
+            newNode.child.push({
+              componentName: type,
+              componentZhName: name,
+              __componentType__,
+              sourcePackage: __source__,
+              child: [],
+              basicProps,
+              styleProps,
+              expandProps,
+              id: subComponentId
+            })
+          }
+        }
+        
         // 当前节点是容器节点，或者是Root节点
         if (isContainerType(moveInNode?.__componentType__) || rootNode) {
           moveInNode?.child.push(newNode);
@@ -315,23 +336,35 @@ const Wrapper = ({ children, id, renderTree, dispatch, currentNode }) => {
       {children}
       {!rootNode && isSelected && (
         <>
-          <div className={styles.pointerMove} ref={dragRef}>
-            <DragOutlined />
-          </div>
+          {
+            currentSchema?.__canMove__ && (
+              <div className={styles.pointerMove} ref={dragRef}>
+                <DragOutlined />
+              </div>
+            )
+          }
           <div className={styles.pointerWrapper}>
-            <div className={styles.pointer}>
-              <Popconfirm
-                title="确定删除该组件?"
-                onConfirm={handleDelete}
-                okText="确定"
-                cancelText="取消"
-              >
-                <DeleteOutlined />
-              </Popconfirm>
-            </div>
-            <div className={styles.pointer} onClick={handleCopy}>
-              <CopyOutlined />
-            </div>
+            {
+              currentSchema?.__canDelete__ && (
+                <div className={styles.pointer}>
+                  <Popconfirm
+                    title="确定删除该组件?"
+                    onConfirm={handleDelete}
+                    okText="确定"
+                    cancelText="取消"
+                  >
+                    <DeleteOutlined />
+                  </Popconfirm>
+                </div>
+              )
+            }
+            {
+              currentSchema?.__canCopy__ && (
+                <div className={styles.pointer} onClick={handleCopy}>
+                  <CopyOutlined />
+                </div>
+              )
+            }
           </div>
         </>
       )}

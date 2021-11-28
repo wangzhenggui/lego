@@ -1,6 +1,6 @@
 import React from 'react';
 import { Form } from 'antd';
-import { get, set } from 'lodash';
+import { get } from 'lodash';
 import { isFormType, isContainerType, getInfoBySchema } from '@/common/tools';
 import { ROOT_NODE_FLAG } from '@/common/constant';
 

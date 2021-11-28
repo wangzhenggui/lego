@@ -119,8 +119,8 @@ export const calcNewStylesByProps = props => {
 export const getPropsByStyleSchema = (schema) => {
   const result = {};
   const getLeafNode = (tree) => {
-    if (tree.type === 'object') {
-      Object.keys(tree.properties).map(t => {
+    if (tree?.type === 'object') {
+      Object.keys(tree?.properties).map(t => {
         if (tree.properties[t]['type'] === 'object') {
           getLeafNode(tree.properties[t])
         } else {
@@ -155,3 +155,7 @@ export const getInfoBySchema = (packageName, componentName, key) => {
 //   getLeafNode(schema);
 //   return schema;
 // }
+
+// TODO: 特殊逻辑
+export const isTabs = (schemas) => schemas?.type === 'ApaasTabs' && schemas?.__source__ === '@apaas-lego/react-container-widgets'
+export const isContainer = (schemas) => schemas?.type === 'ApaasLayout' && schemas?.__source__ === '@apaas-lego/react-container-widgets'

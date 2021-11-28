@@ -12,6 +12,7 @@ import {
   insertNodeInParentTreePosition,
   moveNode,
   removeNodeOnParentTree,
+  getInfoBySchema
 } from '@/common/tools';
 import styles from './index.less';
 
@@ -44,13 +45,18 @@ const ComponentTree = ({ renderTree, currentNode, dispatch }) => {
   const onDrop = ({ dropToGap, node, dragNode: currentDragNode, dropPosition }) => {
     // dropToGap true表示是当前节点的兄弟结点；false表示当前结点的子节点
     // currentDragNode 当前操作节点
-    // dropToGap 移入节点
+    // node 移入节点
     // dropPosition 节点相对位置 [-1,0,1]
     const copyRenderTree = cloneDeep(renderTree);
     const dropPos = node.pos.split('-');
     const position = dropPosition - Number(dropPos[dropPos.length - 1]);
     
     const dragNode = findNodeById([copyRenderTree], currentDragNode.key);
+    const canMove = getInfoBySchema(dragNode?.sourcePackage, dragNode?.componentName, '__canMove__')
+    if (!canMove) {
+      console.debug('当前节点不可以被移动')
+      return
+    }
     const moveInNode = findNodeById([copyRenderTree], node.key);
     const dragNodeParent = findNodeParentById(
       [copyRenderTree],
@@ -64,8 +70,11 @@ const ComponentTree = ({ renderTree, currentNode, dispatch }) => {
     );
     console.debug('dropToGap', dropToGap, 'node', node, 'currentDragNode', currentDragNode, 'dropPosition', dropPosition, 'position', position)
     if (dropToGap) { // 兄弟节点情况
-      // 兄弟节点是否是最外层节点
-      if (isRootNode(node.key)) return;
+      // 兄弟节点是否是最外层节点 看下兄弟节点的父节点是不是一个容器
+      if (isRootNode(node.key) || !(isContainerType(moveInNodeParent?.__componentType__))) {
+        console.debug('移入节点的父节点不是一个容器节点')
+        return;
+      }
       // 位置并未移动
       const beforePos = dropPos.slice(0, dropPos.length - 1);
       beforePos.push(dropPosition)

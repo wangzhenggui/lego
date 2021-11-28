@@ -1,6 +1,5 @@
 import React from 'react';
 import { Tabs } from 'antd';
-import GlobalConfig from '../GlobalConfig';
 import BasicConfig from '../BasicConfig';
 import StyleConfig from '../StyleConfig';
 import AdvancedConfig from '../AdvancedConfig';
