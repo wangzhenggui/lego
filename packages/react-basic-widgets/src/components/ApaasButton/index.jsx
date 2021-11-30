@@ -1,40 +1,34 @@
-import { Button } from "antd";
+import { useEffect,forwardRef } from 'react';
+import { Button as AButton } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_BASIC } from "../../common/constant";
-import { styleSchema } from '../../common/schema';
+import { width, height, margin, padding, cursor } from '../../common/schema';
 
-const ApaasButton = (props) => {
+const ApaasButton = forwardRef((props, ref) => {
+  const handleClick = (e) => {
+    if (typeof props?.events?.onClick === 'function') {
+      props.events.onClick(e)
+    }
+  }
+  useEffect(() => {
+    if (typeof props?.lifeCycle?.didMount === 'function') {
+      props?.lifeCycle?.didMount()
+    }
+    return () => {
+      if (typeof props?.lifeCycle?.unMount === 'function') {
+        props?.lifeCycle?.unMount()
+      }
+    }
+  }, [])
   return (
-    <Button {...props} />
+    <AButton {...props} onClick={handleClick} ref={ref}/>
   );
-};
+});
 
 ApaasButton.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      // TODO: 增加这俩个属性的时候，在搭建的时候触发会发生跳转
-      // href: {
-      //   title: "跳转地址",
-      //   type: "string",
-      //   required: false,
-      //   default: '',
-      // },
-      // target: {
-      //   "title": "跳转方式",
-      //   "type": "string",
-      //   "enum": [
-      //     "_blank",
-      //     "_self",
-      //   ],
-      //   "enumNames": [
-      //     "新打开窗口",
-      //     "当前窗口"
-      //   ],
-      //   "widget": "select",
-      //   "hidden": "{{formData.href ===  ''}}",
-      //   "default": ""
-      // },
       loading: {
         title: "loading功能",
         type: "boolean",
@@ -75,7 +69,11 @@ ApaasButton.schema = {
     type: "object",
     displayType: "column",
     properties: {
-      ...styleSchema
+      width,
+      height,
+      margin,
+      padding,
+      cursor
     }
   }, // 样式属性Schema
   expandSchema: {

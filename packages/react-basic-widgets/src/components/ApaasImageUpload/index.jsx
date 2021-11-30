@@ -1,10 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { Upload, Modal } from 'antd';
 // import ImgCrop from 'antd-img-crop';
 // import ImgCrop from './ImgCrop';
 import { PlusOutlined } from '@ant-design/icons';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
-import { formItemProperties, styleSchema } from '../../common/schema';
+import {
+  formItemProperties,
+  width,
+  height,
+  layout,
+  margin,
+  padding,
+  cursor,
+} from '../../common/schema';
+
 
 const COMPONENT_NAME = '图片上传'
 
@@ -25,14 +34,28 @@ const getBase64 = (file) => {
  * 5、maxCount 最大上传数
  * 6、自己实现双向绑定
  */
-const ApaasImageUpload = (props) => {
-  const { value = [], onChange, crop, maxCount, beforeUpload, action } = props
+const ApaasImageUpload = forwardRef((props) => {
+  const { value = [], onChange, crop, maxCount, beforeUpload, action, style } = props
   const [fileList, setFileList] = useState(value);
   const [previewImageDetail, setPreviewImageDetail] = useState({});
+  useEffect(() => {
+    if (typeof props?.lifeCycle?.didMount === 'function') {
+      props?.lifeCycle?.didMount();
+    }
+    return () => {
+      if (typeof props?.lifeCycle?.unMount === 'function') {
+        props?.lifeCycle?.unMount();
+      }
+    };
+  }, []);
   const handleChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
     if (typeof onChange === 'function') {
-      onChange([...newFileList])
+      onChange([...newFileList]);
+    }
+    // 用户自定义onChange事件
+    if (typeof props?.events?.onChange === 'function') {
+      props.events.onChange([...newFileList]);
     }
   };
 
@@ -67,11 +90,14 @@ const ApaasImageUpload = (props) => {
         action={action}
         listType="picture-card"
         fileList={fileList}
+        maxCount={maxCount}
         onChange={handleChange}
         onPreview={handlePreview}
         beforeUpload={beforeUpload || defaultBeforeUpload}
+        style={style}
+        ref={ref}
       >
-        {fileList.length >= 8 ? null : uploadButton}
+        {fileList.length >= maxCount ? null : uploadButton}
       </Upload>
       <Modal
           visible={previewImageDetail.previewVisible}
@@ -93,7 +119,7 @@ const ApaasImageUpload = (props) => {
   return (
     <UploadChild />
   )
-}
+})
 
 ApaasImageUpload.schema = {
   basicSchema: {
@@ -131,26 +157,73 @@ ApaasImageUpload.schema = {
         default: 1,
         widget: "slider"
       },
-      ...formItemProperties({label: COMPONENT_NAME})
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: {
+          ...formItemProperties({
+            label: COMPONENT_NAME,
+            rules: {
+              required: {
+                label: '必填',
+                message: '',
+              },
+              validator: {
+                label: '自定义函数',
+                message: '',
+              }
+            }
+          }),
+        },
+      },
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      ...styleSchema
-    }
+      width,
+      height,
+      margin,
+      padding,
+      cursor,
+    },
   }, // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: "",
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange'],
+        },
       },
-    }
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false,
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false,
+          },
+        },
+        default: {},
+      },
+    },
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasImageUpload",
   name: COMPONENT_NAME,

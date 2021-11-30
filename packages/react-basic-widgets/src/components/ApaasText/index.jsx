@@ -1,10 +1,21 @@
+import { useEffect, forwardRef } from 'react';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_BASIC, COMPONENT_LAYOUT_INLINE } from "../../common/constant";
-import { styleSchema } from '../../common/schema';
+import { width, height, background, layout, font, margin, padding, border, cursor } from '../../common/schema';
 
-const ApaasText = (props) => {
-  const { content, styles } = props;
-  return <span style={styles}>{content}</span>;
-};
+const ApaasText = forwardRef((props, ref) => {
+  const { content, ...otherProps } = props;
+  useEffect(() => {
+    if (typeof props?.lifeCycle?.didMount === 'function') {
+      props?.lifeCycle?.didMount()
+    }
+    return () => {
+      if (typeof props?.lifeCycle?.unMount === 'function') {
+        props?.lifeCycle?.unMount()
+      }
+    }
+  }, [])
+  return <span {...otherProps} ref={ref}>{content}</span>;
+});
 
 ApaasText.schema = {
   basicSchema: {
@@ -23,18 +34,42 @@ ApaasText.schema = {
     type: "object",
     displayType: "column",
     properties: {
-      ...styleSchema
+      width, height, background, layout, font, margin, padding, border, cursor
     }
   }, // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: "",
+      events: {
+        title: "绑定动作",
+        type: "object",
+        widget: "BindAction",
+        required: false,
+        default: {},
+        props: {
+          actions: ['onClick'],
+        }
       },
+      lifeCycle: {
+        title: "生命周期",
+        type: "object",
+        properties: {
+          didMount: {
+            title: "组件加载完成时",
+            description: 'didMount',
+            type: "string",
+            required: false,
+          },
+          unMount: {
+            title: "组件销毁时",
+            description: 'unMount',
+            type: "string",
+            required: false,
+          },
+        },
+        default: {},
+      }
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasText",

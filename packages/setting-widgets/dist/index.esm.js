@@ -1,7 +1,60 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
-import { Form, Row, Col, Select, Input, Button } from 'antd';
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { Form, Row, Col, Select, Input, Button, Checkbox, InputNumber } from 'antd';
+import { MinusCircleOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+
+    if (enumerableOnly) {
+      symbols = symbols.filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+      });
+    }
+
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -25,8 +78,20 @@ function _slicedToArray(arr, i) {
   return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
 }
 
+function _toConsumableArray(arr) {
+  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
+}
+
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
+}
+
 function _arrayWithHoles(arr) {
   if (Array.isArray(arr)) return arr;
+}
+
+function _iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
 }
 
 function _iterableToArrayLimit(arr, i) {
@@ -74,6 +139,10 @@ function _arrayLikeToArray(arr, len) {
   for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
 
   return arr2;
+}
+
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 function _nonIterableRest() {
@@ -288,4 +357,134 @@ var ColProportion = function ColProportion(_ref) {
   });
 };
 
-export { CodeEditor$1 as BindAction, CodeEditor, ColProportion };
+var Rule = function Rule(_ref) {
+  var type = _ref.type,
+      label = _ref.label,
+      handleChange = _ref.handleChange,
+      checked = _ref.checked,
+      handleChangeProps = _ref.handleChangeProps,
+      currentValue = _ref.currentValue;
+
+  var _useState = useState(false),
+      _useState2 = _slicedToArray(_useState, 2),
+      edit = _useState2[0],
+      setEdit = _useState2[1];
+
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      width: '200px',
+      border: '1px slide grey'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: '1'
+    }
+  }, label), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(EditOutlined, {
+    onClick: function onClick() {
+      return setEdit(!edit);
+    }
+  }), /*#__PURE__*/React.createElement(Checkbox, {
+    style: {
+      marginLeft: '8px'
+    },
+    checked: checked,
+    onChange: function onChange(e) {
+      return handleChange(e.target.checked, type);
+    }
+  }))), edit && checked && /*#__PURE__*/React.createElement("div", null, type !== 'required' && /*#__PURE__*/React.createElement(Form.Item, {
+    label: label
+  }, type === 'validator' ? /*#__PURE__*/React.createElement(MonacoEditor, {
+    language: "javascript",
+    width: "250",
+    height: "200",
+    value: currentValue[type],
+    onChange: function onChange(val) {
+      return handleChangeProps(currentValue, type, val);
+    }
+  }) : /*#__PURE__*/React.createElement(InputNumber, {
+    placeholder: "\u8BF7\u8F93\u5165",
+    value: currentValue[type],
+    onChange: function onChange(num) {
+      return handleChangeProps(currentValue, type, num);
+    }
+  })), /*#__PURE__*/React.createElement(Form.Item, {
+    label: "\u9519\u8BEF\u63D0\u793A"
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "\u8BF7\u8F93\u5165",
+    value: currentValue['message'],
+    onChange: function onChange(e) {
+      return handleChangeProps(currentValue, 'message', e.target.value);
+    }
+  }))));
+};
+
+//   if (Array.isArray(array) && array.length > 0) {
+//     const filterArr = array.filter(a => a.name === type)
+//     if (filterArr.length > 0) {
+//       return true
+//     }
+//   }
+//   return false
+// }
+
+var Rules = function Rules(props) {
+  var _schema$props3;
+
+  var _props$value = props.value,
+      value = _props$value === void 0 ? [] : _props$value,
+      onChange = props.onChange,
+      schema = props.schema;
+
+  var handleChange = function handleChange(checked, type) {
+    if (checked) {
+      if (type === 'required') {
+        onChange([].concat(_toConsumableArray(value), [{
+          required: true,
+          message: ''
+        }]));
+      } else if (type !== 'validator') {
+        var _schema$props, _ref;
+
+        onChange([].concat(_toConsumableArray(value), [(_ref = {}, _defineProperty(_ref, type, null), _defineProperty(_ref, "message", ''), _defineProperty(_ref, "type", schema === null || schema === void 0 ? void 0 : (_schema$props = schema.props) === null || _schema$props === void 0 ? void 0 : _schema$props.rules[type]['type']), _ref)]));
+      } else {
+        var _schema$props2, _ref2;
+
+        // 关于表达式
+        onChange([].concat(_toConsumableArray(value), [(_ref2 = {}, _defineProperty(_ref2, type, null), _defineProperty(_ref2, "message", ''), _defineProperty(_ref2, "type", schema === null || schema === void 0 ? void 0 : (_schema$props2 = schema.props) === null || _schema$props2 === void 0 ? void 0 : _schema$props2.rules[type]['type']), _ref2)]));
+      }
+    } else {
+      var newValue = value.filter(function (v) {
+        return !v.hasOwnProperty(type);
+      });
+      onChange(newValue);
+    }
+  };
+
+  var handleChangeProps = function handleChangeProps(currentValue, key, val) {
+    var newValue = value.filter(function (v) {
+      return v.type !== currentValue.type;
+    });
+    newValue.push(_objectSpread2(_objectSpread2({}, currentValue), {}, _defineProperty({}, key, val)));
+    onChange(newValue);
+  };
+
+  return /*#__PURE__*/React.createElement("div", null, Object.keys(schema === null || schema === void 0 ? void 0 : (_schema$props3 = schema.props) === null || _schema$props3 === void 0 ? void 0 : _schema$props3.rules).map(function (rule) {
+    var _schema$props4;
+
+    var currentValue = value.filter(function (v) {
+      return v.hasOwnProperty(rule);
+    });
+    return /*#__PURE__*/React.createElement(Rule, {
+      type: rule,
+      label: schema === null || schema === void 0 ? void 0 : (_schema$props4 = schema.props) === null || _schema$props4 === void 0 ? void 0 : _schema$props4.rules[rule]['label'],
+      handleChange: handleChange,
+      handleChangeProps: handleChangeProps,
+      checked: currentValue.length > 0,
+      currentValue: currentValue.length > 0 ? currentValue[0] : {}
+    });
+  }));
+};
+
+export { CodeEditor$1 as BindAction, CodeEditor, ColProportion, Rules };

@@ -29,7 +29,7 @@ const RenderWidget = ({ componentName, id, props, styleProps, children, sourcePa
   }
   if (isFormType(schemas?.__componentType__)) {
     return (
-      <Form.Item {...props} style={styles}>
+      <Form.Item {...props?.formItemProps} style={styles}>
         <Component {...props} />
       </Form.Item>
     );

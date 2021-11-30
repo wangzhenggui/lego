@@ -1,0 +1,22 @@
+{
+  "name":  "@apaas-lego/parser",
+  "version": "0.0.1",
+  "description": "> TODO: description",
+  "author": "wangzhenggui",
+  "homepage": "",
+  "license": "ISC",
+  "scripts": {
+    "build": "father-build"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.6",
+    "@babel/preset-env": "^7.14.7",
+    "father-build": "^1.19.6",
+    "rollup": "^2.52.2"
+  },
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "publishConfig": {
+    "access": "public"
+  }
+}

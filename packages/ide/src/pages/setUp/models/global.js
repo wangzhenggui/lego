@@ -7,10 +7,12 @@ export default {
     loading: true,
     resourceList: [{
       name: '@apaas-lego/react-container-widgets',
-      version: '0.0.7'
+      version: '0.0.10',
+      title: '布局'
     }, {
       name: '@apaas-lego/react-basic-widgets',
-      version: '0.0.26'
+      version: '0.0.28',
+      title: '基础'
     }],
   },
   reducers: {
