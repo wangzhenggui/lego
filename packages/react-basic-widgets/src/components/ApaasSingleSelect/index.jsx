@@ -1,67 +1,100 @@
-import { Select } from "antd";
+import { useEffect, useMemo, forwardRef } from 'react';
+import { Select as ASelect } from 'antd';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_FORM } from "../../common/constant";
-import { formItemProperties, styleSchema } from '../../common/schema';
+import {
+  formItemProperties,
+  width,
+  height,
+  layout,
+  margin,
+  padding,
+  cursor,
+} from '../../common/schema';
+
 const COMPONENT_NAME = '下拉选择'
-const ApaasSingleSelect = (props) => {
-  const { names = [], values = [], showSearch, filterItem } = props
-  return (
-    <Select
-      {...props}
-      optionFilterProp="text"
-      filterOption={showSearch ? (input, option) => {
-        console.log('input', input, 'option', option);
-        return option[filterItem].toLowerCase().indexOf(input.toLowerCase()) >= 0
-      } : () => { }}
-    >
-      {
-        values.map((value, index) => <Option value={value} key={value}>{names[index]}</Option>)
+const ApaasSingleSelect = forwardRef((props, ref) => {
+  const { options, showSearch, filterItem } = props;
+  const handleChange = (value) => {
+    // 双向绑定的onChange事件
+    if (typeof props?.onChange === 'function') {
+      props.onChange(value);
+    }
+    // 用户自定义onChange事件
+    if (typeof props?.events?.onChange === 'function') {
+      props.events.onChange(value);
+    }
+  };
+  useEffect(() => {
+    if (typeof props?.lifeCycle?.didMount === 'function') {
+      props?.lifeCycle?.didMount();
+    }
+    return () => {
+      if (typeof props?.lifeCycle?.unMount === 'function') {
+        props?.lifeCycle?.unMount();
       }
-    </Select>
+    };
+  }, []);
+  const finalOptions = useMemo(() => {
+    try {
+      return JSON.parse(options);
+    } catch (e) {
+      return [];
+    }
+  }, [options]);
+  return (
+    <ASelect
+      {...props}
+      options={finalOptions}
+      onChange={handleChange}
+      optionFilterProp="text"
+      ref={ref}
+      filterOption={
+        showSearch
+          ? (input, option) => {
+            return (
+              option[filterItem].toLowerCase().indexOf(input.toLowerCase()) >=
+              0
+            );
+          }
+          : () => { }
+      }
+    >
+      {finalOptions.map((item) => (
+        <ASelect.Option value={item.value} key={item.value}>
+          {item.label}
+        </ASelect.Option>
+      ))}
+    </ASelect>
   );
-};
+});
 
 ApaasSingleSelect.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      values: {
-        "title": "选项字段",
-        "type": "array",
-        "enum": [
-          "A",
-          "B",
-          "C"
-        ],
-        "enumNames": [
-          "A",
-          "B",
-          "C"
-        ],
-        "widget": "select",
-        "props": {
-           "mode": "tags"
-        },
-        "default": ["A", "B", "C"]
+      placeholder: {
+        title: '占位符',
+        type: 'string',
+        default: '',
       },
-      names: {
-        "title": "选项名称",
-        "type": "array",
-        "enum": [
-          "选项1",
-          "选项2",
-          "选项3"
-        ],
-        "enumNames": [
-          "选项1",
-          "选项2",
-          "选项3"
-        ],
-        "widget": "select",
-        "props": {
-           "mode": "tags"
+      options: {
+        title: '数据配置',
+        type: 'string',
+        default: '[]',
+        widget: 'CodeEditor',
+        props: {
+          options: {
+            selectOnLineNumbers: true,
+            roundedSelection: false,
+            readOnly: false,
+            cursorStyle: 'line',
+            automaticLayout: false,
+          },
+          language: 'json',
+          width: '250',
+          height: '200',
         },
-        "default": ["选项1", "选项2", "选项3"]
       },
       showSearch: {
         "title": "是否支持搜索",
@@ -82,26 +115,73 @@ ApaasSingleSelect.schema = {
         "widget": "select",
         "default": "children"
       },
-      ...formItemProperties({label: COMPONENT_NAME})
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: {
+          ...formItemProperties({
+            label: COMPONENT_NAME,
+            rules: {
+              required: {
+                label: '必填',
+                message: '',
+              },
+              validator: {
+                label: '自定义函数',
+                message: '',
+              }
+            }
+          }),
+        },
+      },
     },
   }, // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      ...styleSchema
-    }
+      width,
+      height,
+      margin,
+      padding,
+      cursor,
+    },
   }, // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: "",
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange'],
+        },
       },
-    }
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false,
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false,
+          },
+        },
+        default: {},
+      },
+    },
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasSingleSelect",
   name: COMPONENT_NAME,

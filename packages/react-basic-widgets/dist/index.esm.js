@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 import { Input, InputNumber, Form, Radio, Select, Checkbox, DatePicker, Upload, Modal, Button } from 'antd';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 
@@ -109,6 +109,42 @@ function _extends() {
   return _extends.apply(this, arguments);
 }
 
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
+
+function _objectWithoutProperties(source, excluded) {
+  if (source == null) return {};
+
+  var target = _objectWithoutPropertiesLoose(source, excluded);
+
+  var key, i;
+
+  if (Object.getOwnPropertySymbols) {
+    var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
+
+    for (i = 0; i < sourceSymbolKeys.length; i++) {
+      key = sourceSymbolKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+      target[key] = source[key];
+    }
+  }
+
+  return target;
+}
+
 function _slicedToArray(arr, i) {
   return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
 }
@@ -199,12 +235,11 @@ var formItemProperties = function formItemProperties(_ref) {
       label = _ref$label === void 0 ? '' : _ref$label,
       _ref$colon = _ref.colon,
       colon = _ref$colon === void 0 ? true : _ref$colon,
-      _ref$required = _ref.required,
-      required = _ref$required === void 0 ? false : _ref$required,
-      placeholder = _ref.placeholder,
       initialValue = _ref.initialValue,
       extra = _ref.extra,
-      name = _ref.name;
+      name = _ref.name,
+      _ref$rules = _ref.rules,
+      rules = _ref$rules === void 0 ? [] : _ref$rules;
   return {
     label: {
       title: '标题',
@@ -215,16 +250,6 @@ var formItemProperties = function formItemProperties(_ref) {
       title: '是否有冒号',
       type: 'boolean',
       default: colon
-    },
-    required: {
-      title: '必填',
-      type: 'boolean',
-      default: required
-    },
-    placeholder: {
-      title: '占位符',
-      type: 'string',
-      default: placeholder
     },
     initialValue: {
       title: '初始值',
@@ -240,221 +265,262 @@ var formItemProperties = function formItemProperties(_ref) {
       title: '字段名',
       type: 'string',
       default: name
+    },
+    rules: {
+      title: '校验',
+      type: 'array',
+      default: [],
+      widget: "Rules",
+      props: {
+        rules: rules
+      }
     }
   };
 };
-var styleSchema = {
-  width: {
-    title: '宽度',
-    type: 'string',
-    required: false
-  },
-  height: {
-    title: '高度',
-    type: 'string',
-    required: false
-  },
-  background: {
-    title: '背景色',
-    type: 'string'
-  },
-  layout: {
-    type: 'object',
-    title: '布局',
-    properties: {
-      display: {
-        "title": "布局",
-        "type": "string",
-        "enum": ["flex", "block", "inline-block"],
-        "enumNames": ["flex", "block", "inline-block"],
-        "widget": "select",
-        "default": "block"
-      },
-      flexDirection: {
-        "title": "弹性布局方向",
-        "type": "string",
-        "enum": ["row", "column"],
-        "enumNames": ["横向", "纵向"],
-        "default": "row",
-        "hidden": "{{formData.layout.display !== 'flex'}}"
-      },
-      justifyContent: {
-        "title": "主轴方向",
-        "type": "string",
-        "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-        "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-        "default": "center",
-        "hidden": "{{formData.layout.display !== 'flex'}}"
-      },
-      alignItems: {
-        "title": "侧轴方向",
-        "type": "string",
-        "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-        "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-        "default": "center",
-        "hidden": "{{formData.layout.display !== 'flex'}}"
-      }
+var width = {
+  title: '宽度',
+  type: 'string',
+  required: false
+};
+var height = {
+  title: '高度',
+  type: 'string',
+  required: false
+};
+var background = {
+  title: '背景色',
+  type: 'string'
+};
+var layout = {
+  type: 'object',
+  title: '布局',
+  properties: {
+    display: {
+      "title": "布局",
+      "type": "string",
+      "enum": ["flex", "block", "inline-block"],
+      "enumNames": ["flex", "block", "inline-block"],
+      "widget": "select",
+      "default": "block"
+    },
+    flexDirection: {
+      "title": "弹性布局方向",
+      "type": "string",
+      "enum": ["row", "column"],
+      "enumNames": ["横向", "纵向"],
+      "default": "row",
+      "hidden": "{{formData.layout.display !== 'flex'}}"
+    },
+    justifyContent: {
+      "title": "主轴方向",
+      "type": "string",
+      "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+      "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+      "default": "center",
+      "hidden": "{{formData.layout.display !== 'flex'}}"
+    },
+    alignItems: {
+      "title": "侧轴方向",
+      "type": "string",
+      "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+      "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+      "default": "center",
+      "hidden": "{{formData.layout.display !== 'flex'}}"
     }
-  },
-  font: {
-    type: 'object',
-    title: '文字',
-    properties: {
-      fontFamily: {
-        title: '字体',
-        description: 'font-family',
-        type: 'string',
-        required: false
-      },
-      fontWidget: {
-        type: 'string',
-        description: 'font-widget',
-        title: '字重',
-        default: 'normal',
-        widget: 'select',
-        enum: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder'],
-        enumNames: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder']
-      },
-      fontStyle: {
-        type: 'string',
-        title: '样式',
-        description: 'font-style',
-        default: 'normal',
-        widget: 'select',
-        enum: ['normal', 'italic'],
-        enumNames: ['正常', '斜体']
-      },
-      fontSize: {
-        title: '字体大小',
-        description: 'font-size',
-        type: 'number',
-        required: false,
-        default: 14
-      },
-      lineHeight: {
-        title: '行高',
-        description: 'line-height',
-        type: 'string',
-        required: false,
-        default: '21px'
-      },
-      color: {
-        title: '字体颜色',
-        description: 'color',
-        type: 'string',
-        format: 'color',
-        default: '#000'
-      },
-      textAlign: {
-        type: 'string',
-        description: 'text-align',
-        title: '对齐方式',
-        default: 'left',
-        enum: ['left', 'center', 'right', 'justify'],
-        enumNames: ['left', 'center', 'right', 'justify']
-      },
-      textDecorationLine: {
-        type: 'string',
-        description: 'text-decoration-line',
-        title: '装饰线',
-        default: 'none',
-        enum: ['none', 'underline', 'line-through'],
-        enumNames: ['none', '下划线', '横划线']
-      }
-    }
-  },
-  margin: {
-    type: 'object',
-    title: '外边距',
-    properties: {
-      marginTop: {
-        title: '上边距',
-        type: 'string'
-      },
-      marginRight: {
-        title: '右边距',
-        type: 'string'
-      },
-      marginBottom: {
-        title: '下边距',
-        type: 'string'
-      },
-      marginLeft: {
-        title: '左边距',
-        type: 'string'
-      }
-    }
-  },
-  padding: {
-    type: 'object',
-    title: '内边距',
-    properties: {
-      paddingTop: {
-        title: '上边距',
-        type: 'string'
-      },
-      paddingRight: {
-        title: '右边距',
-        type: 'string'
-      },
-      paddingBottom: {
-        title: '下边距',
-        type: 'string'
-      },
-      paddingLeft: {
-        title: '左边距',
-        type: 'string'
-      }
-    }
-  },
-  border: {
-    type: 'object',
-    title: '边框',
-    properties: {
-      borderStyle: {
-        type: 'string',
-        title: '线形',
-        default: 'none',
-        widget: 'select',
-        enum: ['none', 'solid', 'dashed', 'dotted'],
-        enumNames: ['无', '实线', '虚线', '点线']
-      },
-      borderWidth: {
-        type: 'string',
-        title: '线宽'
-      },
-      borderColor: {
-        type: 'string',
-        title: '颜色',
-        widget: 'color'
-      },
-      borderRadius: {
-        type: 'string',
-        title: '圆角'
-      }
-    }
-  },
-  cursor: {
-    title: '鼠标手势',
-    type: 'string',
-    enum: ['default', 'pointer'],
-    enumNames: ['default', 'pointer'],
-    widget: 'select',
-    default: 'default'
   }
+};
+var font = {
+  type: 'object',
+  title: '文字',
+  properties: {
+    fontFamily: {
+      title: '字体',
+      description: 'font-family',
+      type: 'string',
+      required: false
+    },
+    fontWidget: {
+      type: 'string',
+      description: 'font-widget',
+      title: '字重',
+      default: 'normal',
+      widget: 'select',
+      enum: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder'],
+      enumNames: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder']
+    },
+    fontStyle: {
+      type: 'string',
+      title: '样式',
+      description: 'font-style',
+      default: 'normal',
+      widget: 'select',
+      enum: ['normal', 'italic'],
+      enumNames: ['正常', '斜体']
+    },
+    fontSize: {
+      title: '字体大小',
+      description: 'font-size',
+      type: 'number',
+      required: false,
+      default: 14
+    },
+    lineHeight: {
+      title: '行高',
+      description: 'line-height',
+      type: 'string',
+      required: false,
+      default: '21px'
+    },
+    color: {
+      title: '字体颜色',
+      description: 'color',
+      type: 'string',
+      format: 'color',
+      default: '#000'
+    },
+    textAlign: {
+      type: 'string',
+      description: 'text-align',
+      title: '对齐方式',
+      default: 'left',
+      enum: ['left', 'center', 'right', 'justify'],
+      enumNames: ['left', 'center', 'right', 'justify']
+    },
+    textDecorationLine: {
+      type: 'string',
+      description: 'text-decoration-line',
+      title: '装饰线',
+      default: 'none',
+      enum: ['none', 'underline', 'line-through'],
+      enumNames: ['none', '下划线', '横划线']
+    }
+  }
+};
+var margin = {
+  type: 'object',
+  title: '外边距',
+  properties: {
+    marginTop: {
+      title: '上边距',
+      type: 'string'
+    },
+    marginRight: {
+      title: '右边距',
+      type: 'string'
+    },
+    marginBottom: {
+      title: '下边距',
+      type: 'string'
+    },
+    marginLeft: {
+      title: '左边距',
+      type: 'string'
+    }
+  }
+};
+var padding = {
+  type: 'object',
+  title: '内边距',
+  properties: {
+    paddingTop: {
+      title: '上边距',
+      type: 'string'
+    },
+    paddingRight: {
+      title: '右边距',
+      type: 'string'
+    },
+    paddingBottom: {
+      title: '下边距',
+      type: 'string'
+    },
+    paddingLeft: {
+      title: '左边距',
+      type: 'string'
+    }
+  }
+};
+var border = {
+  type: 'object',
+  title: '边框',
+  properties: {
+    borderStyle: {
+      type: 'string',
+      title: '线形',
+      default: 'none',
+      widget: 'select',
+      enum: ['none', 'solid', 'dashed', 'dotted'],
+      enumNames: ['无', '实线', '虚线', '点线']
+    },
+    borderWidth: {
+      type: 'string',
+      title: '线宽'
+    },
+    borderColor: {
+      type: 'string',
+      title: '颜色',
+      widget: 'color'
+    },
+    borderRadius: {
+      type: 'string',
+      title: '圆角'
+    }
+  }
+};
+var cursor = {
+  title: '鼠标手势',
+  type: 'string',
+  enum: ['default', 'pointer'],
+  enumNames: ['default', 'pointer'],
+  widget: 'select',
+  default: 'default'
 };
 
 var COMPONENT_NAME = '输入框';
+var ApaasInput = /*#__PURE__*/forwardRef(function (props, ref) {
+  var handleChange = function handleChange(e) {
+    var _props$events;
 
-var ApaasInput = function ApaasInput(props) {
-  return /*#__PURE__*/React.createElement(Input, props);
-};
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(e.target.value);
+    } // 用户自定义onChange事件
 
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(e.target.value);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(Input, _extends({}, props, {
+    onChange: handleChange,
+    ref: ref
+  }));
+});
 ApaasInput.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
       allowClear: {
         title: "清除图标",
         type: "boolean",
@@ -470,26 +536,82 @@ ApaasInput.schema = {
         title: "最大长度",
         type: "number",
         required: false
+      },
+      formItemProps: {
+        type: "object",
+        title: "表单字段配置",
+        displayType: "column",
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            max: {
+              label: '最大长度',
+              message: '',
+              type: 'string'
+            },
+            min: {
+              label: '最小长度',
+              message: '',
+              type: 'string'
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: "绑定动作",
+        type: "object",
+        widget: "BindAction",
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: "生命周期",
+        type: "object",
+        properties: {
+          didMount: {
+            title: "组件加载完成时",
+            description: 'didMount',
+            type: "string",
+            required: false
+          },
+          unMount: {
+            title: "组件销毁时",
+            description: 'unMount',
+            type: "string",
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -507,16 +629,55 @@ ApaasInput.schema = {
 };
 
 var COMPONENT_NAME$1 = '数字输入框';
+var ApaasInputNumber = /*#__PURE__*/forwardRef(function (props, ref) {
+  var handleChange = function handleChange(valve) {
+    var _props$events;
 
-var ApaasInputNumber = function ApaasInputNumber(props) {
-  return /*#__PURE__*/React.createElement(InputNumber, props);
-};
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(valve);
+    } // 用户自定义onChange事件
 
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(valve);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(InputNumber, _extends({}, props, {
+    onChange: handleChange,
+    ref: ref
+  }));
+});
 ApaasInputNumber.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
+      placeholder: {
+        title: '占位符',
+        type: 'string',
+        default: ''
+      },
       max: {
         title: "最大值",
         type: "number",
@@ -531,26 +692,82 @@ ApaasInputNumber.schema = {
         title: "校验规则",
         type: "string",
         description: '正则表达式组件'
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$1,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            max: {
+              label: '最大值',
+              message: '',
+              type: 'number'
+            },
+            min: {
+              label: '最小值',
+              message: '',
+              type: 'number'
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$1
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -568,16 +785,56 @@ ApaasInputNumber.schema = {
 };
 
 var COMPONENT_NAME$2 = '多行输入框';
+var ApaasTextArea = /*#__PURE__*/forwardRef(function (props, ref) {
+  useEffect(function () {
+    var _props$lifeCycle;
 
-var ApaasTextArea = function ApaasTextArea(props) {
-  return /*#__PURE__*/React.createElement(Input.TextArea, props);
-};
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
 
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+
+  var handleChange = function handleChange(e) {
+    var _props$events;
+
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(e.target.value);
+    } // 用户自定义onChange事件
+
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(e.target.value);
+    }
+  };
+
+  return /*#__PURE__*/React.createElement(Input.TextArea, _extends({}, props, {
+    onChange: handleChange,
+    ref: ref
+  }));
+});
 ApaasTextArea.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
+      placeholder: {
+        title: '占位符',
+        type: 'string',
+        default: ''
+      },
       allowClear: {
         title: "清除图标",
         type: "boolean",
@@ -592,26 +849,82 @@ ApaasTextArea.schema = {
         title: "行数",
         type: "number",
         default: 4
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$2,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            max: {
+              label: '最大长度',
+              message: '',
+              type: 'string'
+            },
+            min: {
+              label: '最小长度',
+              message: '',
+              type: 'string'
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$2
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -628,10 +941,30 @@ ApaasTextArea.schema = {
 
 };
 
-var ApaasForm = function ApaasForm(props) {
-  return /*#__PURE__*/React.createElement(Form, props);
-};
+var ApaasForm = /*#__PURE__*/forwardRef(function (props, ref) {
+  useEffect(function () {
+    var _props$lifeCycle;
 
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(Form, _extends({}, props, {
+    ref: ref
+  }));
+});
 ApaasForm.schema = {
   basicSchema: {
     type: "object",
@@ -646,7 +979,7 @@ ApaasForm.schema = {
             title: "span",
             type: "number",
             required: false,
-            default: 3
+            default: 0
           },
           offset: {
             title: "offset",
@@ -665,7 +998,7 @@ ApaasForm.schema = {
             title: "span",
             type: "number",
             required: false,
-            default: 9
+            default: 0
           },
           offset: {
             title: "offset",
@@ -725,19 +1058,36 @@ ApaasForm.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding
+    }
   },
   // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        widget: "CodeEditor",
-        required: false,
-        description: "函数表达式组件"
+      lifeCycle: {
+        title: "生命周期",
+        type: "object",
+        properties: {
+          didMount: {
+            title: "组件加载完成时",
+            description: 'didMount',
+            type: "string",
+            required: false
+          },
+          unMount: {
+            title: "组件销毁时",
+            description: 'unMount',
+            type: "string",
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -755,15 +1105,50 @@ ApaasForm.schema = {
 };
 
 var COMPONENT_NAME$3 = '单选框';
-
-var ApaasRadio = function ApaasRadio(props) {
+var ApaasRadio = /*#__PURE__*/forwardRef(function (props, ref) {
   var _props$names = props.names,
       names = _props$names === void 0 ? [] : _props$names,
       _props$values = props.values,
       values = _props$values === void 0 ? [] : _props$values,
       isButton = props.isButton;
-  console.log('names', names, 'values', values, 'props', props);
-  return /*#__PURE__*/React.createElement(Radio.Group, props, values.map(function (value, index) {
+
+  var handleChange = function handleChange(value) {
+    var _props$events;
+
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(value);
+    } // 用户自定义onChange事件
+
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(value);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(Radio.Group, _extends({}, props, {
+    onChange: handleChange,
+    ref: ref
+  }), values.map(function (value, index) {
     return isButton ? /*#__PURE__*/React.createElement(Radio.Button, {
       value: value,
       key: value
@@ -772,13 +1157,12 @@ var ApaasRadio = function ApaasRadio(props) {
       key: value
     }, names[index]);
   }));
-};
-
+});
 ApaasRadio.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
       values: {
         "title": "选项字段",
         "type": "array",
@@ -813,26 +1197,72 @@ ApaasRadio.schema = {
         "enum": ["outline", "solid"],
         "enumNames": ["描边", "填色"],
         "widget": "select"
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$3,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$3
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
-    type: "object",
-    displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    type: 'object',
+    displayType: 'column',
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -850,54 +1280,93 @@ ApaasRadio.schema = {
 };
 
 var COMPONENT_NAME$4 = '下拉选择';
-
-var ApaasSingleSelect = function ApaasSingleSelect(props) {
-  var _props$names = props.names,
-      names = _props$names === void 0 ? [] : _props$names,
-      _props$values = props.values,
-      values = _props$values === void 0 ? [] : _props$values,
+var ApaasSingleSelect = /*#__PURE__*/forwardRef(function (props, ref) {
+  var options = props.options,
       showSearch = props.showSearch,
       filterItem = props.filterItem;
+
+  var handleChange = function handleChange(value) {
+    var _props$events;
+
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(value);
+    } // 用户自定义onChange事件
+
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(value);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  var finalOptions = useMemo(function () {
+    try {
+      return JSON.parse(options);
+    } catch (e) {
+      return [];
+    }
+  }, [options]);
   return /*#__PURE__*/React.createElement(Select, _extends({}, props, {
+    options: finalOptions,
+    onChange: handleChange,
     optionFilterProp: "text",
+    ref: ref,
     filterOption: showSearch ? function (input, option) {
-      console.log('input', input, 'option', option);
       return option[filterItem].toLowerCase().indexOf(input.toLowerCase()) >= 0;
     } : function () {}
-  }), values.map(function (value, index) {
-    return /*#__PURE__*/React.createElement(Option, {
-      value: value,
-      key: value
-    }, names[index]);
+  }), finalOptions.map(function (item) {
+    return /*#__PURE__*/React.createElement(Select.Option, {
+      value: item.value,
+      key: item.value
+    }, item.label);
   }));
-};
-
+});
 ApaasSingleSelect.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
-      values: {
-        "title": "选项字段",
-        "type": "array",
-        "enum": ["A", "B", "C"],
-        "enumNames": ["A", "B", "C"],
-        "widget": "select",
-        "props": {
-          "mode": "tags"
-        },
-        "default": ["A", "B", "C"]
+    properties: {
+      placeholder: {
+        title: '占位符',
+        type: 'string',
+        default: ''
       },
-      names: {
-        "title": "选项名称",
-        "type": "array",
-        "enum": ["选项1", "选项2", "选项3"],
-        "enumNames": ["选项1", "选项2", "选项3"],
-        "widget": "select",
-        "props": {
-          "mode": "tags"
-        },
-        "default": ["选项1", "选项2", "选项3"]
+      options: {
+        title: '数据配置',
+        type: 'string',
+        default: '[]',
+        widget: 'CodeEditor',
+        props: {
+          options: {
+            selectOnLineNumbers: true,
+            roundedSelection: false,
+            readOnly: false,
+            cursorStyle: 'line',
+            automaticLayout: false
+          },
+          language: 'json',
+          width: '250',
+          height: '200'
+        }
       },
       showSearch: {
         "title": "是否支持搜索",
@@ -911,26 +1380,72 @@ ApaasSingleSelect.schema = {
         "enum": ["value", "children"],
         "widget": "select",
         "default": "children"
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$4,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$4
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -947,26 +1462,63 @@ ApaasSingleSelect.schema = {
 
 };
 
+var _excluded = ["names", "values"];
 var COMPONENT_NAME$5 = '多选框';
-
-var ApaasCheckBox = function ApaasCheckBox(props) {
+var ApaasCheckBox = /*#__PURE__*/forwardRef(function (props, ref) {
   var _props$names = props.names,
       names = _props$names === void 0 ? [] : _props$names,
       _props$values = props.values,
-      values = _props$values === void 0 ? [] : _props$values;
-  return /*#__PURE__*/React.createElement(Checkbox.Group, props, values.map(function (value, index) {
+      values = _props$values === void 0 ? [] : _props$values,
+      otherProps = _objectWithoutProperties(props, _excluded);
+
+  var handleChange = function handleChange(checkedValue) {
+    var _props$events;
+
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(checkedValue);
+    } // 用户自定义onChange事件
+
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(checkedValue);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(Checkbox.Group, _extends({}, otherProps, {
+    onChange: handleChange,
+    ref: ref
+  }), values.map(function (value, index) {
     return /*#__PURE__*/React.createElement(Checkbox, {
       value: value,
       key: value
     }, names[index]);
   }));
-};
-
+});
 ApaasCheckBox.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
       values: {
         "title": "选项字段",
         "type": "array",
@@ -988,26 +1540,82 @@ ApaasCheckBox.schema = {
           "mode": "tags"
         },
         "default": ["选项1", "选项2", "选项3"]
+      },
+      placeholder: {
+        title: '占位符',
+        type: 'string',
+        default: ''
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$5,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            len: {
+              label: '长度',
+              message: '',
+              type: 'array'
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$5
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -1025,33 +1633,73 @@ ApaasCheckBox.schema = {
 };
 
 var COMPONENT_NAME$6 = '下拉多选';
-
-var ApaasMultSelect = function ApaasMultSelect(props) {
+var ApaasMultSelect = /*#__PURE__*/forwardRef(function (props, ref) {
   var _props$names = props.names,
       names = _props$names === void 0 ? [] : _props$names,
       _props$values = props.values,
       values = _props$values === void 0 ? [] : _props$values,
-      filterItem = props.filterItem;
-  return /*#__PURE__*/React.createElement(Select, {
+      filterItem = props.filterItem,
+      style = props.style;
+
+  var handleChange = function handleChange(value) {
+    var _props$events;
+
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(value);
+    } // 用户自定义onChange事件
+
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(value);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(Select, _extends({}, props, {
+    style: style,
     mode: "multiple",
     optionFilterProp: "text",
+    onChange: handleChange,
     filterOption: function filterOption(input, option) {
-      console.log('input', input, 'option', option);
       return option[filterItem].toLowerCase().indexOf(input.toLowerCase()) >= 0;
-    }
-  }, values.map(function (value, index) {
-    return /*#__PURE__*/React.createElement(Option, {
+    },
+    ref: ref
+  }), values.map(function (value, index) {
+    return /*#__PURE__*/React.createElement(Select.Option, {
       value: value,
       key: value
     }, names[index]);
   }));
-};
-
+});
 ApaasMultSelect.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
+      placeholder: {
+        title: '占位符',
+        type: 'string',
+        default: ''
+      },
       values: {
         "title": "选项字段",
         "type": "array",
@@ -1081,26 +1729,77 @@ ApaasMultSelect.schema = {
         "enum": ["value", "children"],
         "widget": "select",
         "default": "children"
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$6,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            len: {
+              label: '长度',
+              message: '',
+              type: 'array'
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$6
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -1118,62 +1817,151 @@ ApaasMultSelect.schema = {
 };
 
 var COMPONENT_NAME$7 = '日期';
-
-var ApaasDatePicker = function ApaasDatePicker(props) {
+var ApaasDatePicker = /*#__PURE__*/forwardRef(function (props, ref) {
   var range = props.range;
-  return range === 'DatePicker' ? /*#__PURE__*/React.createElement(DatePicker, props) : /*#__PURE__*/React.createElement(DatePicker.RangePicker, props);
-};
 
+  var handleChange = function handleChange(date, dataString) {
+    var _props$events;
+
+    // 双向绑定的onChange事件
+    if (typeof (props === null || props === void 0 ? void 0 : props.onChange) === 'function') {
+      props.onChange(date);
+    } // 用户自定义onChange事件
+
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(date, dataString);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return range === 'DatePicker' ? /*#__PURE__*/React.createElement(DatePicker, _extends({}, props, {
+    onChange: handleChange,
+    ref: ref
+  })) : /*#__PURE__*/React.createElement(DatePicker.RangePicker, _extends({}, props, {
+    onChange: handleChange,
+    ref: ref
+  }));
+});
 ApaasDatePicker.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
       picker: {
-        "title": "选择器类型",
-        "type": "string",
-        "default": "date",
-        "enum": ["date", "week", "month", "quarter", "year"],
-        "enumNames": ["日", "周", "月", "季度", "年"],
-        "widget": "select"
+        title: '选择器类型',
+        type: 'string',
+        default: 'date',
+        enum: ['date', 'week', 'month', 'quarter', 'year'],
+        enumNames: ['日', '周', '月', '季度', '年'],
+        widget: 'select'
       },
       range: {
-        "title": "日期选择类型",
-        "type": "string",
-        "default": "DatePicker",
-        "enum": ["DatePicker", "RangePicker"],
-        "enumNames": ["日期", "日期范围"],
-        "widget": "select"
+        title: '日期选择类型',
+        type: 'string',
+        default: 'DatePicker',
+        enum: ['DatePicker', 'RangePicker'],
+        enumNames: ['日期', '日期范围'],
+        widget: 'select'
       },
       allowClear: {
-        title: "清除图标",
-        type: "boolean",
+        title: '清除图标',
+        type: 'boolean',
         required: true
       },
+      placeholder: {
+        title: '占位符',
+        type: 'string',
+        default: ''
+      },
       showTime: {
-        title: "显示时间",
-        type: "boolean",
+        title: '显示时间',
+        type: 'boolean',
         required: false
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$7,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$7
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -1218,14 +2006,15 @@ var getBase64 = function getBase64(file) {
  */
 
 
-var ApaasImageUpload = function ApaasImageUpload(props) {
+var ApaasImageUpload = /*#__PURE__*/forwardRef(function (props) {
   var _props$value = props.value,
       value = _props$value === void 0 ? [] : _props$value,
       onChange = props.onChange,
       crop = props.crop,
       maxCount = props.maxCount,
       beforeUpload = props.beforeUpload,
-      action = props.action;
+      action = props.action,
+      style = props.style;
 
   var _useState = useState(value),
       _useState2 = _slicedToArray(_useState, 2),
@@ -1237,12 +2026,39 @@ var ApaasImageUpload = function ApaasImageUpload(props) {
       previewImageDetail = _useState4[0],
       setPreviewImageDetail = _useState4[1];
 
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+
   var handleChange = function handleChange(_ref) {
+    var _props$events;
+
     var newFileList = _ref.fileList;
     setFileList(newFileList);
 
     if (typeof onChange === 'function') {
       onChange(_toConsumableArray(newFileList));
+    } // 用户自定义onChange事件
+
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onChange) === 'function') {
+      props.events.onChange(_toConsumableArray(newFileList));
     }
   };
 
@@ -1300,10 +2116,13 @@ var ApaasImageUpload = function ApaasImageUpload(props) {
       action: action,
       listType: "picture-card",
       fileList: fileList,
+      maxCount: maxCount,
       onChange: handleChange,
       onPreview: handlePreview,
-      beforeUpload: beforeUpload || defaultBeforeUpload
-    }, fileList.length >= 8 ? null : uploadButton), /*#__PURE__*/React.createElement(Modal, {
+      beforeUpload: beforeUpload || defaultBeforeUpload,
+      style: style,
+      ref: ref
+    }, fileList.length >= maxCount ? null : uploadButton), /*#__PURE__*/React.createElement(Modal, {
       visible: previewImageDetail.previewVisible,
       title: previewImageDetail.previewTitle,
       footer: null,
@@ -1325,13 +2144,12 @@ var ApaasImageUpload = function ApaasImageUpload(props) {
 
 
   return /*#__PURE__*/React.createElement(UploadChild, null);
-};
-
+});
 ApaasImageUpload.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({
+    properties: {
       accept: {
         title: "接受类型",
         type: "string",
@@ -1362,26 +2180,72 @@ ApaasImageUpload.schema = {
         min: 1,
         default: 1,
         widget: "slider"
+      },
+      formItemProps: {
+        type: 'object',
+        title: '表单字段配置',
+        displayType: 'column',
+        properties: _objectSpread2({}, formItemProperties({
+          label: COMPONENT_NAME$8,
+          rules: {
+            required: {
+              label: '必填',
+              message: ''
+            },
+            validator: {
+              label: '自定义函数',
+              message: ''
+            }
+          }
+        }))
       }
-    }, formItemProperties({
-      label: COMPONENT_NAME$8
-    }))
+    }
   },
   // 基础属性Schema
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
-    type: "object",
-    displayType: "column",
+    type: 'object',
+    displayType: 'column',
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: '绑定动作',
+        type: 'object',
+        widget: 'BindAction',
+        required: false,
+        default: {},
+        props: {
+          actions: ['onChange']
+        }
+      },
+      lifeCycle: {
+        title: '生命周期',
+        type: 'object',
+        properties: {
+          didMount: {
+            title: '组件加载完成时',
+            description: 'didMount',
+            type: 'string',
+            required: false
+          },
+          unMount: {
+            title: '组件销毁时',
+            description: 'unMount',
+            type: 'string',
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -1398,14 +2262,34 @@ ApaasImageUpload.schema = {
 
 };
 
-var ApaasText = function ApaasText(props) {
+var _excluded$1 = ["content"];
+var ApaasText = /*#__PURE__*/forwardRef(function (props, ref) {
   var content = props.content,
-      styles = props.styles;
-  return /*#__PURE__*/React.createElement("span", {
-    style: styles
-  }, content);
-};
+      otherProps = _objectWithoutProperties(props, _excluded$1);
 
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement("span", _extends({}, otherProps, {
+    ref: ref
+  }), content);
+});
 ApaasText.schema = {
   basicSchema: {
     type: "object",
@@ -1423,17 +2307,51 @@ ApaasText.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      background: background,
+      layout: layout,
+      font: font,
+      margin: margin,
+      padding: padding,
+      border: border,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
+      events: {
+        title: "绑定动作",
+        type: "object",
+        widget: "BindAction",
+        required: false,
+        default: {},
+        props: {
+          actions: ['onClick']
+        }
+      },
+      lifeCycle: {
+        title: "生命周期",
+        type: "object",
+        properties: {
+          didMount: {
+            title: "组件加载完成时",
+            description: 'didMount',
+            type: "string",
+            required: false
+          },
+          unMount: {
+            title: "组件销毁时",
+            description: 'unMount',
+            type: "string",
+            required: false
+          }
+        },
+        default: {}
       }
     }
   },
@@ -1445,53 +2363,6 @@ ApaasText.schema = {
   __componentLayout__: COMPONENT_LAYOUT_INLINE,
   __isNeedCommonStyleConfig__: true,
   // 扩展字段，是否需要通用样式
-  __canDelete__: true,
-  // 是否支持在IDE中删除
-  __canCopy__: true,
-  // 是否支持被复制
-  __canMove__: true // 是否支持被移动
-
-};
-
-var ApaasBox = function ApaasBox(props) {
-  var children = props.children,
-      styles = props.styles;
-  return /*#__PURE__*/React.createElement("div", {
-    style: styles
-  }, children);
-};
-
-ApaasBox.schema = {
-  basicSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {}
-  },
-  // 基础属性Schema
-  styleSchema: {
-    type: "object",
-    displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
-  },
-  // 样式属性Schema
-  expandSchema: {
-    type: "object",
-    displayType: "column",
-    properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: ""
-      }
-    }
-  },
-  // 扩展属性Schema,用于写函数这些功能
-  type: "ApaasBox",
-  // 组件类型, 需要和导出名称一致
-  name: "Box",
-  // 组件名称，组件展示时使用
-  __source__: CURRENT_PACKAGE_NAME,
-  __componentType__: COMPONENT_TYPE_CONTAINER,
   __canDelete__: true,
   // 是否支持在IDE中删除
   __canCopy__: true,
@@ -1590,7 +2461,7 @@ ApaasModal.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {}
   },
   // 样式属性Schema
   expandSchema: {
@@ -1611,37 +2482,44 @@ ApaasModal.schema = {
   __componentType__: COMPONENT_TYPE_CONTAINER
 };
 
-var ApaasButton = function ApaasButton(props) {
-  return /*#__PURE__*/React.createElement(Button, props);
-};
+var ApaasButton = /*#__PURE__*/forwardRef(function (props, ref) {
+  var handleClick = function handleClick(e) {
+    var _props$events;
 
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onClick) === 'function') {
+      props.events.onClick(e);
+    }
+  };
+
+  useEffect(function () {
+    var _props$lifeCycle;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle = props.lifeCycle) === null || _props$lifeCycle === void 0 ? void 0 : _props$lifeCycle.didMount) === 'function') {
+      var _props$lifeCycle2;
+
+      props === null || props === void 0 ? void 0 : (_props$lifeCycle2 = props.lifeCycle) === null || _props$lifeCycle2 === void 0 ? void 0 : _props$lifeCycle2.didMount();
+    }
+
+    return function () {
+      var _props$lifeCycle3;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$lifeCycle3 = props.lifeCycle) === null || _props$lifeCycle3 === void 0 ? void 0 : _props$lifeCycle3.unMount) === 'function') {
+        var _props$lifeCycle4;
+
+        props === null || props === void 0 ? void 0 : (_props$lifeCycle4 = props.lifeCycle) === null || _props$lifeCycle4 === void 0 ? void 0 : _props$lifeCycle4.unMount();
+      }
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(Button, _extends({}, props, {
+    onClick: handleClick,
+    ref: ref
+  }));
+});
 ApaasButton.schema = {
   basicSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      // TODO: 增加这俩个属性的时候，在搭建的时候触发会发生跳转
-      // href: {
-      //   title: "跳转地址",
-      //   type: "string",
-      //   required: false,
-      //   default: '',
-      // },
-      // target: {
-      //   "title": "跳转方式",
-      //   "type": "string",
-      //   "enum": [
-      //     "_blank",
-      //     "_self",
-      //   ],
-      //   "enumNames": [
-      //     "新打开窗口",
-      //     "当前窗口"
-      //   ],
-      //   "widget": "select",
-      //   "hidden": "{{formData.href ===  ''}}",
-      //   "default": ""
-      // },
       loading: {
         title: "loading功能",
         type: "boolean",
@@ -1668,7 +2546,13 @@ ApaasButton.schema = {
   styleSchema: {
     type: "object",
     displayType: "column",
-    properties: _objectSpread2({}, styleSchema)
+    properties: {
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      cursor: cursor
+    }
   },
   // 样式属性Schema
   expandSchema: {
@@ -1721,7 +2605,6 @@ ApaasButton.schema = {
 
 var index = {
   ApaasText: ApaasText,
-  ApaasBox: ApaasBox,
   ApaasInput: ApaasInput,
   ApaasInputNumber: ApaasInputNumber,
   ApaasTextArea: ApaasTextArea,
@@ -1734,7 +2617,7 @@ var index = {
   ApaasModal: ApaasModal,
   ApaasForm: ApaasForm,
   ApaasButton: ApaasButton,
-  showComponentList: [ApaasText, ApaasBox, ApaasInput, ApaasInputNumber, ApaasTextArea, ApaasRadio, ApaasCheckBox, ApaasSingleSelect, ApaasMultSelect, ApaasDatePicker, ApaasImageUpload, ApaasForm, ApaasButton]
+  showComponentList: [ApaasText, ApaasInput, ApaasInputNumber, ApaasTextArea, ApaasRadio, ApaasCheckBox, ApaasSingleSelect, ApaasMultSelect, ApaasDatePicker, ApaasImageUpload, ApaasForm, ApaasButton]
 };
 
 export default index;

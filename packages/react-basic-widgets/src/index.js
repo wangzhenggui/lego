@@ -9,13 +9,11 @@ import ApaasMultSelect from './components/ApaasMultSelect';
 import ApaasDatePicker from './components/ApaasDatePicker';
 import ApaasImageUpload from './components/ApaasImageUpload';
 import ApaasText from './components/ApaasText';
-import ApaasBox from './components/ApaasBox';
 import ApaasModal from './components/ApaasModal';
 import ApaasButton from './components/ApaasButton';
 
 export default {
   ApaasText,
-  ApaasBox,
   ApaasInput,
   ApaasInputNumber,
   ApaasTextArea,
@@ -30,7 +28,6 @@ export default {
   ApaasButton,
   showComponentList: [
     ApaasText,
-    ApaasBox,
     ApaasInput,
     ApaasInputNumber,
     ApaasTextArea,

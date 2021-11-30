@@ -1,4 +1,5 @@
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_CONTAINER } from "../../common/constant";
+import { width, height, background, layout, font, margin, padding, border, cursor } from '../../common/schema';
 import './index.css';
 
 const COMPONENT_NAME = "容器"
@@ -20,17 +21,42 @@ ApaasContainer.schema = {
     type: "object",
     displayType: "column",
     properties: {
+      width, height, background, layout, font, margin, padding, border, cursor
     }
   }, // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        default: "",
+      events: {
+        title: "绑定动作",
+        type: "object",
+        widget: "BindAction",
+        required: false,
+        default: {},
+        props: {
+          actions: ['onClick'],
+        }
       },
+      lifeCycle: {
+        title: "生命周期",
+        type: "object",
+        properties: {
+          didMount: {
+            title: "组件加载完成时",
+            description: 'didMount',
+            type: "string",
+            required: false,
+          },
+          unMount: {
+            title: "组件销毁时",
+            description: 'unMount',
+            type: "string",
+            required: false,
+          },
+        },
+        default: {},
+      }
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasContainer",

@@ -7,7 +7,7 @@ import {
   ROOT_NODE_FLAG,
   COMPONENT_TYPE_BASIC,
 } from '@/common/constant';
-import { findIndex, get } from 'lodash';
+import { findIndex, get, set } from 'lodash';
 
 export const isAntComp = (type) => type === COMPONENT_SOURCE_ANTD;
 export const isOfficeComp = (type) => type === COMPONENT_SOURCE_OFFICE;
@@ -159,3 +159,19 @@ export const getInfoBySchema = (packageName, componentName, key) => {
 // TODO: 特殊逻辑
 export const isTabs = (schemas) => schemas?.type === 'ApaasTabs' && schemas?.__source__ === '@apaas-lego/react-container-widgets'
 export const isContainer = (schemas) => schemas?.type === 'ApaasLayout' && schemas?.__source__ === '@apaas-lego/react-container-widgets'
+
+
+// IDE输出的Schema转成Render所能识别的schema结构 [主要数组转对象]
+export const ideOutPutSchemaToRenderSchema = (chiles, node) => {
+  if (Array.isArray(chiles) && chiles.length > 0) {
+    const newChiles = chiles.map(item => ideOutPutSchemaToRenderSchema(item?.child, item))
+    set(node, `children`, {})
+    newChiles.map(i => {
+      set(node, `children.${i.id}`, i)
+    })
+    delete node.child
+  } else {
+    delete node.child
+  }
+  return node;
+}

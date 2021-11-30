@@ -2,7 +2,6 @@ import { CloseOutlined } from '@ant-design/icons'
 import { Button } from 'antd';
 import './index.css';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_CONTAINER } from "../../common/constant";
-import { styleSchema } from '../../common/schema';
 
 const ApaasModal = (props) => {
   const { children, styles, title, cancelText, okText } = props;
@@ -51,7 +50,6 @@ ApaasModal.schema = {
     type: "object",
     displayType: "column",
     properties: {
-      ...styleSchema
     }
   }, // 样式属性Schema
   expandSchema: {

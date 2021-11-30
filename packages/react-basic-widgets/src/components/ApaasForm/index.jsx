@@ -1,10 +1,22 @@
-import { Form } from "antd";
+import { useEffect, forwardRef } from 'react';
+import { Form as AForm } from "antd";
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_CONTAINER } from "../../common/constant";
-import { styleSchema } from '../../common/schema';
+import { width, height, margin, padding } from '../../common/schema';
 
-const ApaasForm = (props) => {
-  return <Form {...props}/>;
-};
+const ApaasForm = forwardRef((props, ref) => {
+  useEffect(() => {
+    if (typeof props?.lifeCycle?.didMount === 'function') {
+      props?.lifeCycle?.didMount()
+    }
+    return () => {
+      if (typeof props?.lifeCycle?.unMount === 'function') {
+        props?.lifeCycle?.unMount()
+      }
+    }
+  }, [])
+
+  return <AForm {...props} ref={ref} />;
+});
 
 ApaasForm.schema = {
   basicSchema: {
@@ -20,7 +32,7 @@ ApaasForm.schema = {
             title: "span",
             type: "number",
             required: false,
-            default: 3
+            default: 0
           },
           offset: {
             title: "offset",
@@ -39,7 +51,7 @@ ApaasForm.schema = {
             title: "span",
             type: "number",
             required: false,
-            default: 9
+            default: 0
           },
           offset: {
             title: "offset",
@@ -112,20 +124,32 @@ ApaasForm.schema = {
     type: "object",
     displayType: "column",
     properties: {
-      ...styleSchema
+      width, height, margin, padding
     }
   }, // 样式属性Schema
   expandSchema: {
     type: "object",
     displayType: "column",
     properties: {
-      didMount: {
-        title: "组件加载后",
-        type: "string",
-        widget: "CodeEditor",
-        required: false,
-        description: "函数表达式组件"
-      },
+      lifeCycle: {
+        title: "生命周期",
+        type: "object",
+        properties: {
+          didMount: {
+            title: "组件加载完成时",
+            description: 'didMount',
+            type: "string",
+            required: false,
+          },
+          unMount: {
+            title: "组件销毁时",
+            description: 'unMount',
+            type: "string",
+            required: false,
+          },
+        },
+        default: {},
+      }
     }
   }, // 扩展属性Schema,用于写函数这些功能
   type: "ApaasForm",

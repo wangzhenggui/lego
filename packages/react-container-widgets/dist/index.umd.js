@@ -8,59 +8,6 @@
 
   var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
 
-  function ownKeys(object, enumerableOnly) {
-    var keys = Object.keys(object);
-
-    if (Object.getOwnPropertySymbols) {
-      var symbols = Object.getOwnPropertySymbols(object);
-
-      if (enumerableOnly) {
-        symbols = symbols.filter(function (sym) {
-          return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-        });
-      }
-
-      keys.push.apply(keys, symbols);
-    }
-
-    return keys;
-  }
-
-  function _objectSpread2(target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i] != null ? arguments[i] : {};
-
-      if (i % 2) {
-        ownKeys(Object(source), true).forEach(function (key) {
-          _defineProperty(target, key, source[key]);
-        });
-      } else if (Object.getOwnPropertyDescriptors) {
-        Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-      } else {
-        ownKeys(Object(source)).forEach(function (key) {
-          Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-        });
-      }
-    }
-
-    return target;
-  }
-
-  function _defineProperty(obj, key, value) {
-    if (key in obj) {
-      Object.defineProperty(obj, key, {
-        value: value,
-        enumerable: true,
-        configurable: true,
-        writable: true
-      });
-    } else {
-      obj[key] = value;
-    }
-
-    return obj;
-  }
-
   function _extends() {
     _extends = Object.assign || function (target) {
       for (var i = 1; i < arguments.length; i++) {
@@ -79,7 +26,7 @@
     return _extends.apply(this, arguments);
   }
 
-  function _defineProperty$1(obj, key, value) {
+  function _defineProperty(obj, key, value) {
     if (key in obj) {
       Object.defineProperty(obj, key, {
         value: value,
@@ -313,7 +260,7 @@
   }());
   });
 
-  function ownKeys$1(object, enumerableOnly) {
+  function ownKeys(object, enumerableOnly) {
     var keys = Object.keys(object);
 
     if (Object.getOwnPropertySymbols) {
@@ -331,18 +278,18 @@
     return keys;
   }
 
-  function _objectSpread2$1(target) {
+  function _objectSpread2(target) {
     for (var i = 1; i < arguments.length; i++) {
       var source = arguments[i] != null ? arguments[i] : {};
 
       if (i % 2) {
-        ownKeys$1(Object(source), true).forEach(function (key) {
-          _defineProperty$1(target, key, source[key]);
+        ownKeys(Object(source), true).forEach(function (key) {
+          _defineProperty(target, key, source[key]);
         });
       } else if (Object.getOwnPropertyDescriptors) {
         Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
       } else {
-        ownKeys$1(Object(source)).forEach(function (key) {
+        ownKeys(Object(source)).forEach(function (key) {
           Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
         });
       }
@@ -352,7 +299,7 @@
   }
 
   function omit(obj, fields) {
-    var clone = _objectSpread2$1({}, obj);
+    var clone = _objectSpread2({}, obj);
 
     if (Array.isArray(fields)) {
       fields.forEach(function (key) {
@@ -28999,7 +28946,7 @@
             var mergedOffsetHeight = offsetHeight === Math.round(height) ? height : offsetHeight; // defer the callback but not defer to next frame
 
             Promise.resolve().then(function () {
-              onResize(_objectSpread2$1(_objectSpread2$1({}, size), {}, {
+              onResize(_objectSpread2(_objectSpread2({}, size), {}, {
                 offsetWidth: mergedOffsetWidth,
                 offsetHeight: mergedOffsetHeight
               }), target);
@@ -30399,7 +30346,7 @@
       }
 
       return /*#__PURE__*/React.createElement("div", _extends({
-        className: classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-normal"), image === simpleEmptyImg), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className)
+        className: classnames(prefixCls, (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-normal"), image === simpleEmptyImg), _defineProperty(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className)
       }, restProps), /*#__PURE__*/React.createElement("div", {
         className: "".concat(prefixCls, "-image"),
         style: imageStyle
@@ -30854,13 +30801,13 @@
 
       switch (status) {
         case 'appear':
-          return _ref2 = {}, _defineProperty$1(_ref2, STEP_PREPARE, onAppearPrepare), _defineProperty$1(_ref2, STEP_START, onAppearStart), _defineProperty$1(_ref2, STEP_ACTIVE, onAppearActive), _ref2;
+          return _ref2 = {}, _defineProperty(_ref2, STEP_PREPARE, onAppearPrepare), _defineProperty(_ref2, STEP_START, onAppearStart), _defineProperty(_ref2, STEP_ACTIVE, onAppearActive), _ref2;
 
         case 'enter':
-          return _ref3 = {}, _defineProperty$1(_ref3, STEP_PREPARE, onEnterPrepare), _defineProperty$1(_ref3, STEP_START, onEnterStart), _defineProperty$1(_ref3, STEP_ACTIVE, onEnterActive), _ref3;
+          return _ref3 = {}, _defineProperty(_ref3, STEP_PREPARE, onEnterPrepare), _defineProperty(_ref3, STEP_START, onEnterStart), _defineProperty(_ref3, STEP_ACTIVE, onEnterActive), _ref3;
 
         case 'leave':
-          return _ref4 = {}, _defineProperty$1(_ref4, STEP_PREPARE, onLeavePrepare), _defineProperty$1(_ref4, STEP_START, onLeaveStart), _defineProperty$1(_ref4, STEP_ACTIVE, onLeaveActive), _ref4;
+          return _ref4 = {}, _defineProperty(_ref4, STEP_PREPARE, onLeavePrepare), _defineProperty(_ref4, STEP_START, onLeaveStart), _defineProperty(_ref4, STEP_ACTIVE, onLeaveActive), _ref4;
 
         default:
           return {};
@@ -30968,7 +30915,7 @@
     var mergedStyle = style;
 
     if (eventHandlers[STEP_PREPARE] && step === STEP_START) {
-      mergedStyle = _objectSpread2$1({
+      mergedStyle = _objectSpread2({
         transition: 'none'
       }, mergedStyle);
     }
@@ -31063,7 +31010,7 @@
 
       var motionChildren;
 
-      var mergedProps = _objectSpread2$1(_objectSpread2$1({}, eventProps), {}, {
+      var mergedProps = _objectSpread2(_objectSpread2({}, eventProps), {}, {
         visible: visible
       });
 
@@ -31073,13 +31020,13 @@
       } else if (status === STATUS_NONE || !isSupportTransition(props)) {
         // Stable children
         if (mergedVisible) {
-          motionChildren = children(_objectSpread2$1({}, mergedProps), setNodeRef);
+          motionChildren = children(_objectSpread2({}, mergedProps), setNodeRef);
         } else if (!removeOnLeave && renderedRef.current) {
-          motionChildren = children(_objectSpread2$1(_objectSpread2$1({}, mergedProps), {}, {
+          motionChildren = children(_objectSpread2(_objectSpread2({}, mergedProps), {}, {
             className: leavedClassName
           }), setNodeRef);
         } else if (forceRender) {
-          motionChildren = children(_objectSpread2$1(_objectSpread2$1({}, mergedProps), {}, {
+          motionChildren = children(_objectSpread2(_objectSpread2({}, mergedProps), {}, {
             style: {
               display: 'none'
             }
@@ -31101,8 +31048,8 @@
           statusSuffix = 'start';
         }
 
-        motionChildren = children(_objectSpread2$1(_objectSpread2$1({}, mergedProps), {}, {
-          className: classnames(getTransitionName(motionName, status), (_classNames = {}, _defineProperty$1(_classNames, getTransitionName(motionName, "".concat(status, "-").concat(statusSuffix)), statusSuffix), _defineProperty$1(_classNames, motionName, typeof motionName === 'string'), _classNames)),
+        motionChildren = children(_objectSpread2(_objectSpread2({}, mergedProps), {}, {
+          className: classnames(getTransitionName(motionName, status), (_classNames = {}, _defineProperty(_classNames, getTransitionName(motionName, "".concat(status, "-").concat(statusSuffix)), statusSuffix), _defineProperty(_classNames, motionName, typeof motionName === 'string'), _classNames)),
           style: statusStyle
         }), setNodeRef);
       }
@@ -32000,14 +31947,14 @@
   }
   function generate$1(node, key, rootProps) {
     if (!rootProps) {
-      return /*#__PURE__*/React__default['default'].createElement(node.tag, _objectSpread2$1({
+      return /*#__PURE__*/React__default['default'].createElement(node.tag, _objectSpread2({
         key: key
       }, normalizeAttrs(node.attrs)), (node.children || []).map(function (child, index) {
         return generate$1(child, "".concat(key, "-").concat(node.tag, "-").concat(index));
       }));
     }
 
-    return /*#__PURE__*/React__default['default'].createElement(node.tag, _objectSpread2$1(_objectSpread2$1({
+    return /*#__PURE__*/React__default['default'].createElement(node.tag, _objectSpread2(_objectSpread2({
       key: key
     }, normalizeAttrs(node.attrs)), rootProps), (node.children || []).map(function (child, index) {
       return generate$1(child, "".concat(key, "-").concat(node.tag, "-").concat(index));
@@ -32055,7 +32002,7 @@
   }
 
   function getTwoToneColors() {
-    return _objectSpread2$1({}, twoToneColorPalette);
+    return _objectSpread2({}, twoToneColorPalette);
   }
 
   var IconBase = function IconBase(props) {
@@ -32086,12 +32033,12 @@
     var target = icon;
 
     if (target && typeof target.icon === 'function') {
-      target = _objectSpread2$1(_objectSpread2$1({}, target), {}, {
+      target = _objectSpread2(_objectSpread2({}, target), {}, {
         icon: target.icon(colors.primaryColor, colors.secondaryColor)
       });
     }
 
-    return generate$1(target.icon, "svg-".concat(target.name), _objectSpread2$1({
+    return generate$1(target.icon, "svg-".concat(target.name), _objectSpread2({
       className: className,
       onClick: onClick,
       style: style,
@@ -32148,7 +32095,7 @@
         _React$useContext$pre = _React$useContext.prefixCls,
         prefixCls = _React$useContext$pre === void 0 ? 'anticon' : _React$useContext$pre;
 
-    var classString = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(icon.name), !!icon.name), _defineProperty$1(_classNames, "".concat(prefixCls, "-spin"), !!spin || icon.name === 'loading'), _classNames), className);
+    var classString = classnames(prefixCls, (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-").concat(icon.name), !!icon.name), _defineProperty(_classNames, "".concat(prefixCls, "-spin"), !!spin || icon.name === 'loading'), _classNames), className);
     var iconTabIndex = tabIndex;
 
     if (iconTabIndex === undefined && onClick) {
@@ -32165,7 +32112,7 @@
         primaryColor = _normalizeTwoToneColo2[0],
         secondaryColor = _normalizeTwoToneColo2[1];
 
-    return /*#__PURE__*/React.createElement("span", _objectSpread2$1(_objectSpread2$1({
+    return /*#__PURE__*/React.createElement("span", _objectSpread2(_objectSpread2({
       role: "img",
       "aria-label": icon.name
     }, restProps), {}, {
@@ -32188,7 +32135,7 @@
   var CloseOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 00203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z" } }] }, "name": "close", "theme": "outlined" };
 
   var CloseOutlined$1 = function CloseOutlined$1(props, ref) {
-    return /*#__PURE__*/React.createElement(Icon, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
       ref: ref,
       icon: CloseOutlined
     }));
@@ -32956,7 +32903,7 @@
 
     var itemNode = /*#__PURE__*/React.createElement(Component, _extends({
       className: classnames(!invalidate && prefixCls, className),
-      style: _objectSpread2$1(_objectSpread2$1({}, overflowStyle), style)
+      style: _objectSpread2(_objectSpread2({}, overflowStyle), style)
     }, overflowProps, restProps, {
       ref: ref
     }), childNode);
@@ -33294,7 +33241,7 @@
       var key = getKey(item, index);
       return /*#__PURE__*/React.createElement(OverflowContext.Provider, {
         key: key,
-        value: _objectSpread2$1(_objectSpread2$1({}, itemSharedProps), {}, {
+        value: _objectSpread2(_objectSpread2({}, itemSharedProps), {}, {
           order: index,
           item: item,
           itemKey: key,
@@ -33328,7 +33275,7 @@
       restNode = /*#__PURE__*/React.createElement(Item, _extends({}, itemSharedProps, restContextProps), typeof mergedRenderRest === 'function' ? mergedRenderRest(omittedItems) : mergedRenderRest);
     } else if (renderRawRest) {
       restNode = /*#__PURE__*/React.createElement(OverflowContext.Provider, {
-        value: _objectSpread2$1(_objectSpread2$1({}, itemSharedProps), restContextProps)
+        value: _objectSpread2(_objectSpread2({}, itemSharedProps), restContextProps)
       }, renderRawRest(omittedItems));
     }
 
@@ -33410,7 +33357,7 @@
 
   function getAlignFromPlacement(builtinPlacements, placementStr, align) {
     var baseAlign = builtinPlacements[placementStr] || {};
-    return _objectSpread2$1(_objectSpread2$1({}, baseAlign), align);
+    return _objectSpread2(_objectSpread2({}, baseAlign), align);
   }
   function getAlignPopupClassName(builtinPlacements, prefixCls, align, isAlignPoint) {
     var points = align.points;
@@ -33468,7 +33415,7 @@
     var motion = {};
 
     if (maskMotion || maskTransitionName || maskAnimation) {
-      motion = _objectSpread2$1({
+      motion = _objectSpread2({
         motionAppear: true
       }, getMotion({
         motion: maskMotion,
@@ -33520,7 +33467,7 @@
     return false;
   });
 
-  function ownKeys$2(object, enumerableOnly) {
+  function ownKeys$1(object, enumerableOnly) {
     var keys = Object.keys(object);
 
     if (Object.getOwnPropertySymbols) {
@@ -33538,18 +33485,18 @@
     return keys;
   }
 
-  function _objectSpread2$2(target) {
+  function _objectSpread2$1(target) {
     for (var i = 1; i < arguments.length; i++) {
       var source = arguments[i] != null ? arguments[i] : {};
 
       if (i % 2) {
-        ownKeys$2(Object(source), true).forEach(function (key) {
-          _defineProperty$2(target, key, source[key]);
+        ownKeys$1(Object(source), true).forEach(function (key) {
+          _defineProperty$1(target, key, source[key]);
         });
       } else if (Object.getOwnPropertyDescriptors) {
         Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
       } else {
-        ownKeys$2(Object(source)).forEach(function (key) {
+        ownKeys$1(Object(source)).forEach(function (key) {
           Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
         });
       }
@@ -33574,7 +33521,7 @@
     return _typeof$2(obj);
   }
 
-  function _defineProperty$2(obj, key, value) {
+  function _defineProperty$1(obj, key, value) {
     if (key in obj) {
       Object.defineProperty(obj, key, {
         value: value,
@@ -34854,7 +34801,7 @@
     var pointInView = pageX >= 0 && pageX <= scrollX + viewportWidth && pageY >= 0 && pageY <= scrollY + viewportHeight; // Provide default target point
 
     var points = [align.points[0], 'cc'];
-    return doAlign(el, tgtRegion, _objectSpread2$2(_objectSpread2$2({}, align), {}, {
+    return doAlign(el, tgtRegion, _objectSpread2$1(_objectSpread2$1({}, align), {}, {
       points: points
     }), pointInView);
   }
@@ -37521,7 +37468,7 @@
     } // ======================== Motion ========================
 
 
-    var motion = _objectSpread2$1({}, getMotion(props));
+    var motion = _objectSpread2({}, getMotion(props));
 
     ['onAppearEnd', 'onEnterEnd', 'onLeaveEnd'].forEach(function (eventName) {
       var originHandler = motion[eventName];
@@ -37554,7 +37501,7 @@
       };
     }); // ======================== Render ========================
 
-    var mergedStyle = _objectSpread2$1(_objectSpread2$1({}, stretchStyle), {}, {
+    var mergedStyle = _objectSpread2(_objectSpread2({}, stretchStyle), {}, {
       zIndex: zIndex,
       opacity: status === 'motion' || status === 'stable' || !visible ? undefined : 0,
       pointerEvents: status === 'stable' ? undefined : 'none'
@@ -37603,7 +37550,7 @@
         onMouseLeave: onMouseLeave,
         onMouseDownCapture: onMouseDown,
         onTouchStartCapture: onTouchStart,
-        style: _objectSpread2$1(_objectSpread2$1({}, motionStyle), mergedStyle)
+        style: _objectSpread2(_objectSpread2({}, motionStyle), mergedStyle)
       }, childNode));
     });
   });
@@ -37632,7 +37579,7 @@
       };
     }); // ======================== Render ========================
 
-    var mergedStyle = _objectSpread2$1({
+    var mergedStyle = _objectSpread2({
       zIndex: zIndex
     }, popupStyle);
 
@@ -37660,7 +37607,7 @@
       return /*#__PURE__*/React.createElement("div", {
         ref: motionRef,
         className: mergedClassName,
-        style: _objectSpread2$1(_objectSpread2$1({}, motionStyle), mergedStyle)
+        style: _objectSpread2(_objectSpread2({}, motionStyle), mergedStyle)
       }, childNode);
     });
   });
@@ -37682,7 +37629,7 @@
         inMobile = _useState4[0],
         setInMobile = _useState4[1];
 
-    var cloneProps = _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+    var cloneProps = _objectSpread2(_objectSpread2({}, props), {}, {
       visible: innerVisible
     }); // We check mobile in visible changed here.
     // And this also delay set `innerVisible` to avoid popup component render flash
@@ -38423,7 +38370,7 @@
             newChildProps.className = childrenClassName;
           }
 
-          var cloneProps = _objectSpread2$1({}, newChildProps);
+          var cloneProps = _objectSpread2({}, newChildProps);
 
           if (supportRef(child)) {
             cloneProps.ref = composeRef(this.triggerRef, child.ref);
@@ -38545,7 +38492,7 @@
         var listener = function listener(_ref) {
           var matches = _ref.matches;
 
-          _this2.dispatch(_extends(_extends({}, screens), _defineProperty$1({}, screen, matches)));
+          _this2.dispatch(_extends(_extends({}, screens), _defineProperty({}, screen, matches)));
         };
 
         var mql = window.matchMedia(matchMediaQuery);
@@ -38746,7 +38693,7 @@
     return React.createElement(Trigger, Object.assign({}, otherProps, {
       prefixCls: prefixCls,
       ref: triggerRef,
-      popupClassName: classnames(overlayClassName, _defineProperty$1({}, "".concat(prefixCls, "-show-arrow"), arrow)),
+      popupClassName: classnames(overlayClassName, _defineProperty({}, "".concat(prefixCls, "-show-arrow"), arrow)),
       popupStyle: overlayStyle,
       builtinPlacements: placements$1,
       action: trigger,
@@ -38770,7 +38717,7 @@
   var EllipsisOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M176 511a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0z" } }] }, "name": "ellipsis", "theme": "outlined" };
 
   var EllipsisOutlined$1 = function EllipsisOutlined$1(props, ref) {
-    return /*#__PURE__*/React.createElement(Icon, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
       ref: ref,
       icon: EllipsisOutlined
     }));
@@ -38830,7 +38777,7 @@
   var MenuContext = /*#__PURE__*/React.createContext(null);
 
   function mergeProps(origin, target) {
-    var clone = _objectSpread2$1({}, origin);
+    var clone = _objectSpread2({}, origin);
 
     Object.keys(target).forEach(function (key) {
       var value = target[key];
@@ -38915,7 +38862,7 @@
     var iconNode;
 
     if (typeof icon === 'function') {
-      iconNode = /*#__PURE__*/React.createElement(icon, _objectSpread2$1({}, props));
+      iconNode = /*#__PURE__*/React.createElement(icon, _objectSpread2({}, props));
     } else {
       // Compatible for origin definition
       iconNode = icon;
@@ -39126,13 +39073,13 @@
     }, restProps, activeProps, optionRoleProps, {
       component: "li",
       "aria-disabled": disabled,
-      style: _objectSpread2$1(_objectSpread2$1({}, directionStyle), style),
-      className: classnames(itemCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(itemCls, "-active"), active), _defineProperty$1(_classNames, "".concat(itemCls, "-selected"), selected), _defineProperty$1(_classNames, "".concat(itemCls, "-disabled"), mergedDisabled), _classNames), className),
+      style: _objectSpread2(_objectSpread2({}, directionStyle), style),
+      className: classnames(itemCls, (_classNames = {}, _defineProperty(_classNames, "".concat(itemCls, "-active"), active), _defineProperty(_classNames, "".concat(itemCls, "-selected"), selected), _defineProperty(_classNames, "".concat(itemCls, "-disabled"), mergedDisabled), _classNames), className),
       onClick: onInternalClick,
       onKeyDown: onInternalKeyDown,
       onFocus: onInternalFocus
     }), children, /*#__PURE__*/React.createElement(Icon$1, {
-      props: _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+      props: _objectSpread2(_objectSpread2({}, props), {}, {
         isSelected: selected
       }),
       icon: mergedItemIcon
@@ -39328,11 +39275,11 @@
         innerVisible = _React$useState2[0],
         setInnerVisible = _React$useState2[1];
 
-    var placement = rtl ? _objectSpread2$1(_objectSpread2$1({}, placementsRtl), builtinPlacements) : _objectSpread2$1(_objectSpread2$1({}, placements$1), builtinPlacements);
+    var placement = rtl ? _objectSpread2(_objectSpread2({}, placementsRtl), builtinPlacements) : _objectSpread2(_objectSpread2({}, placements$1), builtinPlacements);
     var popupPlacement = popupPlacementMap[mode];
     var targetMotion = getMotion$1(mode, motion, defaultMotions);
 
-    var mergedMotion = _objectSpread2$1(_objectSpread2$1({}, targetMotion), {}, {
+    var mergedMotion = _objectSpread2(_objectSpread2({}, targetMotion), {}, {
       leavedClassName: "".concat(prefixCls, "-hidden"),
       removeOnLeave: false,
       motionAppear: true
@@ -39350,7 +39297,7 @@
     }, [visible]);
     return /*#__PURE__*/React.createElement(Trigger, {
       prefixCls: prefixCls,
-      popupClassName: classnames("".concat(prefixCls, "-popup"), _defineProperty$1({}, "".concat(prefixCls, "-rtl"), rtl), popupClassName),
+      popupClassName: classnames("".concat(prefixCls, "-popup"), _defineProperty({}, "".concat(prefixCls, "-rtl"), rtl), popupClassName),
       stretch: mode === 'horizontal' ? 'minWidth' : null,
       getPopupContainer: getPopupContainer,
       builtinPlacements: placement,
@@ -39402,7 +39349,7 @@
       }
     }, [mode]); // ================================= Render =================================
 
-    var mergedMotion = _objectSpread2$1({}, getMotion$1(fixedMode, motion, defaultMotions)); // No need appear since nest inlineCollapse changed
+    var mergedMotion = _objectSpread2({}, getMotion$1(fixedMode, motion, defaultMotions)); // No need appear since nest inlineCollapse changed
 
 
     if (keyPath.length > 1) {
@@ -39611,7 +39558,7 @@
       onFocus: onInternalFocus
     }, activeProps), title, /*#__PURE__*/React.createElement(Icon$1, {
       icon: mode !== 'horizontal' ? mergedExpandIcon : null,
-      props: _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+      props: _objectSpread2(_objectSpread2({}, props), {}, {
         isOpen: open,
         // [Legacy] Not sure why need this mark
         isSubMenu: true
@@ -39659,7 +39606,7 @@
     }, restProps, {
       component: "li",
       style: style,
-      className: classnames(subMenuPrefixCls, "".concat(subMenuPrefixCls, "-").concat(mode), className, (_classNames = {}, _defineProperty$1(_classNames, "".concat(subMenuPrefixCls, "-open"), open), _defineProperty$1(_classNames, "".concat(subMenuPrefixCls, "-active"), mergedActive), _defineProperty$1(_classNames, "".concat(subMenuPrefixCls, "-selected"), childrenSelected), _defineProperty$1(_classNames, "".concat(subMenuPrefixCls, "-disabled"), mergedDisabled), _classNames)),
+      className: classnames(subMenuPrefixCls, "".concat(subMenuPrefixCls, "-").concat(mode), className, (_classNames = {}, _defineProperty(_classNames, "".concat(subMenuPrefixCls, "-open"), open), _defineProperty(_classNames, "".concat(subMenuPrefixCls, "-active"), mergedActive), _defineProperty(_classNames, "".concat(subMenuPrefixCls, "-selected"), childrenSelected), _defineProperty(_classNames, "".concat(subMenuPrefixCls, "-disabled"), mergedDisabled), _classNames)),
       onMouseEnter: onInternalMouseEnter,
       onMouseLeave: onInternalMouseLeave
     }), titleNode, !overflowDisabled && /*#__PURE__*/React.createElement(InlineSubMenuList, {
@@ -39765,9 +39712,9 @@
       };
     }
 
-    var inline = (_inline = {}, _defineProperty$1(_inline, UP, prev), _defineProperty$1(_inline, DOWN, next), _inline);
-    var horizontal = (_horizontal = {}, _defineProperty$1(_horizontal, LEFT$1, isRtl ? next : prev), _defineProperty$1(_horizontal, RIGHT, isRtl ? prev : next), _defineProperty$1(_horizontal, DOWN, children), _defineProperty$1(_horizontal, ENTER, children), _horizontal);
-    var vertical = (_vertical = {}, _defineProperty$1(_vertical, UP, prev), _defineProperty$1(_vertical, DOWN, next), _defineProperty$1(_vertical, ENTER, children), _defineProperty$1(_vertical, ESC, parent), _defineProperty$1(_vertical, LEFT$1, isRtl ? children : parent), _defineProperty$1(_vertical, RIGHT, isRtl ? parent : children), _vertical);
+    var inline = (_inline = {}, _defineProperty(_inline, UP, prev), _defineProperty(_inline, DOWN, next), _inline);
+    var horizontal = (_horizontal = {}, _defineProperty(_horizontal, LEFT$1, isRtl ? next : prev), _defineProperty(_horizontal, RIGHT, isRtl ? prev : next), _defineProperty(_horizontal, DOWN, children), _defineProperty(_horizontal, ENTER, children), _horizontal);
+    var vertical = (_vertical = {}, _defineProperty(_vertical, UP, prev), _defineProperty(_vertical, DOWN, next), _defineProperty(_vertical, ENTER, children), _defineProperty(_vertical, ESC, parent), _defineProperty(_vertical, LEFT$1, isRtl ? children : parent), _defineProperty(_vertical, RIGHT, isRtl ? parent : children), _vertical);
     var offsets = {
       inline: inline,
       horizontal: horizontal,
@@ -40389,7 +40336,7 @@
 
         setMergedSelectKeys(newSelectKeys); // Trigger event
 
-        var selectInfo = _objectSpread2$1(_objectSpread2$1({}, info), {}, {
+        var selectInfo = _objectSpread2(_objectSpread2({}, info), {}, {
           selectedKeys: newSelectKeys
         });
 
@@ -40466,7 +40413,7 @@
       prefixCls: "".concat(prefixCls, "-overflow"),
       component: "ul",
       itemComponent: MenuItem,
-      className: classnames(prefixCls, "".concat(prefixCls, "-root"), "".concat(prefixCls, "-").concat(mergedMode), className, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-inline-collapsed"), mergedInlineCollapsed), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), isRtl), _classNames)),
+      className: classnames(prefixCls, "".concat(prefixCls, "-root"), "".concat(prefixCls, "-").concat(mergedMode), className, (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-inline-collapsed"), mergedInlineCollapsed), _defineProperty(_classNames, "".concat(prefixCls, "-rtl"), isRtl), _classNames)),
       dir: direction,
       style: style,
       role: "menu",
@@ -40705,7 +40652,7 @@
     var node = /*#__PURE__*/React.createElement("div", {
       key: key,
       ref: ref,
-      className: classnames(tabPrefix, className, (_classNames = {}, _defineProperty$1(_classNames, "".concat(tabPrefix, "-with-remove"), removable), _defineProperty$1(_classNames, "".concat(tabPrefix, "-active"), active), _defineProperty$1(_classNames, "".concat(tabPrefix, "-disabled"), disabled), _classNames)),
+      className: classnames(tabPrefix, className, (_classNames = {}, _defineProperty(_classNames, "".concat(tabPrefix, "-with-remove"), removable), _defineProperty(_classNames, "".concat(tabPrefix, "-active"), active), _defineProperty(_classNames, "".concat(tabPrefix, "-disabled"), disabled), _classNames)),
       style: style,
       onClick: onInternalClick
     }, /*#__PURE__*/React.createElement("div", {
@@ -40766,7 +40713,7 @@
           data = tabSizes.get((_tabs = tabs[i - 1]) === null || _tabs === void 0 ? void 0 : _tabs.key) || DEFAULT_SIZE;
         }
 
-        var entity = map.get(key) || _objectSpread2$1({}, data); // Right
+        var entity = map.get(key) || _objectSpread2({}, data); // Right
 
 
         entity.right = rightOffset - entity.left - entity.width; // Update entity
@@ -41018,14 +40965,14 @@
       }
     }, [open]); // ========================= Render =========================
 
-    var moreStyle = _defineProperty$1({}, rtl ? 'marginRight' : 'marginLeft', tabBarGutter);
+    var moreStyle = _defineProperty({}, rtl ? 'marginRight' : 'marginLeft', tabBarGutter);
 
     if (!tabs.length) {
       moreStyle.visibility = 'hidden';
       moreStyle.order = 1;
     }
 
-    var overlayClassName = classnames(_defineProperty$1({}, "".concat(dropdownPrefix, "-rtl"), rtl));
+    var overlayClassName = classnames(_defineProperty({}, "".concat(dropdownPrefix, "-rtl"), rtl));
     var moreNode = mobile ? null : /*#__PURE__*/React.createElement(Dropdown$1, {
       prefixCls: dropdownPrefix,
       overlay: menu,
@@ -41534,7 +41481,7 @@
     }, {
       width: addWidth,
       height: addHeight
-    }, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+    }, _objectSpread2(_objectSpread2({}, props), {}, {
       tabs: tabs
     })),
         _useVisibleRange2 = _slicedToArray(_useVisibleRange, 2),
@@ -41719,7 +41666,7 @@
     }), /*#__PURE__*/React.createElement(ReactResizeObserver, {
       onResize: onListHolderResize
     }, /*#__PURE__*/React.createElement("div", {
-      className: classnames(wrapPrefix, (_classNames = {}, _defineProperty$1(_classNames, "".concat(wrapPrefix, "-ping-left"), pingLeft), _defineProperty$1(_classNames, "".concat(wrapPrefix, "-ping-right"), pingRight), _defineProperty$1(_classNames, "".concat(wrapPrefix, "-ping-top"), pingTop), _defineProperty$1(_classNames, "".concat(wrapPrefix, "-ping-bottom"), pingBottom), _classNames)),
+      className: classnames(wrapPrefix, (_classNames = {}, _defineProperty(_classNames, "".concat(wrapPrefix, "-ping-left"), pingLeft), _defineProperty(_classNames, "".concat(wrapPrefix, "-ping-right"), pingRight), _defineProperty(_classNames, "".concat(wrapPrefix, "-ping-top"), pingTop), _defineProperty(_classNames, "".concat(wrapPrefix, "-ping-bottom"), pingBottom), _classNames)),
       ref: tabsWrapperRef
     }, /*#__PURE__*/React.createElement(ReactResizeObserver, {
       onResize: onListHolderResize
@@ -41735,11 +41682,11 @@
       prefixCls: prefixCls,
       locale: locale,
       editable: editable,
-      style: _objectSpread2$1(_objectSpread2$1({}, tabNodes.length === 0 ? undefined : tabNodeStyle), {}, {
+      style: _objectSpread2(_objectSpread2({}, tabNodes.length === 0 ? undefined : tabNodeStyle), {}, {
         visibility: hasDropdown ? 'hidden' : null
       })
     }), /*#__PURE__*/React.createElement("div", {
-      className: classnames("".concat(prefixCls, "-ink-bar"), _defineProperty$1({}, "".concat(prefixCls, "-ink-bar-animated"), animated.inkBar)),
+      className: classnames("".concat(prefixCls, "-ink-bar"), _defineProperty({}, "".concat(prefixCls, "-ink-bar-animated"), animated.inkBar)),
       style: inkStyle
     }))))), /*#__PURE__*/React.createElement(OperationNode$1, _extends({}, props, {
       removeAriaLabel: locale === null || locale === void 0 ? void 0 : locale.removeAriaLabel,
@@ -41777,8 +41724,8 @@
     return /*#__PURE__*/React.createElement("div", {
       className: classnames("".concat(prefixCls, "-content-holder"))
     }, /*#__PURE__*/React.createElement("div", {
-      className: classnames("".concat(prefixCls, "-content"), "".concat(prefixCls, "-content-").concat(tabPosition), _defineProperty$1({}, "".concat(prefixCls, "-content-animated"), tabPaneAnimated)),
-      style: activeIndex && tabPaneAnimated ? _defineProperty$1({}, rtl ? 'marginRight' : 'marginLeft', "-".concat(activeIndex, "00%")) : null
+      className: classnames("".concat(prefixCls, "-content"), "".concat(prefixCls, "-content-").concat(tabPosition), _defineProperty({}, "".concat(prefixCls, "-content-animated"), tabPaneAnimated)),
+      style: activeIndex && tabPaneAnimated ? _defineProperty({}, rtl ? 'marginRight' : 'marginLeft', "-".concat(activeIndex, "00%")) : null
     }, tabs.map(function (tab) {
       return /*#__PURE__*/React.cloneElement(tab.node, {
         key: tab.key,
@@ -41834,7 +41781,7 @@
       tabIndex: active ? 0 : -1,
       "aria-labelledby": id && "".concat(id, "-tab-").concat(tabKey),
       "aria-hidden": !active,
-      style: _objectSpread2$1(_objectSpread2$1({}, mergedStyle), style),
+      style: _objectSpread2(_objectSpread2({}, mergedStyle), style),
       className: classnames("".concat(prefixCls, "-tabpane"), active && "".concat(prefixCls, "-tabpane-active"), className)
     }, (active || visited || forceRender) && children);
   }
@@ -41857,7 +41804,7 @@
     return toArray(children).map(function (node) {
       if ( /*#__PURE__*/React.isValidElement(node)) {
         var key = node.key !== undefined ? String(node.key) : undefined;
-        return _objectSpread2$1(_objectSpread2$1({
+        return _objectSpread2(_objectSpread2({
           key: key
         }, node.props), {}, {
           node: node
@@ -41917,7 +41864,7 @@
         tabPane: true
       };
     } else {
-      mergedAnimated = _objectSpread2$1({
+      mergedAnimated = _objectSpread2({
         inkBar: true,
         tabPane: false
       }, _typeof$1(animated) === 'object' ? animated : {});
@@ -42011,7 +41958,7 @@
     };
     var tabNavBar;
 
-    var tabNavBarProps = _objectSpread2$1(_objectSpread2$1({}, sharedProps), {}, {
+    var tabNavBarProps = _objectSpread2(_objectSpread2({}, sharedProps), {}, {
       editable: editable,
       locale: locale,
       moreIcon: moreIcon,
@@ -42038,7 +41985,7 @@
     }, /*#__PURE__*/React.createElement("div", _extends({
       ref: ref,
       id: id,
-      className: classnames(prefixCls, "".concat(prefixCls, "-").concat(mergedTabPosition), (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-mobile"), mobile), _defineProperty$1(_classNames, "".concat(prefixCls, "-editable"), editable), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), rtl), _classNames), className)
+      className: classnames(prefixCls, "".concat(prefixCls, "-").concat(mergedTabPosition), (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-mobile"), mobile), _defineProperty(_classNames, "".concat(prefixCls, "-editable"), editable), _defineProperty(_classNames, "".concat(prefixCls, "-rtl"), rtl), _classNames), className)
     }, restProps), tabNavBar, /*#__PURE__*/React.createElement(TabPanelList, _extends({
       destroyInactiveTabPane: destroyInactiveTabPane
     }, sharedProps, {
@@ -42053,7 +42000,7 @@
   var PlusOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "defs", "attrs": {}, "children": [{ "tag": "style", "attrs": {} }] }, { "tag": "path", "attrs": { "d": "M482 152h60q8 0 8 8v704q0 8-8 8h-60q-8 0-8-8V160q0-8 8-8z" } }, { "tag": "path", "attrs": { "d": "M176 474h672q8 0 8 8v60q0 8-8 8H176q-8 0-8-8v-60q0-8 8-8z" } }] }, "name": "plus", "theme": "outlined" };
 
   var PlusOutlined$1 = function PlusOutlined$1(props, ref) {
-    return /*#__PURE__*/React.createElement(Icon, _objectSpread2$1(_objectSpread2$1({}, props), {}, {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
       ref: ref,
       icon: PlusOutlined
     }));
@@ -42119,7 +42066,7 @@
         direction: direction,
         moreTransitionName: "".concat(rootPrefixCls, "-slide-up")
       }, props, {
-        className: classnames((_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(size), size), _defineProperty$1(_classNames, "".concat(prefixCls, "-card"), ['card', 'editable-card'].includes(type)), _defineProperty$1(_classNames, "".concat(prefixCls, "-editable-card"), type === 'editable-card'), _defineProperty$1(_classNames, "".concat(prefixCls, "-centered"), centered), _classNames), className),
+        className: classnames((_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-").concat(size), size), _defineProperty(_classNames, "".concat(prefixCls, "-card"), ['card', 'editable-card'].includes(type)), _defineProperty(_classNames, "".concat(prefixCls, "-editable-card"), type === 'editable-card'), _defineProperty(_classNames, "".concat(prefixCls, "-centered"), centered), _classNames), className),
         editable: editable,
         moreIcon: moreIcon,
         prefixCls: prefixCls
@@ -42254,7 +42201,7 @@
 
     var prefixCls = getPrefixCls('row', customizePrefixCls);
     var gutters = getGutter();
-    var classes = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-no-wrap"), wrap === false), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(justify), justify), _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(align), align), _defineProperty$1(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className); // Add gutter related style
+    var classes = classnames(prefixCls, (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-no-wrap"), wrap === false), _defineProperty(_classNames, "".concat(prefixCls, "-").concat(justify), justify), _defineProperty(_classNames, "".concat(prefixCls, "-").concat(align), align), _defineProperty(_classNames, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _classNames), className); // Add gutter related style
 
     var rowStyle = {};
     var horizontalGutter = gutters[0] > 0 ? gutters[0] / -2 : undefined;
@@ -42357,9 +42304,9 @@
       }
 
       delete others[size];
-      sizeClassObj = _extends(_extends({}, sizeClassObj), (_extends2 = {}, _defineProperty$1(_extends2, "".concat(prefixCls, "-").concat(size, "-").concat(sizeProps.span), sizeProps.span !== undefined), _defineProperty$1(_extends2, "".concat(prefixCls, "-").concat(size, "-order-").concat(sizeProps.order), sizeProps.order || sizeProps.order === 0), _defineProperty$1(_extends2, "".concat(prefixCls, "-").concat(size, "-offset-").concat(sizeProps.offset), sizeProps.offset || sizeProps.offset === 0), _defineProperty$1(_extends2, "".concat(prefixCls, "-").concat(size, "-push-").concat(sizeProps.push), sizeProps.push || sizeProps.push === 0), _defineProperty$1(_extends2, "".concat(prefixCls, "-").concat(size, "-pull-").concat(sizeProps.pull), sizeProps.pull || sizeProps.pull === 0), _defineProperty$1(_extends2, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _extends2));
+      sizeClassObj = _extends(_extends({}, sizeClassObj), (_extends2 = {}, _defineProperty(_extends2, "".concat(prefixCls, "-").concat(size, "-").concat(sizeProps.span), sizeProps.span !== undefined), _defineProperty(_extends2, "".concat(prefixCls, "-").concat(size, "-order-").concat(sizeProps.order), sizeProps.order || sizeProps.order === 0), _defineProperty(_extends2, "".concat(prefixCls, "-").concat(size, "-offset-").concat(sizeProps.offset), sizeProps.offset || sizeProps.offset === 0), _defineProperty(_extends2, "".concat(prefixCls, "-").concat(size, "-push-").concat(sizeProps.push), sizeProps.push || sizeProps.push === 0), _defineProperty(_extends2, "".concat(prefixCls, "-").concat(size, "-pull-").concat(sizeProps.pull), sizeProps.pull || sizeProps.pull === 0), _defineProperty(_extends2, "".concat(prefixCls, "-rtl"), direction === 'rtl'), _extends2));
     });
-    var classes = classnames(prefixCls, (_classNames = {}, _defineProperty$1(_classNames, "".concat(prefixCls, "-").concat(span), span !== undefined), _defineProperty$1(_classNames, "".concat(prefixCls, "-order-").concat(order), order), _defineProperty$1(_classNames, "".concat(prefixCls, "-offset-").concat(offset), offset), _defineProperty$1(_classNames, "".concat(prefixCls, "-push-").concat(push), push), _defineProperty$1(_classNames, "".concat(prefixCls, "-pull-").concat(pull), pull), _classNames), className, sizeClassObj);
+    var classes = classnames(prefixCls, (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-").concat(span), span !== undefined), _defineProperty(_classNames, "".concat(prefixCls, "-order-").concat(order), order), _defineProperty(_classNames, "".concat(prefixCls, "-offset-").concat(offset), offset), _defineProperty(_classNames, "".concat(prefixCls, "-push-").concat(push), push), _defineProperty(_classNames, "".concat(prefixCls, "-pull-").concat(pull), pull), _classNames), className, sizeClassObj);
     var mergedStyle = {}; // Horizontal gutter use padding
 
     if (gutter && gutter[0] > 0) {
@@ -42399,205 +42346,203 @@
   var COMPONENT_TYPE_BASIC = 'basic'; // 基础类型
    // 行类元素
 
-  var styleSchema = {
-    width: {
-      title: '宽度',
-      type: 'string',
-      required: false
-    },
-    height: {
-      title: '高度',
-      type: 'string',
-      required: false
-    },
-    background: {
-      title: '背景色',
-      type: 'string'
-    },
-    layout: {
-      type: 'object',
-      title: '布局',
-      properties: {
-        display: {
-          "title": "布局",
-          "type": "string",
-          "enum": ["flex", "block", "inline-block"],
-          "enumNames": ["flex", "block", "inline-block"],
-          "widget": "select",
-          "default": "block"
-        },
-        flexDirection: {
-          "title": "弹性布局方向",
-          "type": "string",
-          "enum": ["row", "column"],
-          "enumNames": ["横向", "纵向"],
-          "default": "row",
-          "hidden": "{{formData.layout.display !== 'flex'}}"
-        },
-        justifyContent: {
-          "title": "主轴方向",
-          "type": "string",
-          "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-          "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-          "default": "center",
-          "hidden": "{{formData.layout.display !== 'flex'}}"
-        },
-        alignItems: {
-          "title": "侧轴方向",
-          "type": "string",
-          "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-          "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
-          "default": "center",
-          "hidden": "{{formData.layout.display !== 'flex'}}"
-        }
+  var width = {
+    title: '宽度',
+    type: 'string',
+    required: false
+  };
+  var height = {
+    title: '高度',
+    type: 'string',
+    required: false
+  };
+  var background = {
+    title: '背景色',
+    type: 'string'
+  };
+  var layout = {
+    type: 'object',
+    title: '布局',
+    properties: {
+      display: {
+        "title": "布局",
+        "type": "string",
+        "enum": ["flex", "block", "inline-block"],
+        "enumNames": ["flex", "block", "inline-block"],
+        "widget": "select",
+        "default": "block"
+      },
+      flexDirection: {
+        "title": "弹性布局方向",
+        "type": "string",
+        "enum": ["row", "column"],
+        "enumNames": ["横向", "纵向"],
+        "default": "row",
+        "hidden": "{{formData.layout.display !== 'flex'}}"
+      },
+      justifyContent: {
+        "title": "主轴方向",
+        "type": "string",
+        "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "default": "center",
+        "hidden": "{{formData.layout.display !== 'flex'}}"
+      },
+      alignItems: {
+        "title": "侧轴方向",
+        "type": "string",
+        "enum": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "enumNames": ["flex-start", "flex-end", "center", "space-around", "space-between"],
+        "default": "center",
+        "hidden": "{{formData.layout.display !== 'flex'}}"
       }
-    },
-    font: {
-      type: 'object',
-      title: '文字',
-      properties: {
-        fontFamily: {
-          title: '字体',
-          description: 'font-family',
-          type: 'string',
-          required: false
-        },
-        fontWidget: {
-          type: 'string',
-          description: 'font-widget',
-          title: '字重',
-          default: 'normal',
-          widget: 'select',
-          enum: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder'],
-          enumNames: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder']
-        },
-        fontStyle: {
-          type: 'string',
-          title: '样式',
-          description: 'font-style',
-          default: 'normal',
-          widget: 'select',
-          enum: ['normal', 'italic'],
-          enumNames: ['正常', '斜体']
-        },
-        fontSize: {
-          title: '字体大小',
-          description: 'font-size',
-          type: 'number',
-          required: false,
-          default: 14
-        },
-        lineHeight: {
-          title: '行高',
-          description: 'line-height',
-          type: 'string',
-          required: false,
-          default: '21px'
-        },
-        color: {
-          title: '字体颜色',
-          description: 'color',
-          type: 'string',
-          format: 'color',
-          default: '#000'
-        },
-        textAlign: {
-          type: 'string',
-          description: 'text-align',
-          title: '对齐方式',
-          default: 'left',
-          enum: ['left', 'center', 'right', 'justify'],
-          enumNames: ['left', 'center', 'right', 'justify']
-        },
-        textDecorationLine: {
-          type: 'string',
-          description: 'text-decoration-line',
-          title: '装饰线',
-          default: 'none',
-          enum: ['none', 'underline', 'line-through'],
-          enumNames: ['none', '下划线', '横划线']
-        }
-      }
-    },
-    margin: {
-      type: 'object',
-      title: '外边距',
-      properties: {
-        marginTop: {
-          title: '上边距',
-          type: 'string'
-        },
-        marginRight: {
-          title: '右边距',
-          type: 'string'
-        },
-        marginBottom: {
-          title: '下边距',
-          type: 'string'
-        },
-        marginLeft: {
-          title: '左边距',
-          type: 'string'
-        }
-      }
-    },
-    padding: {
-      type: 'object',
-      title: '内边距',
-      properties: {
-        paddingTop: {
-          title: '上边距',
-          type: 'string'
-        },
-        paddingRight: {
-          title: '右边距',
-          type: 'string'
-        },
-        paddingBottom: {
-          title: '下边距',
-          type: 'string'
-        },
-        paddingLeft: {
-          title: '左边距',
-          type: 'string'
-        }
-      }
-    },
-    border: {
-      type: 'object',
-      title: '边框',
-      properties: {
-        borderStyle: {
-          type: 'string',
-          title: '线形',
-          default: 'none',
-          widget: 'select',
-          enum: ['none', 'solid', 'dashed', 'dotted'],
-          enumNames: ['无', '实线', '虚线', '点线']
-        },
-        borderWidth: {
-          type: 'string',
-          title: '线宽'
-        },
-        borderColor: {
-          type: 'string',
-          title: '颜色',
-          widget: 'color'
-        },
-        borderRadius: {
-          type: 'string',
-          title: '圆角'
-        }
-      }
-    },
-    cursor: {
-      title: '鼠标手势',
-      type: 'string',
-      enum: ['default', 'pointer'],
-      enumNames: ['default', 'pointer'],
-      widget: 'select',
-      default: 'default'
     }
+  };
+  var font = {
+    type: 'object',
+    title: '文字',
+    properties: {
+      fontFamily: {
+        title: '字体',
+        description: 'font-family',
+        type: 'string',
+        required: false
+      },
+      fontWidget: {
+        type: 'string',
+        description: 'font-widget',
+        title: '字重',
+        default: 'normal',
+        widget: 'select',
+        enum: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder'],
+        enumNames: ['lighter', 'normal', '100', '200', '300', '400', '500', '600', '700', '800', '900', 'bold', 'bolder']
+      },
+      fontStyle: {
+        type: 'string',
+        title: '样式',
+        description: 'font-style',
+        default: 'normal',
+        widget: 'select',
+        enum: ['normal', 'italic'],
+        enumNames: ['正常', '斜体']
+      },
+      fontSize: {
+        title: '字体大小',
+        description: 'font-size',
+        type: 'number',
+        required: false,
+        default: 14
+      },
+      lineHeight: {
+        title: '行高',
+        description: 'line-height',
+        type: 'string',
+        required: false,
+        default: '21px'
+      },
+      color: {
+        title: '字体颜色',
+        description: 'color',
+        type: 'string',
+        format: 'color',
+        default: '#000'
+      },
+      textAlign: {
+        type: 'string',
+        description: 'text-align',
+        title: '对齐方式',
+        default: 'left',
+        enum: ['left', 'center', 'right', 'justify'],
+        enumNames: ['left', 'center', 'right', 'justify']
+      },
+      textDecorationLine: {
+        type: 'string',
+        description: 'text-decoration-line',
+        title: '装饰线',
+        default: 'none',
+        enum: ['none', 'underline', 'line-through'],
+        enumNames: ['none', '下划线', '横划线']
+      }
+    }
+  };
+  var margin = {
+    type: 'object',
+    title: '外边距',
+    properties: {
+      marginTop: {
+        title: '上边距',
+        type: 'string'
+      },
+      marginRight: {
+        title: '右边距',
+        type: 'string'
+      },
+      marginBottom: {
+        title: '下边距',
+        type: 'string'
+      },
+      marginLeft: {
+        title: '左边距',
+        type: 'string'
+      }
+    }
+  };
+  var padding = {
+    type: 'object',
+    title: '内边距',
+    properties: {
+      paddingTop: {
+        title: '上边距',
+        type: 'string'
+      },
+      paddingRight: {
+        title: '右边距',
+        type: 'string'
+      },
+      paddingBottom: {
+        title: '下边距',
+        type: 'string'
+      },
+      paddingLeft: {
+        title: '左边距',
+        type: 'string'
+      }
+    }
+  };
+  var border = {
+    type: 'object',
+    title: '边框',
+    properties: {
+      borderStyle: {
+        type: 'string',
+        title: '线形',
+        default: 'none',
+        widget: 'select',
+        enum: ['none', 'solid', 'dashed', 'dotted'],
+        enumNames: ['无', '实线', '虚线', '点线']
+      },
+      borderWidth: {
+        type: 'string',
+        title: '线宽'
+      },
+      borderColor: {
+        type: 'string',
+        title: '颜色',
+        widget: 'color'
+      },
+      borderRadius: {
+        type: 'string',
+        title: '圆角'
+      }
+    }
+  };
+  var cursor = {
+    title: '鼠标手势',
+    type: 'string',
+    enum: ['default', 'pointer'],
+    enumNames: ['default', 'pointer'],
+    widget: 'select',
+    default: 'default'
   };
 
   var TabPane$1 = Tabs$1.TabPane;
@@ -42637,17 +42582,51 @@
     styleSchema: {
       type: "object",
       displayType: "column",
-      properties: _objectSpread2({}, styleSchema)
+      properties: {
+        width: width,
+        height: height,
+        background: background,
+        layout: layout,
+        font: font,
+        margin: margin,
+        padding: padding,
+        border: border,
+        cursor: cursor
+      }
     },
     // 样式属性Schema
     expandSchema: {
       type: "object",
       displayType: "column",
       properties: {
-        didMount: {
-          title: "组件加载后",
-          type: "string",
-          default: ""
+        events: {
+          title: "绑定动作",
+          type: "object",
+          widget: "BindAction",
+          required: false,
+          default: {},
+          props: {
+            actions: ['onClick']
+          }
+        },
+        lifeCycle: {
+          title: "生命周期",
+          type: "object",
+          properties: {
+            didMount: {
+              title: "组件加载完成时",
+              description: 'didMount',
+              type: "string",
+              required: false
+            },
+            unMount: {
+              title: "组件销毁时",
+              description: 'unMount',
+              type: "string",
+              required: false
+            }
+          },
+          default: {}
         }
       }
     },
@@ -42723,17 +42702,51 @@
     styleSchema: {
       type: "object",
       displayType: "column",
-      properties: {}
+      properties: {
+        width: width,
+        height: height,
+        background: background,
+        layout: layout,
+        font: font,
+        margin: margin,
+        padding: padding,
+        border: border,
+        cursor: cursor
+      }
     },
     // 样式属性Schema
     expandSchema: {
       type: "object",
       displayType: "column",
       properties: {
-        didMount: {
-          title: "组件加载后",
-          type: "string",
-          default: ""
+        events: {
+          title: "绑定动作",
+          type: "object",
+          widget: "BindAction",
+          required: false,
+          default: {},
+          props: {
+            actions: ['onClick']
+          }
+        },
+        lifeCycle: {
+          title: "生命周期",
+          type: "object",
+          properties: {
+            didMount: {
+              title: "组件加载完成时",
+              description: 'didMount',
+              type: "string",
+              required: false
+            },
+            unMount: {
+              title: "组件销毁时",
+              description: 'unMount',
+              type: "string",
+              required: false
+            }
+          },
+          default: {}
         }
       }
     },
@@ -42781,17 +42794,51 @@
     styleSchema: {
       type: "object",
       displayType: "column",
-      properties: {}
+      properties: {
+        width: width,
+        height: height,
+        background: background,
+        layout: layout,
+        font: font,
+        margin: margin,
+        padding: padding,
+        border: border,
+        cursor: cursor
+      }
     },
     // 样式属性Schema
     expandSchema: {
       type: "object",
       displayType: "column",
       properties: {
-        didMount: {
-          title: "组件加载后",
-          type: "string",
-          default: ""
+        events: {
+          title: "绑定动作",
+          type: "object",
+          widget: "BindAction",
+          required: false,
+          default: {},
+          props: {
+            actions: ['onClick']
+          }
+        },
+        lifeCycle: {
+          title: "生命周期",
+          type: "object",
+          properties: {
+            didMount: {
+              title: "组件加载完成时",
+              description: 'didMount',
+              type: "string",
+              required: false
+            },
+            unMount: {
+              title: "组件销毁时",
+              description: 'unMount',
+              type: "string",
+              required: false
+            }
+          },
+          default: {}
         }
       }
     },
@@ -42819,11 +42866,94 @@
     }
   };
 
+  var css_248z$1 = ".container {\n  background-color: #f0f0f0;\n  border: 1px dotted;\n  color: rgb(167, 177, 189);\n  max-height: 572px;\n  padding: 20px;\n  overflow: auto;\n  margin-top: 16px;\n  text-align: center;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  overflow: hidden;\n}";
+  styleInject(css_248z$1);
+
+  var COMPONENT_NAME$3 = "普通容器";
+
+  var ApaasBox = function ApaasBox(_ref) {
+    var children = _ref.children;
+    return children ? children : /*#__PURE__*/React__default['default'].createElement("div", {
+      className: "container"
+    }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC");
+  };
+  ApaasBox.schema = {
+    basicSchema: {
+      type: "object",
+      displayType: "column",
+      properties: {}
+    },
+    // 基础属性Schema
+    styleSchema: {
+      type: "object",
+      displayType: "column",
+      properties: {
+        width: width,
+        height: height,
+        background: background,
+        layout: layout,
+        font: font,
+        margin: margin,
+        padding: padding,
+        border: border,
+        cursor: cursor
+      }
+    },
+    // 样式属性Schema
+    expandSchema: {
+      type: "object",
+      displayType: "column",
+      properties: {
+        events: {
+          title: "绑定动作",
+          type: "object",
+          widget: "BindAction",
+          required: false,
+          default: {},
+          props: {
+            actions: ['onClick']
+          }
+        },
+        lifeCycle: {
+          title: "生命周期",
+          type: "object",
+          properties: {
+            didMount: {
+              title: "组件加载完成时",
+              description: 'didMount',
+              type: "string",
+              required: false
+            },
+            unMount: {
+              title: "组件销毁时",
+              description: 'unMount',
+              type: "string",
+              required: false
+            }
+          },
+          default: {}
+        }
+      }
+    },
+    // 扩展属性Schema,用于写函数这些功能
+    type: "ApaasBox",
+    name: COMPONENT_NAME$3,
+    __source__: CURRENT_PACKAGE_NAME,
+    __componentType__: COMPONENT_TYPE_CONTAINER,
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: true,
+    // 是否支持被复制
+    __canMove__: true // 是否支持被移动
+
+  };
+
   var index$1 = {
     ApaasTabs: ApaasTabs,
     ApaasContainer: ApaasContainer,
     ApaasLayout: ApaasLayout,
-    showComponentList: [ApaasTabs, ApaasLayout]
+    ApaasBox: ApaasBox,
+    showComponentList: [ApaasTabs, ApaasLayout, ApaasBox]
   };
 
   return index$1;

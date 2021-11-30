@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ant-design/pro-layout": "^6.5.0",
+    "@apaas-lego/react-render": "^0.0.1",
     "@apaas-lego/setting-widgets": "^0.0.1",
     "@umijs/preset-react": "^1.8.22",
     "classnames": "^2.3.1",
@@ -43,6 +44,7 @@
   },
   "scripts": {
     "start": "umi dev",
+    "build": "umi build",
     "postinstall": "umi generate tmp",
     "prettier": "prettier --write '**/*.{js,jsx,tsx,ts,less,md,json}'",
     "test": "umi-test",
