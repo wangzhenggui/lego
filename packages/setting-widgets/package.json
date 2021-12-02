@@ -1,6 +1,6 @@
 {
   "name": "@apaas-lego/setting-widgets",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "配置组件库",
   "author": "wangzhenggui <jianjia.wzg@raycloud.com>",
   "homepage": "https://github.com/wangzhenggui/lego/tree/main/packages/setting-widgets#readme",
