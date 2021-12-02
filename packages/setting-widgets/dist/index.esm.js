@@ -334,26 +334,26 @@ var ColProportion = function ColProportion(_ref) {
   var _ref$value = _ref.value,
       value = _ref$value === void 0 ? [] : _ref$value,
       onChange = _ref.onChange;
-  console.log('value', value);
+
+  var handlePaste = function handlePaste(e) {
+    console.debug('阻止用户粘贴；防止布局错乱');
+    e.preventDefault();
+  };
 
   var handleChange = function handleChange(e) {
     var inputValue = e.target.value;
-    var reg = /^[\d:]+$/;
+    var reg = /^[\d:]*$/;
 
     if (reg.test(inputValue)) {
-      var finalValue = inputValue.split(':'); // .map(item => {
-      //   const newItem = Number(item);
-      //   if (isNaN(newItem) || newItem === 0) return 1;
-      //   return newItem
-      // })
-
+      var finalValue = inputValue.split(':');
       onChange(finalValue);
     }
   };
 
   return /*#__PURE__*/React.createElement(Input, {
     value: value.join(':'),
-    onChange: handleChange
+    onChange: handleChange,
+    onPaste: handlePaste
   });
 };
 
