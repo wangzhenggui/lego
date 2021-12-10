@@ -1,6 +1,6 @@
 {
   "name": "@apaas-lego/react-container-widgets",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "react搭建组件库-容器组件",
   "author": "wangzhenggui",
   "homepage": "https://github.com/wangzhenggui/lego/tree/main/packages/react-basic-widgets#readme",

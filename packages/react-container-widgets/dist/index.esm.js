@@ -429,9 +429,12 @@ var COMPONENT_NAME$2 = '布局容器';
 
 var ApaasLayout = function ApaasLayout(_ref) {
   var items = _ref.items,
+      gutter = _ref.gutter,
       children = _ref.children;
   var childrenList = Array.isArray(children) ? children : [children];
-  return /*#__PURE__*/React.createElement(Row, null, items.map(function (item, index) {
+  return /*#__PURE__*/React.createElement(Row, {
+    gutter: gutter
+  }, items.map(function (item, index) {
     return /*#__PURE__*/React.createElement(Col, {
       span: item || '1',
       key: index
@@ -449,6 +452,13 @@ ApaasLayout.schema = {
         "type": "array",
         "widget": "ColProportion",
         "default": ["24", "12", "12"]
+      },
+      "gutter": {
+        "title": "间距",
+        "description": "第一个行间距，第二个列间距",
+        "type": "array",
+        "widget": "Gutter",
+        "default": [0, 0]
       }
     }
   },

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import MonacoEditor from 'react-monaco-editor';
-import { Form, Row, Col, Select, Input, Button, Checkbox, InputNumber } from 'antd';
+import { Form, Row, Col, Select, Input, Button, Checkbox, InputNumber, Space, Slider } from 'antd';
 import { MinusCircleOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 
 function ownKeys(object, enumerableOnly) {
@@ -487,4 +487,65 @@ var Rules = function Rules(props) {
   }));
 };
 
-export { CodeEditor$1 as BindAction, CodeEditor, ColProportion, Rules };
+var chunk = function chunk(min, max, step) {
+  var marks = {};
+
+  for (var i = min; i <= max; i++) {
+    if (i % step === 0) {
+      marks[i] = i;
+    }
+  }
+
+  return marks;
+}; //TODO: 交互换一下 换成滑块交互
+
+
+var Gutter = function Gutter(_ref) {
+  var _ref$value = _ref.value,
+      value = _ref$value === void 0 ? [] : _ref$value,
+      onChange = _ref.onChange;
+  var marks = chunk(0, 48, 8);
+
+  var handleChange = function handleChange(index) {
+    var val = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+    var _value = _slicedToArray(value, 2),
+        start = _value[0],
+        end = _value[1];
+
+    if (index === 0) {
+      onChange([val, end]);
+    } else {
+      onChange([start, val]);
+    }
+  };
+
+  return /*#__PURE__*/React.createElement(Space, {
+    direction: "vertical",
+    style: {
+      width: '200px'
+    }
+  }, /*#__PURE__*/React.createElement(Slider, {
+    min: 0,
+    max: 48,
+    step: 8,
+    marks: marks,
+    dots: true,
+    value: value[0],
+    onChange: function onChange(value) {
+      return handleChange(0, value);
+    }
+  }), /*#__PURE__*/React.createElement(Slider, {
+    min: 0,
+    max: 48,
+    step: 8,
+    marks: marks,
+    dots: true,
+    value: value[1],
+    onChange: function onChange(value) {
+      return handleChange(1, value);
+    }
+  }));
+};
+
+export { CodeEditor$1 as BindAction, CodeEditor, ColProportion, Gutter, Rules };
