@@ -349,10 +349,13 @@ styleInject(css_248z);
 var COMPONENT_NAME$1 = "容器";
 
 var ApaasContainer = function ApaasContainer(_ref) {
-  var children = _ref.children;
-  return children ? children : /*#__PURE__*/React.createElement("div", {
+  var children = _ref.children,
+      style = _ref.style;
+  return /*#__PURE__*/React.createElement("div", {
+    style: style
+  }, children ? children : /*#__PURE__*/React.createElement("div", {
     className: "container"
-  }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC");
+  }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC"));
 };
 ApaasContainer.schema = {
   basicSchema: {
@@ -427,11 +430,16 @@ ApaasContainer.schema = {
 
 var COMPONENT_NAME$2 = '布局容器';
 
-var ApaasLayout = function ApaasLayout(_ref) {
-  var items = _ref.items,
-      children = _ref.children;
+var ApaasLayout = function ApaasLayout(props) {
+  var items = props.items,
+      gutter = props.gutter,
+      children = props.children,
+      style = props.style;
   var childrenList = Array.isArray(children) ? children : [children];
-  return /*#__PURE__*/React.createElement(Row, null, items.map(function (item, index) {
+  return /*#__PURE__*/React.createElement(Row, {
+    style: style,
+    gutter: gutter
+  }, items.map(function (item, index) {
     return /*#__PURE__*/React.createElement(Col, {
       span: item || '1',
       key: index
@@ -449,6 +457,13 @@ ApaasLayout.schema = {
         "type": "array",
         "widget": "ColProportion",
         "default": ["24", "12", "12"]
+      },
+      "gutter": {
+        "title": "间距",
+        "description": "第一个行间距，第二个列间距",
+        "type": "array",
+        "widget": "Gutter",
+        "default": [0, 0]
       }
     }
   },
@@ -460,7 +475,6 @@ ApaasLayout.schema = {
       width: width,
       height: height,
       background: background,
-      layout: layout,
       font: font,
       margin: margin,
       padding: padding,
@@ -534,10 +548,13 @@ styleInject(css_248z$1);
 var COMPONENT_NAME$3 = "普通容器";
 
 var ApaasBox = function ApaasBox(_ref) {
-  var children = _ref.children;
-  return children ? children : /*#__PURE__*/React.createElement("div", {
+  var children = _ref.children,
+      style = _ref.style;
+  return /*#__PURE__*/React.createElement("div", {
+    style: style
+  }, children ? children : /*#__PURE__*/React.createElement("div", {
     className: "container"
-  }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC");
+  }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC"));
 };
 ApaasBox.schema = {
   basicSchema: {
