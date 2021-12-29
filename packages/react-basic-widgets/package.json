@@ -1,6 +1,6 @@
 {
   "name": "@apaas-lego/react-basic-widgets",
-  "version": "0.0.29",
+  "version": "0.1.4",
   "description": "react搭建元组件库",
   "author": "wangzhenggui <jianjia.wzg@raycloud.com>",
   "homepage": "https://github.com/wangzhenggui/lego/tree/main/packages/react-basic-widgets#readme",
@@ -32,8 +32,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.6.2",
-    "antd": "^4.16.6",
-    "react-easy-crop": "^3.5.3"
+    "antd": "^4.16.6"
   },
   "devDependencies": {
     "@umijs/test": "^3.0.5",
@@ -47,8 +46,7 @@
     "yorkie": "^2.0.0"
   },
   "peerDependencies": {
-    "react": "^16.12.0",
-    "umi-request": "^1.3.9"
+    "react": "^16.12.0"
   },
   "publishConfig": {
     "access": "public"
