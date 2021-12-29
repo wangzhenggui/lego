@@ -4,10 +4,11 @@ import { width, height, background, layout, font, margin, padding, border, curso
 
 const COMPONENT_NAME = '布局容器';
 
-const ApaasLayout = ({ items, gutter, children }) => {
+const ApaasLayout = (props) => {
+  const { items, gutter, children, style } = props
   const childrenList = Array.isArray(children) ? children : [children]
   return (
-    <Row gutter={gutter}>
+    <Row style={style} gutter={gutter} >
       {
         items.map((item, index) => <Col span={item || '1'} key={index}>{childrenList[index]}</Col>)
       }
@@ -39,7 +40,7 @@ ApaasLayout.schema = {
     type: "object",
     displayType: "column",
     properties: {
-      width, height, background, layout, font, margin, padding, border, cursor
+      width, height, background, font, margin, padding, border, cursor
     }
   }, // 样式属性Schema
   expandSchema: {

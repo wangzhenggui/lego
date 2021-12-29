@@ -4,8 +4,12 @@ import './index.css';
 
 const COMPONENT_NAME = "容器"
 
-const ApaasContainer = ({ children }) => {
-  return children ? children : <div className="container">拖拽组件或者模版到这里</div>
+const ApaasContainer = ({ children, style }) => {
+  return <div style={style}>
+    {
+      children ? children : <div className="container">拖拽组件或者模版到这里</div>
+    }
+  </div>
 };
 
 export default ApaasContainer;
