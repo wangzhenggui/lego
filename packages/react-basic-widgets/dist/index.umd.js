@@ -71362,11 +71362,10 @@
    */
 
 
-  var ApaasImageUpload = /*#__PURE__*/React.forwardRef(function (props) {
+  var ApaasImageUpload = /*#__PURE__*/React.forwardRef(function (props, ref) {
     var _props$value = props.value,
         value = _props$value === void 0 ? [] : _props$value,
         onChange = props.onChange,
-        crop = props.crop,
         maxCount = props.maxCount,
         beforeUpload = props.beforeUpload,
         action = props.action,

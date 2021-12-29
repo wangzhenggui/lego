@@ -8,7 +8,6 @@ import {
   formItemProperties,
   width,
   height,
-  layout,
   margin,
   padding,
   cursor,
@@ -34,8 +33,8 @@ const getBase64 = (file) => {
  * 5、maxCount 最大上传数
  * 6、自己实现双向绑定
  */
-const ApaasImageUpload = forwardRef((props) => {
-  const { value = [], onChange, crop, maxCount, beforeUpload, action, style } = props
+const ApaasImageUpload = forwardRef((props, ref) => {
+  const { value = [], onChange, maxCount, beforeUpload, action, style } = props
   const [fileList, setFileList] = useState(value);
   const [previewImageDetail, setPreviewImageDetail] = useState({});
   useEffect(() => {
