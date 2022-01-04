@@ -1,6 +1,5 @@
-import { forwardRef } from 'react';
+import { useEffect,forwardRef } from 'react';
 import { Button as AButton } from "antd";
-import useLifeCycle from '../../hooks/useLifeCycle';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_BASIC } from "../../common/constant";
 import { width, height, margin, padding, cursor } from '../../common/schema';
 
@@ -10,7 +9,16 @@ const ApaasButton = forwardRef((props, ref) => {
       props.events.onClick(e)
     }
   }
-  useLifeCycle(props)
+  useEffect(() => {
+    if (typeof props?.lifeCycle?.didMount === 'function') {
+      props?.lifeCycle?.didMount()
+    }
+    return () => {
+      if (typeof props?.lifeCycle?.unMount === 'function') {
+        props?.lifeCycle?.unMount()
+      }
+    }
+  }, [])
   return (
     <AButton {...props} onClick={handleClick} ref={ref}/>
   );
@@ -49,31 +57,12 @@ ApaasButton.schema = {
         "widget": "select",
         "default": "default"
       },
-      href: {
-        title: '链接地址',
-        type: 'string',
-        default: '',
-        hidden: "{{formData.type !== 'link'}}"
-      },
-      target: {
-        title: '跳转方式',
-        type: 'string',
-        "enum": [
-          "_blank",
-          "_self",
-        ],
-        "enumNames": [
-          "新开页面",
-          "当前页面跳转",
-        ],
-        "widget": "select",
-      },
       children: {
         title: "按钮内容",
         type: "string",
         required: true,
         default: '按钮',
-      },
+      }
     },
   }, // 基础属性Schema
   styleSchema: {

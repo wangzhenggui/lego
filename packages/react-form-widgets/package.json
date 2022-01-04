@@ -1,9 +1,14 @@
 {
-  "name": "@apaas-lego/react-basic-widgets",
-  "version": "0.1.16",
-  "description": "react搭建元组件库",
+  "name": "@apaas-lego/react-form-widgets",
+  "version": "0.0.2",
+  "description": "表单组件",
+  "keywords": [
+    "form",
+    "表单",
+    "lego"
+  ],
   "author": "wangzhenggui <jianjia.wzg@raycloud.com>",
-  "homepage": "https://github.com/wangzhenggui/lego/tree/main/packages/react-basic-widgets#readme",
+  "homepage": "https://github.com/wangzhenggui/lego#readme",
   "license": "ISC",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -32,7 +37,8 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.6.2",
-    "antd": "^4.16.6"
+    "antd": "^4.16.6",
+    "react-easy-crop": "^3.5.3"
   },
   "devDependencies": {
     "@umijs/test": "^3.0.5",
