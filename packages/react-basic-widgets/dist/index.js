@@ -2,6 +2,7 @@
 
 var React = require('react');
 var antd = require('antd');
+var icons = require('@ant-design/icons');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -68,6 +69,10 @@ var COMPONENT_TYPE_CONTAINER = 'container'; // 容器类型
 var COMPONENT_TYPE_BASIC = 'basic'; // 基础类型
 
 var COMPONENT_LAYOUT_INLINE = 'inline'; // 行类元素
+
+var COMPONENT_MODE_PREVIEW = 'preview'; // 组件预览模式
+
+var COMPONENT_MODE_EDIT = 'edit'; // 组件在IDE模式
 
 var width = {
   title: '宽度',
@@ -377,15 +382,7 @@ ApaasText.schema = {
 
 };
 
-var ApaasButton = /*#__PURE__*/React.forwardRef(function (props, ref) {
-  var handleClick = function handleClick(e) {
-    var _props$events;
-
-    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onClick) === 'function') {
-      props.events.onClick(e);
-    }
-  };
-
+var useLifeCycle = function useLifeCycle(props) {
   React.useEffect(function () {
     var _props$lifeCycle;
 
@@ -405,6 +402,18 @@ var ApaasButton = /*#__PURE__*/React.forwardRef(function (props, ref) {
       }
     };
   }, []);
+};
+
+var ApaasButton = /*#__PURE__*/React.forwardRef(function (props, ref) {
+  var handleClick = function handleClick(e) {
+    var _props$events;
+
+    if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onClick) === 'function') {
+      props.events.onClick(e);
+    }
+  };
+
+  useLifeCycle(props);
   return /*#__PURE__*/React__default['default'].createElement(antd.Button, _extends({}, props, {
     onClick: handleClick,
     ref: ref
@@ -433,7 +442,7 @@ ApaasButton.schema = {
         title: '链接地址',
         type: 'string',
         default: '',
-        hidden: "{{state.type !== 'link'}}"
+        hidden: "{{formData.type !== 'link'}}"
       },
       target: {
         title: '跳转方式',
@@ -693,8 +702,7 @@ var css_248z = ".container {\n  background-color: #f0f0f0;\n  border: 1px dotted
 styleInject(css_248z);
 
 var COMPONENT_NAME = "链接块";
-
-var ApaasLinkDiv = function ApaasLinkDiv(props) {
+var ApaasLinkDiv = /*#__PURE__*/React.forwardRef(function (props, ref) {
   var children = props.children,
       style = props.style,
       url = props.url,
@@ -702,11 +710,12 @@ var ApaasLinkDiv = function ApaasLinkDiv(props) {
   return /*#__PURE__*/React__default['default'].createElement("a", {
     style: style,
     href: url,
-    target: openOther ? '_blank' : '_self'
+    target: openOther ? '_blank' : '_self',
+    ref: ref
   }, children ? children : /*#__PURE__*/React__default['default'].createElement("div", {
     className: "container"
   }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC"));
-};
+});
 ApaasLinkDiv.schema = {
   basicSchema: {
     type: "object",
@@ -802,12 +811,218 @@ ApaasLinkDiv.schema = {
 
 };
 
+var css_248z$1 = ".footer {\n  display: flex;\n  justify-content: flex-end;\n  margin-top: 16px;\n}\n\n.container {\n  background-color: #f0f0f0;\n  border: 1px dotted;\n  color: rgb(167, 177, 189);\n  max-height: 572px;\n  padding: 20px;\n  overflow: auto;\n  margin-top: 16px;\n}\n\n.titleWrap {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  justify-content: space-between;\n  border-bottom: 1px solid #f0f0f0;\n  padding: 10px 16px;\n}\n\n.titleName {\n  color: #333;\n  font-size: 16px;\n}\n\n.footer-wrap {\n  margin-top: 4px;\n  padding: 10px 16px;\n  text-align: right;\n  background: 0 0;\n  border-top: 1px solid #f0f0f0;\n  border-radius: 0 0 2px 2px;\n}\n\n.button-list :not(:first-child) {\n  margin-left:8px\n}";
+styleInject(css_248z$1);
+
+var DevModal = function DevModal(props) {
+  var children = props.children,
+      title = props.title,
+      width = props.width,
+      closable = props.closable,
+      footer = props.footer;
+  return /*#__PURE__*/React__default['default'].createElement("div", {
+    style: {
+      width: width,
+      background: '#fff'
+    }
+  }, /*#__PURE__*/React__default['default'].createElement("div", {
+    className: "titleWrap"
+  }, /*#__PURE__*/React__default['default'].createElement("span", {
+    className: "titleName"
+  }, title), closable && /*#__PURE__*/React__default['default'].createElement(icons.CloseOutlined, null)), children ? children : /*#__PURE__*/React__default['default'].createElement("div", {
+    className: "container"
+  }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC"), /*#__PURE__*/React__default['default'].createElement("div", {
+    className: "footer-wrap"
+  }, footer));
+};
+
+var fn = function fn() {};
+
+var RenderFooter = function RenderFooter(props) {
+  var show = props.show,
+      align = props.align,
+      permutation = props.permutation,
+      _props$okText = props.okText,
+      okText = _props$okText === void 0 ? '确认' : _props$okText,
+      _props$cancelText = props.cancelText,
+      cancelText = _props$cancelText === void 0 ? '取消' : _props$cancelText,
+      _props$onOk = props.onOk,
+      onOk = _props$onOk === void 0 ? fn : _props$onOk,
+      _props$onCancel = props.onCancel,
+      onCancel = _props$onCancel === void 0 ? fn : _props$onCancel;
+  if (!show) return null;
+
+  var handleClick = function handleClick(item, e) {
+    return item === 'sure' ? onOk(e) : onCancel(e);
+  };
+
+  return /*#__PURE__*/React__default['default'].createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: align
+    }
+  }, /*#__PURE__*/React__default['default'].createElement("div", {
+    className: "button-list"
+  }, permutation.split(',').map(function (item) {
+    return /*#__PURE__*/React__default['default'].createElement(antd.Button, {
+      type: item === 'sure' ? 'primary' : 'default',
+      onClick: function onClick(e) {
+        return handleClick(item, e);
+      }
+    }, item === 'sure' ? okText : cancelText);
+  })));
+};
+
+var _excluded$1 = ["children", "events", "mode", "footer"];
+var ApaasModal = /*#__PURE__*/React.forwardRef(function (props, ref) {
+  var children = props.children,
+      events = props.events,
+      _props$mode = props.mode,
+      mode = _props$mode === void 0 ? COMPONENT_MODE_PREVIEW : _props$mode,
+      _props$footer = props.footer,
+      footer = _props$footer === void 0 ? {} : _props$footer,
+      basicProps = _objectWithoutProperties(props, _excluded$1);
+
+  useLifeCycle(props);
+  return mode === COMPONENT_MODE_EDIT ? /*#__PURE__*/React__default['default'].createElement(DevModal, _extends({}, props, {
+    footer: /*#__PURE__*/React__default['default'].createElement(RenderFooter, _extends({}, footer, events))
+  })) : /*#__PURE__*/React__default['default'].createElement(antd.Modal, _extends({}, basicProps, events, {
+    ref: ref,
+    footer: /*#__PURE__*/React__default['default'].createElement(RenderFooter, _extends({}, footer, events))
+  }), children);
+});
+ApaasModal.schema = {
+  basicSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      title: {
+        title: '标题',
+        type: 'string',
+        default: '标题'
+      },
+      width: {
+        title: '宽度',
+        type: 'number',
+        default: 520,
+        min: 0
+      },
+      closable: {
+        title: '是否显示关闭按钮',
+        type: 'boolean',
+        default: true
+      },
+      visible: {
+        title: '显示',
+        type: 'boolean',
+        default: true
+      },
+      footer: {
+        title: '底部按钮配置',
+        type: "object",
+        displayType: "column",
+        properties: {
+          show: {
+            title: '是否显示底部按钮',
+            type: 'boolean',
+            default: true
+          },
+          align: {
+            "title": "对齐方式",
+            "type": "string",
+            "enum": ["flex-start", "center", "flex-end"],
+            "enumNames": ["左", "中", "右"],
+            "widget": "select",
+            "default": "flex-end"
+          },
+          permutation: {
+            "title": "排列方式",
+            "type": "string",
+            "enum": ['sure,cancel', 'cancel,sure', 'sure', 'cancel'],
+            "enumNames": ["确定，取消", "取消，确定", "确定", "取消"],
+            "widget": "select",
+            "default": 'sure,cancel'
+          },
+          okText: {
+            title: '确认按钮文案',
+            type: 'string',
+            default: '确认'
+          },
+          cancelText: {
+            title: '取消按钮文案',
+            type: 'string',
+            default: '取消'
+          }
+        }
+      }
+    }
+  },
+  // 基础属性Schema
+  styleSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {}
+  },
+  // 样式属性Schema
+  expandSchema: {
+    type: "object",
+    displayType: "column",
+    properties: {
+      events: {
+        title: "绑定动作",
+        type: "object",
+        widget: "BindAction",
+        required: false,
+        default: {},
+        props: {
+          actions: ['onOk', 'onCancel']
+        },
+        hidden: true
+      },
+      lifeCycle: {
+        title: "生命周期",
+        type: "object",
+        properties: {
+          didMount: {
+            title: "组件加载完成时",
+            description: 'didMount',
+            type: "string",
+            required: false
+          },
+          unMount: {
+            title: "组件销毁时",
+            description: 'unMount',
+            type: "string",
+            required: false
+          }
+        },
+        default: {}
+      }
+    }
+  },
+  // 扩展属性Schema,用于写函数这些功能
+  type: "ApaasModal",
+  name: "对话框",
+  __source__: CURRENT_PACKAGE_NAME,
+  __componentType__: COMPONENT_TYPE_CONTAINER,
+  __showModal__: true,
+  // 弹框组件
+  __canDelete__: true,
+  // 是否支持在IDE中删除
+  __canCopy__: false,
+  // 是否支持被复制
+  __canMove__: false // 是否支持被移动
+
+};
+
 var index = {
   ApaasText: ApaasText,
   ApaasButton: ApaasButton,
   ApaasImage: ApaasImage,
   ApaasLinkDiv: ApaasLinkDiv,
-  showComponentList: [ApaasText, ApaasButton, ApaasImage, ApaasLinkDiv]
+  ApaasModal: ApaasModal,
+  showComponentList: [ApaasText, ApaasButton, ApaasImage, ApaasLinkDiv, ApaasModal]
 };
 
 module.exports = index;

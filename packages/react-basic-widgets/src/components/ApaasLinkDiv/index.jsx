@@ -1,17 +1,18 @@
+import { forwardRef } from 'react';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_CONTAINER } from "../../common/constant";
 import { width, height, font, margin, padding, cursor } from '../../common/schema';
 import './index.css';
 
 const COMPONENT_NAME = "链接块"
 
-const ApaasLinkDiv = (props) => {
+const ApaasLinkDiv = forwardRef((props, ref) => {
   const { children, style, url, openOther } = props
-  return <a style={style} href={url} target={openOther ? '_blank' : '_self'}>
+  return <a style={style} href={url} target={openOther ? '_blank' : '_self'} ref={ref}>
     {
       children ? children : <div className="container">拖拽组件或者模版到这里</div>
     }
   </a>
-};
+});
 
 export default ApaasLinkDiv;
 

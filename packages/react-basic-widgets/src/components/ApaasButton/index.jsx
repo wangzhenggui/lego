@@ -1,5 +1,6 @@
-import { useEffect,forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Button as AButton } from "antd";
+import useLifeCycle from '../../hooks/useLifeCycle';
 import { CURRENT_PACKAGE_NAME, COMPONENT_TYPE_BASIC } from "../../common/constant";
 import { width, height, margin, padding, cursor } from '../../common/schema';
 
@@ -9,16 +10,7 @@ const ApaasButton = forwardRef((props, ref) => {
       props.events.onClick(e)
     }
   }
-  useEffect(() => {
-    if (typeof props?.lifeCycle?.didMount === 'function') {
-      props?.lifeCycle?.didMount()
-    }
-    return () => {
-      if (typeof props?.lifeCycle?.unMount === 'function') {
-        props?.lifeCycle?.unMount()
-      }
-    }
-  }, [])
+  useLifeCycle(props)
   return (
     <AButton {...props} onClick={handleClick} ref={ref}/>
   );
@@ -61,7 +53,7 @@ ApaasButton.schema = {
         title: '链接地址',
         type: 'string',
         default: '',
-        hidden: "{{state.type !== 'link'}}"
+        hidden: "{{formData.type !== 'link'}}"
       },
       target: {
         title: '跳转方式',

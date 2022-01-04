@@ -1,6 +1,6 @@
 {
   "name": "@apaas-lego/react-basic-widgets",
-  "version": "0.1.4",
+  "version": "0.1.16",
   "description": "react搭建元组件库",
   "author": "wangzhenggui <jianjia.wzg@raycloud.com>",
   "homepage": "https://github.com/wangzhenggui/lego/tree/main/packages/react-basic-widgets#readme",

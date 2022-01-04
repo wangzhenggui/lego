@@ -70,6 +70,10 @@
 
   var COMPONENT_LAYOUT_INLINE = 'inline'; // 行类元素
 
+  var COMPONENT_MODE_PREVIEW = 'preview'; // 组件预览模式
+
+  var COMPONENT_MODE_EDIT = 'edit'; // 组件在IDE模式
+
   var width = {
     title: '宽度',
     type: 'string',
@@ -28248,6 +28252,25 @@
   }
   });
 
+  function toArray(children) {
+    var option = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var ret = [];
+    React__default['default'].Children.forEach(children, function (child) {
+      if ((child === undefined || child === null) && !option.keepEmpty) {
+        return;
+      }
+
+      if (Array.isArray(child)) {
+        ret = ret.concat(toArray(child));
+      } else if (reactIs.isFragment(child) && child.props) {
+        ret = ret.concat(toArray(child.props.children, option));
+      } else {
+        ret.push(child);
+      }
+    });
+    return ret;
+  }
+
   /* eslint-disable no-console */
   var warned = {};
   function warning(valid, message) {
@@ -28378,6 +28401,2176 @@
     return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
   }
 
+  var HOOK_MARK = 'RC_FORM_INTERNAL_HOOKS'; // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+  var warningFunc = function warningFunc() {
+    warningOnce(false, 'Can not find FormContext. Please make sure you wrap Field under Form.');
+  };
+
+  var Context = /*#__PURE__*/React.createContext({
+    getFieldValue: warningFunc,
+    getFieldsValue: warningFunc,
+    getFieldError: warningFunc,
+    getFieldWarning: warningFunc,
+    getFieldsError: warningFunc,
+    isFieldsTouched: warningFunc,
+    isFieldTouched: warningFunc,
+    isFieldValidating: warningFunc,
+    isFieldsValidating: warningFunc,
+    resetFields: warningFunc,
+    setFields: warningFunc,
+    setFieldsValue: warningFunc,
+    validateFields: warningFunc,
+    submit: warningFunc,
+    getInternalHooks: function getInternalHooks() {
+      warningFunc();
+      return {
+        dispatch: warningFunc,
+        initEntityValue: warningFunc,
+        registerField: warningFunc,
+        useSubscribe: warningFunc,
+        setInitialValues: warningFunc,
+        setCallbacks: warningFunc,
+        getFields: warningFunc,
+        setValidateMessages: warningFunc,
+        setPreserve: warningFunc,
+        getInitialValue: warningFunc
+      };
+    }
+  });
+
+  function toArray$1(value) {
+    if (value === undefined || value === null) {
+      return [];
+    }
+
+    return Array.isArray(value) ? value : [value];
+  }
+
+  var runtime_1 = createCommonjsModule(function (module) {
+  /**
+   * Copyright (c) 2014-present, Facebook, Inc.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+  var runtime = (function (exports) {
+
+    var Op = Object.prototype;
+    var hasOwn = Op.hasOwnProperty;
+    var undefined$1; // More compressible than void 0.
+    var $Symbol = typeof Symbol === "function" ? Symbol : {};
+    var iteratorSymbol = $Symbol.iterator || "@@iterator";
+    var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+    var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+    function define(obj, key, value) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+      return obj[key];
+    }
+    try {
+      // IE 8 has a broken Object.defineProperty that only works on DOM objects.
+      define({}, "");
+    } catch (err) {
+      define = function(obj, key, value) {
+        return obj[key] = value;
+      };
+    }
+
+    function wrap(innerFn, outerFn, self, tryLocsList) {
+      // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+      var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+      var generator = Object.create(protoGenerator.prototype);
+      var context = new Context(tryLocsList || []);
+
+      // The ._invoke method unifies the implementations of the .next,
+      // .throw, and .return methods.
+      generator._invoke = makeInvokeMethod(innerFn, self, context);
+
+      return generator;
+    }
+    exports.wrap = wrap;
+
+    // Try/catch helper to minimize deoptimizations. Returns a completion
+    // record like context.tryEntries[i].completion. This interface could
+    // have been (and was previously) designed to take a closure to be
+    // invoked without arguments, but in all the cases we care about we
+    // already have an existing method we want to call, so there's no need
+    // to create a new function object. We can even get away with assuming
+    // the method takes exactly one argument, since that happens to be true
+    // in every case, so we don't have to touch the arguments object. The
+    // only additional allocation required is the completion record, which
+    // has a stable shape and so hopefully should be cheap to allocate.
+    function tryCatch(fn, obj, arg) {
+      try {
+        return { type: "normal", arg: fn.call(obj, arg) };
+      } catch (err) {
+        return { type: "throw", arg: err };
+      }
+    }
+
+    var GenStateSuspendedStart = "suspendedStart";
+    var GenStateSuspendedYield = "suspendedYield";
+    var GenStateExecuting = "executing";
+    var GenStateCompleted = "completed";
+
+    // Returning this object from the innerFn has the same effect as
+    // breaking out of the dispatch switch statement.
+    var ContinueSentinel = {};
+
+    // Dummy constructor functions that we use as the .constructor and
+    // .constructor.prototype properties for functions that return Generator
+    // objects. For full spec compliance, you may wish to configure your
+    // minifier not to mangle the names of these two functions.
+    function Generator() {}
+    function GeneratorFunction() {}
+    function GeneratorFunctionPrototype() {}
+
+    // This is a polyfill for %IteratorPrototype% for environments that
+    // don't natively support it.
+    var IteratorPrototype = {};
+    define(IteratorPrototype, iteratorSymbol, function () {
+      return this;
+    });
+
+    var getProto = Object.getPrototypeOf;
+    var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+    if (NativeIteratorPrototype &&
+        NativeIteratorPrototype !== Op &&
+        hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+      // This environment has a native %IteratorPrototype%; use it instead
+      // of the polyfill.
+      IteratorPrototype = NativeIteratorPrototype;
+    }
+
+    var Gp = GeneratorFunctionPrototype.prototype =
+      Generator.prototype = Object.create(IteratorPrototype);
+    GeneratorFunction.prototype = GeneratorFunctionPrototype;
+    define(Gp, "constructor", GeneratorFunctionPrototype);
+    define(GeneratorFunctionPrototype, "constructor", GeneratorFunction);
+    GeneratorFunction.displayName = define(
+      GeneratorFunctionPrototype,
+      toStringTagSymbol,
+      "GeneratorFunction"
+    );
+
+    // Helper for defining the .next, .throw, and .return methods of the
+    // Iterator interface in terms of a single ._invoke method.
+    function defineIteratorMethods(prototype) {
+      ["next", "throw", "return"].forEach(function(method) {
+        define(prototype, method, function(arg) {
+          return this._invoke(method, arg);
+        });
+      });
+    }
+
+    exports.isGeneratorFunction = function(genFun) {
+      var ctor = typeof genFun === "function" && genFun.constructor;
+      return ctor
+        ? ctor === GeneratorFunction ||
+          // For the native GeneratorFunction constructor, the best we can
+          // do is to check its .name property.
+          (ctor.displayName || ctor.name) === "GeneratorFunction"
+        : false;
+    };
+
+    exports.mark = function(genFun) {
+      if (Object.setPrototypeOf) {
+        Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+      } else {
+        genFun.__proto__ = GeneratorFunctionPrototype;
+        define(genFun, toStringTagSymbol, "GeneratorFunction");
+      }
+      genFun.prototype = Object.create(Gp);
+      return genFun;
+    };
+
+    // Within the body of any async function, `await x` is transformed to
+    // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+    // `hasOwn.call(value, "__await")` to determine if the yielded value is
+    // meant to be awaited.
+    exports.awrap = function(arg) {
+      return { __await: arg };
+    };
+
+    function AsyncIterator(generator, PromiseImpl) {
+      function invoke(method, arg, resolve, reject) {
+        var record = tryCatch(generator[method], generator, arg);
+        if (record.type === "throw") {
+          reject(record.arg);
+        } else {
+          var result = record.arg;
+          var value = result.value;
+          if (value &&
+              typeof value === "object" &&
+              hasOwn.call(value, "__await")) {
+            return PromiseImpl.resolve(value.__await).then(function(value) {
+              invoke("next", value, resolve, reject);
+            }, function(err) {
+              invoke("throw", err, resolve, reject);
+            });
+          }
+
+          return PromiseImpl.resolve(value).then(function(unwrapped) {
+            // When a yielded Promise is resolved, its final value becomes
+            // the .value of the Promise<{value,done}> result for the
+            // current iteration.
+            result.value = unwrapped;
+            resolve(result);
+          }, function(error) {
+            // If a rejected Promise was yielded, throw the rejection back
+            // into the async generator function so it can be handled there.
+            return invoke("throw", error, resolve, reject);
+          });
+        }
+      }
+
+      var previousPromise;
+
+      function enqueue(method, arg) {
+        function callInvokeWithMethodAndArg() {
+          return new PromiseImpl(function(resolve, reject) {
+            invoke(method, arg, resolve, reject);
+          });
+        }
+
+        return previousPromise =
+          // If enqueue has been called before, then we want to wait until
+          // all previous Promises have been resolved before calling invoke,
+          // so that results are always delivered in the correct order. If
+          // enqueue has not been called before, then it is important to
+          // call invoke immediately, without waiting on a callback to fire,
+          // so that the async generator function has the opportunity to do
+          // any necessary setup in a predictable way. This predictability
+          // is why the Promise constructor synchronously invokes its
+          // executor callback, and why async functions synchronously
+          // execute code before the first await. Since we implement simple
+          // async functions in terms of async generators, it is especially
+          // important to get this right, even though it requires care.
+          previousPromise ? previousPromise.then(
+            callInvokeWithMethodAndArg,
+            // Avoid propagating failures to Promises returned by later
+            // invocations of the iterator.
+            callInvokeWithMethodAndArg
+          ) : callInvokeWithMethodAndArg();
+      }
+
+      // Define the unified helper method that is used to implement .next,
+      // .throw, and .return (see defineIteratorMethods).
+      this._invoke = enqueue;
+    }
+
+    defineIteratorMethods(AsyncIterator.prototype);
+    define(AsyncIterator.prototype, asyncIteratorSymbol, function () {
+      return this;
+    });
+    exports.AsyncIterator = AsyncIterator;
+
+    // Note that simple async functions are implemented on top of
+    // AsyncIterator objects; they just return a Promise for the value of
+    // the final result produced by the iterator.
+    exports.async = function(innerFn, outerFn, self, tryLocsList, PromiseImpl) {
+      if (PromiseImpl === void 0) PromiseImpl = Promise;
+
+      var iter = new AsyncIterator(
+        wrap(innerFn, outerFn, self, tryLocsList),
+        PromiseImpl
+      );
+
+      return exports.isGeneratorFunction(outerFn)
+        ? iter // If outerFn is a generator, return the full iterator.
+        : iter.next().then(function(result) {
+            return result.done ? result.value : iter.next();
+          });
+    };
+
+    function makeInvokeMethod(innerFn, self, context) {
+      var state = GenStateSuspendedStart;
+
+      return function invoke(method, arg) {
+        if (state === GenStateExecuting) {
+          throw new Error("Generator is already running");
+        }
+
+        if (state === GenStateCompleted) {
+          if (method === "throw") {
+            throw arg;
+          }
+
+          // Be forgiving, per 25.3.3.3.3 of the spec:
+          // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+          return doneResult();
+        }
+
+        context.method = method;
+        context.arg = arg;
+
+        while (true) {
+          var delegate = context.delegate;
+          if (delegate) {
+            var delegateResult = maybeInvokeDelegate(delegate, context);
+            if (delegateResult) {
+              if (delegateResult === ContinueSentinel) continue;
+              return delegateResult;
+            }
+          }
+
+          if (context.method === "next") {
+            // Setting context._sent for legacy support of Babel's
+            // function.sent implementation.
+            context.sent = context._sent = context.arg;
+
+          } else if (context.method === "throw") {
+            if (state === GenStateSuspendedStart) {
+              state = GenStateCompleted;
+              throw context.arg;
+            }
+
+            context.dispatchException(context.arg);
+
+          } else if (context.method === "return") {
+            context.abrupt("return", context.arg);
+          }
+
+          state = GenStateExecuting;
+
+          var record = tryCatch(innerFn, self, context);
+          if (record.type === "normal") {
+            // If an exception is thrown from innerFn, we leave state ===
+            // GenStateExecuting and loop back for another invocation.
+            state = context.done
+              ? GenStateCompleted
+              : GenStateSuspendedYield;
+
+            if (record.arg === ContinueSentinel) {
+              continue;
+            }
+
+            return {
+              value: record.arg,
+              done: context.done
+            };
+
+          } else if (record.type === "throw") {
+            state = GenStateCompleted;
+            // Dispatch the exception by looping back around to the
+            // context.dispatchException(context.arg) call above.
+            context.method = "throw";
+            context.arg = record.arg;
+          }
+        }
+      };
+    }
+
+    // Call delegate.iterator[context.method](context.arg) and handle the
+    // result, either by returning a { value, done } result from the
+    // delegate iterator, or by modifying context.method and context.arg,
+    // setting context.delegate to null, and returning the ContinueSentinel.
+    function maybeInvokeDelegate(delegate, context) {
+      var method = delegate.iterator[context.method];
+      if (method === undefined$1) {
+        // A .throw or .return when the delegate iterator has no .throw
+        // method always terminates the yield* loop.
+        context.delegate = null;
+
+        if (context.method === "throw") {
+          // Note: ["return"] must be used for ES3 parsing compatibility.
+          if (delegate.iterator["return"]) {
+            // If the delegate iterator has a return method, give it a
+            // chance to clean up.
+            context.method = "return";
+            context.arg = undefined$1;
+            maybeInvokeDelegate(delegate, context);
+
+            if (context.method === "throw") {
+              // If maybeInvokeDelegate(context) changed context.method from
+              // "return" to "throw", let that override the TypeError below.
+              return ContinueSentinel;
+            }
+          }
+
+          context.method = "throw";
+          context.arg = new TypeError(
+            "The iterator does not provide a 'throw' method");
+        }
+
+        return ContinueSentinel;
+      }
+
+      var record = tryCatch(method, delegate.iterator, context.arg);
+
+      if (record.type === "throw") {
+        context.method = "throw";
+        context.arg = record.arg;
+        context.delegate = null;
+        return ContinueSentinel;
+      }
+
+      var info = record.arg;
+
+      if (! info) {
+        context.method = "throw";
+        context.arg = new TypeError("iterator result is not an object");
+        context.delegate = null;
+        return ContinueSentinel;
+      }
+
+      if (info.done) {
+        // Assign the result of the finished delegate to the temporary
+        // variable specified by delegate.resultName (see delegateYield).
+        context[delegate.resultName] = info.value;
+
+        // Resume execution at the desired location (see delegateYield).
+        context.next = delegate.nextLoc;
+
+        // If context.method was "throw" but the delegate handled the
+        // exception, let the outer generator proceed normally. If
+        // context.method was "next", forget context.arg since it has been
+        // "consumed" by the delegate iterator. If context.method was
+        // "return", allow the original .return call to continue in the
+        // outer generator.
+        if (context.method !== "return") {
+          context.method = "next";
+          context.arg = undefined$1;
+        }
+
+      } else {
+        // Re-yield the result returned by the delegate method.
+        return info;
+      }
+
+      // The delegate iterator is finished, so forget it and continue with
+      // the outer generator.
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    // Define Generator.prototype.{next,throw,return} in terms of the
+    // unified ._invoke helper method.
+    defineIteratorMethods(Gp);
+
+    define(Gp, toStringTagSymbol, "Generator");
+
+    // A Generator should always return itself as the iterator object when the
+    // @@iterator function is called on it. Some browsers' implementations of the
+    // iterator prototype chain incorrectly implement this, causing the Generator
+    // object to not be returned from this call. This ensures that doesn't happen.
+    // See https://github.com/facebook/regenerator/issues/274 for more details.
+    define(Gp, iteratorSymbol, function() {
+      return this;
+    });
+
+    define(Gp, "toString", function() {
+      return "[object Generator]";
+    });
+
+    function pushTryEntry(locs) {
+      var entry = { tryLoc: locs[0] };
+
+      if (1 in locs) {
+        entry.catchLoc = locs[1];
+      }
+
+      if (2 in locs) {
+        entry.finallyLoc = locs[2];
+        entry.afterLoc = locs[3];
+      }
+
+      this.tryEntries.push(entry);
+    }
+
+    function resetTryEntry(entry) {
+      var record = entry.completion || {};
+      record.type = "normal";
+      delete record.arg;
+      entry.completion = record;
+    }
+
+    function Context(tryLocsList) {
+      // The root entry object (effectively a try statement without a catch
+      // or a finally block) gives us a place to store values thrown from
+      // locations where there is no enclosing try statement.
+      this.tryEntries = [{ tryLoc: "root" }];
+      tryLocsList.forEach(pushTryEntry, this);
+      this.reset(true);
+    }
+
+    exports.keys = function(object) {
+      var keys = [];
+      for (var key in object) {
+        keys.push(key);
+      }
+      keys.reverse();
+
+      // Rather than returning an object with a next method, we keep
+      // things simple and return the next function itself.
+      return function next() {
+        while (keys.length) {
+          var key = keys.pop();
+          if (key in object) {
+            next.value = key;
+            next.done = false;
+            return next;
+          }
+        }
+
+        // To avoid creating an additional object, we just hang the .value
+        // and .done properties off the next function object itself. This
+        // also ensures that the minifier will not anonymize the function.
+        next.done = true;
+        return next;
+      };
+    };
+
+    function values(iterable) {
+      if (iterable) {
+        var iteratorMethod = iterable[iteratorSymbol];
+        if (iteratorMethod) {
+          return iteratorMethod.call(iterable);
+        }
+
+        if (typeof iterable.next === "function") {
+          return iterable;
+        }
+
+        if (!isNaN(iterable.length)) {
+          var i = -1, next = function next() {
+            while (++i < iterable.length) {
+              if (hasOwn.call(iterable, i)) {
+                next.value = iterable[i];
+                next.done = false;
+                return next;
+              }
+            }
+
+            next.value = undefined$1;
+            next.done = true;
+
+            return next;
+          };
+
+          return next.next = next;
+        }
+      }
+
+      // Return an iterator with no values.
+      return { next: doneResult };
+    }
+    exports.values = values;
+
+    function doneResult() {
+      return { value: undefined$1, done: true };
+    }
+
+    Context.prototype = {
+      constructor: Context,
+
+      reset: function(skipTempReset) {
+        this.prev = 0;
+        this.next = 0;
+        // Resetting context._sent for legacy support of Babel's
+        // function.sent implementation.
+        this.sent = this._sent = undefined$1;
+        this.done = false;
+        this.delegate = null;
+
+        this.method = "next";
+        this.arg = undefined$1;
+
+        this.tryEntries.forEach(resetTryEntry);
+
+        if (!skipTempReset) {
+          for (var name in this) {
+            // Not sure about the optimal order of these conditions:
+            if (name.charAt(0) === "t" &&
+                hasOwn.call(this, name) &&
+                !isNaN(+name.slice(1))) {
+              this[name] = undefined$1;
+            }
+          }
+        }
+      },
+
+      stop: function() {
+        this.done = true;
+
+        var rootEntry = this.tryEntries[0];
+        var rootRecord = rootEntry.completion;
+        if (rootRecord.type === "throw") {
+          throw rootRecord.arg;
+        }
+
+        return this.rval;
+      },
+
+      dispatchException: function(exception) {
+        if (this.done) {
+          throw exception;
+        }
+
+        var context = this;
+        function handle(loc, caught) {
+          record.type = "throw";
+          record.arg = exception;
+          context.next = loc;
+
+          if (caught) {
+            // If the dispatched exception was caught by a catch block,
+            // then let that catch block handle the exception normally.
+            context.method = "next";
+            context.arg = undefined$1;
+          }
+
+          return !! caught;
+        }
+
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          var record = entry.completion;
+
+          if (entry.tryLoc === "root") {
+            // Exception thrown outside of any try block that could handle
+            // it, so set the completion value of the entire function to
+            // throw the exception.
+            return handle("end");
+          }
+
+          if (entry.tryLoc <= this.prev) {
+            var hasCatch = hasOwn.call(entry, "catchLoc");
+            var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+            if (hasCatch && hasFinally) {
+              if (this.prev < entry.catchLoc) {
+                return handle(entry.catchLoc, true);
+              } else if (this.prev < entry.finallyLoc) {
+                return handle(entry.finallyLoc);
+              }
+
+            } else if (hasCatch) {
+              if (this.prev < entry.catchLoc) {
+                return handle(entry.catchLoc, true);
+              }
+
+            } else if (hasFinally) {
+              if (this.prev < entry.finallyLoc) {
+                return handle(entry.finallyLoc);
+              }
+
+            } else {
+              throw new Error("try statement without catch or finally");
+            }
+          }
+        }
+      },
+
+      abrupt: function(type, arg) {
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          if (entry.tryLoc <= this.prev &&
+              hasOwn.call(entry, "finallyLoc") &&
+              this.prev < entry.finallyLoc) {
+            var finallyEntry = entry;
+            break;
+          }
+        }
+
+        if (finallyEntry &&
+            (type === "break" ||
+             type === "continue") &&
+            finallyEntry.tryLoc <= arg &&
+            arg <= finallyEntry.finallyLoc) {
+          // Ignore the finally entry if control is not jumping to a
+          // location outside the try/catch block.
+          finallyEntry = null;
+        }
+
+        var record = finallyEntry ? finallyEntry.completion : {};
+        record.type = type;
+        record.arg = arg;
+
+        if (finallyEntry) {
+          this.method = "next";
+          this.next = finallyEntry.finallyLoc;
+          return ContinueSentinel;
+        }
+
+        return this.complete(record);
+      },
+
+      complete: function(record, afterLoc) {
+        if (record.type === "throw") {
+          throw record.arg;
+        }
+
+        if (record.type === "break" ||
+            record.type === "continue") {
+          this.next = record.arg;
+        } else if (record.type === "return") {
+          this.rval = this.arg = record.arg;
+          this.method = "return";
+          this.next = "end";
+        } else if (record.type === "normal" && afterLoc) {
+          this.next = afterLoc;
+        }
+
+        return ContinueSentinel;
+      },
+
+      finish: function(finallyLoc) {
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          if (entry.finallyLoc === finallyLoc) {
+            this.complete(entry.completion, entry.afterLoc);
+            resetTryEntry(entry);
+            return ContinueSentinel;
+          }
+        }
+      },
+
+      "catch": function(tryLoc) {
+        for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+          var entry = this.tryEntries[i];
+          if (entry.tryLoc === tryLoc) {
+            var record = entry.completion;
+            if (record.type === "throw") {
+              var thrown = record.arg;
+              resetTryEntry(entry);
+            }
+            return thrown;
+          }
+        }
+
+        // The context.catch method must only be called with a location
+        // argument that corresponds to a known catch block.
+        throw new Error("illegal catch attempt");
+      },
+
+      delegateYield: function(iterable, resultName, nextLoc) {
+        this.delegate = {
+          iterator: values(iterable),
+          resultName: resultName,
+          nextLoc: nextLoc
+        };
+
+        if (this.method === "next") {
+          // Deliberately forget the last sent value so that we don't
+          // accidentally pass it on to the delegate.
+          this.arg = undefined$1;
+        }
+
+        return ContinueSentinel;
+      }
+    };
+
+    // Regardless of whether this script is executing as a CommonJS module
+    // or not, return the runtime object so that we can declare the variable
+    // regeneratorRuntime in the outer scope, which allows this module to be
+    // injected easily by `bin/regenerator --include-runtime script.js`.
+    return exports;
+
+  }(
+    // If this script is executing as a CommonJS module, use module.exports
+    // as the regeneratorRuntime namespace. Otherwise create a new empty
+    // object. Either way, the resulting object will be used to initialize
+    // the regeneratorRuntime variable at the top of this file.
+     module.exports 
+  ));
+
+  try {
+    regeneratorRuntime = runtime;
+  } catch (accidentalStrictMode) {
+    // This module should not be running in strict mode, so the above
+    // assignment should always work unless something is misconfigured. Just
+    // in case runtime.js accidentally runs in strict mode, in modern engines
+    // we can explicitly access globalThis. In older engines we can escape
+    // strict mode using a global Function call. This could conceivably fail
+    // if a Content Security Policy forbids using Function, but in that case
+    // the proper solution is to fix the accidental strict mode problem. If
+    // you've misconfigured your bundler to force strict mode and applied a
+    // CSP to forbid Function, and you're not willing to fix either of those
+    // problems, please detail your unique predicament in a GitHub issue.
+    if (typeof globalThis === "object") {
+      globalThis.regeneratorRuntime = runtime;
+    } else {
+      Function("r", "regeneratorRuntime = r")(runtime);
+    }
+  }
+  });
+
+  var regenerator = runtime_1;
+
+  function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+    try {
+      var info = gen[key](arg);
+      var value = info.value;
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
+    if (info.done) {
+      resolve(value);
+    } else {
+      Promise.resolve(value).then(_next, _throw);
+    }
+  }
+
+  function _asyncToGenerator(fn) {
+    return function () {
+      var self = this,
+          args = arguments;
+      return new Promise(function (resolve, reject) {
+        var gen = fn.apply(self, args);
+
+        function _next(value) {
+          asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
+        }
+
+        function _throw(err) {
+          asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
+        }
+
+        _next(undefined);
+      });
+    };
+  }
+
+  function _extends$2() {
+    _extends$2 = Object.assign || function (target) {
+      for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i];
+
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
+        }
+      }
+
+      return target;
+    };
+
+    return _extends$2.apply(this, arguments);
+  }
+
+  function _inheritsLoose(subClass, superClass) {
+    subClass.prototype = Object.create(superClass.prototype);
+    subClass.prototype.constructor = subClass;
+
+    _setPrototypeOf$1(subClass, superClass);
+  }
+
+  function _getPrototypeOf$1(o) {
+    _getPrototypeOf$1 = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+      return o.__proto__ || Object.getPrototypeOf(o);
+    };
+    return _getPrototypeOf$1(o);
+  }
+
+  function _setPrototypeOf$1(o, p) {
+    _setPrototypeOf$1 = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+      o.__proto__ = p;
+      return o;
+    };
+
+    return _setPrototypeOf$1(o, p);
+  }
+
+  function _isNativeReflectConstruct$1() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function _construct(Parent, args, Class) {
+    if (_isNativeReflectConstruct$1()) {
+      _construct = Reflect.construct;
+    } else {
+      _construct = function _construct(Parent, args, Class) {
+        var a = [null];
+        a.push.apply(a, args);
+        var Constructor = Function.bind.apply(Parent, a);
+        var instance = new Constructor();
+        if (Class) _setPrototypeOf$1(instance, Class.prototype);
+        return instance;
+      };
+    }
+
+    return _construct.apply(null, arguments);
+  }
+
+  function _isNativeFunction(fn) {
+    return Function.toString.call(fn).indexOf("[native code]") !== -1;
+  }
+
+  function _wrapNativeSuper(Class) {
+    var _cache = typeof Map === "function" ? new Map() : undefined;
+
+    _wrapNativeSuper = function _wrapNativeSuper(Class) {
+      if (Class === null || !_isNativeFunction(Class)) return Class;
+
+      if (typeof Class !== "function") {
+        throw new TypeError("Super expression must either be null or a function");
+      }
+
+      if (typeof _cache !== "undefined") {
+        if (_cache.has(Class)) return _cache.get(Class);
+
+        _cache.set(Class, Wrapper);
+      }
+
+      function Wrapper() {
+        return _construct(Class, arguments, _getPrototypeOf$1(this).constructor);
+      }
+
+      Wrapper.prototype = Object.create(Class.prototype, {
+        constructor: {
+          value: Wrapper,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      });
+      return _setPrototypeOf$1(Wrapper, Class);
+    };
+
+    return _wrapNativeSuper(Class);
+  }
+
+  /* eslint no-console:0 */
+  var formatRegExp = /%[sdj%]/g;
+  var warning$1 = function warning() {}; // don't print warning message when in production env or node runtime
+
+  if (typeof process !== 'undefined' && process.env && "development" !== 'production' && typeof window !== 'undefined' && typeof document !== 'undefined') {
+    warning$1 = function warning(type, errors) {
+      if (typeof console !== 'undefined' && console.warn && typeof ASYNC_VALIDATOR_NO_WARNING === 'undefined') {
+        if (errors.every(function (e) {
+          return typeof e === 'string';
+        })) {
+          console.warn(type, errors);
+        }
+      }
+    };
+  }
+
+  function convertFieldsError(errors) {
+    if (!errors || !errors.length) return null;
+    var fields = {};
+    errors.forEach(function (error) {
+      var field = error.field;
+      fields[field] = fields[field] || [];
+      fields[field].push(error);
+    });
+    return fields;
+  }
+  function format(template) {
+    for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
+
+    var i = 0;
+    var len = args.length;
+
+    if (typeof template === 'function') {
+      return template.apply(null, args);
+    }
+
+    if (typeof template === 'string') {
+      var str = template.replace(formatRegExp, function (x) {
+        if (x === '%%') {
+          return '%';
+        }
+
+        if (i >= len) {
+          return x;
+        }
+
+        switch (x) {
+          case '%s':
+            return String(args[i++]);
+
+          case '%d':
+            return Number(args[i++]);
+
+          case '%j':
+            try {
+              return JSON.stringify(args[i++]);
+            } catch (_) {
+              return '[Circular]';
+            }
+
+            break;
+
+          default:
+            return x;
+        }
+      });
+      return str;
+    }
+
+    return template;
+  }
+
+  function isNativeStringType(type) {
+    return type === 'string' || type === 'url' || type === 'hex' || type === 'email' || type === 'date' || type === 'pattern';
+  }
+
+  function isEmptyValue(value, type) {
+    if (value === undefined || value === null) {
+      return true;
+    }
+
+    if (type === 'array' && Array.isArray(value) && !value.length) {
+      return true;
+    }
+
+    if (isNativeStringType(type) && typeof value === 'string' && !value) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function asyncParallelArray(arr, func, callback) {
+    var results = [];
+    var total = 0;
+    var arrLength = arr.length;
+
+    function count(errors) {
+      results.push.apply(results, errors || []);
+      total++;
+
+      if (total === arrLength) {
+        callback(results);
+      }
+    }
+
+    arr.forEach(function (a) {
+      func(a, count);
+    });
+  }
+
+  function asyncSerialArray(arr, func, callback) {
+    var index = 0;
+    var arrLength = arr.length;
+
+    function next(errors) {
+      if (errors && errors.length) {
+        callback(errors);
+        return;
+      }
+
+      var original = index;
+      index = index + 1;
+
+      if (original < arrLength) {
+        func(arr[original], next);
+      } else {
+        callback([]);
+      }
+    }
+
+    next([]);
+  }
+
+  function flattenObjArr(objArr) {
+    var ret = [];
+    Object.keys(objArr).forEach(function (k) {
+      ret.push.apply(ret, objArr[k] || []);
+    });
+    return ret;
+  }
+
+  var AsyncValidationError = /*#__PURE__*/function (_Error) {
+    _inheritsLoose(AsyncValidationError, _Error);
+
+    function AsyncValidationError(errors, fields) {
+      var _this;
+
+      _this = _Error.call(this, 'Async Validation Error') || this;
+      _this.errors = errors;
+      _this.fields = fields;
+      return _this;
+    }
+
+    return AsyncValidationError;
+  }( /*#__PURE__*/_wrapNativeSuper(Error));
+  function asyncMap(objArr, option, func, callback, source) {
+    if (option.first) {
+      var _pending = new Promise(function (resolve, reject) {
+        var next = function next(errors) {
+          callback(errors);
+          return errors.length ? reject(new AsyncValidationError(errors, convertFieldsError(errors))) : resolve(source);
+        };
+
+        var flattenArr = flattenObjArr(objArr);
+        asyncSerialArray(flattenArr, func, next);
+      });
+
+      _pending["catch"](function (e) {
+        return e;
+      });
+
+      return _pending;
+    }
+
+    var firstFields = option.firstFields === true ? Object.keys(objArr) : option.firstFields || [];
+    var objArrKeys = Object.keys(objArr);
+    var objArrLength = objArrKeys.length;
+    var total = 0;
+    var results = [];
+    var pending = new Promise(function (resolve, reject) {
+      var next = function next(errors) {
+        results.push.apply(results, errors);
+        total++;
+
+        if (total === objArrLength) {
+          callback(results);
+          return results.length ? reject(new AsyncValidationError(results, convertFieldsError(results))) : resolve(source);
+        }
+      };
+
+      if (!objArrKeys.length) {
+        callback(results);
+        resolve(source);
+      }
+
+      objArrKeys.forEach(function (key) {
+        var arr = objArr[key];
+
+        if (firstFields.indexOf(key) !== -1) {
+          asyncSerialArray(arr, func, next);
+        } else {
+          asyncParallelArray(arr, func, next);
+        }
+      });
+    });
+    pending["catch"](function (e) {
+      return e;
+    });
+    return pending;
+  }
+
+  function isErrorObj(obj) {
+    return !!(obj && obj.message !== undefined);
+  }
+
+  function getValue(value, path) {
+    var v = value;
+
+    for (var i = 0; i < path.length; i++) {
+      if (v == undefined) {
+        return v;
+      }
+
+      v = v[path[i]];
+    }
+
+    return v;
+  }
+
+  function complementError(rule, source) {
+    return function (oe) {
+      var fieldValue;
+
+      if (rule.fullFields) {
+        fieldValue = getValue(source, rule.fullFields);
+      } else {
+        fieldValue = source[oe.field || rule.fullField];
+      }
+
+      if (isErrorObj(oe)) {
+        oe.field = oe.field || rule.fullField;
+        oe.fieldValue = fieldValue;
+        return oe;
+      }
+
+      return {
+        message: typeof oe === 'function' ? oe() : oe,
+        fieldValue: fieldValue,
+        field: oe.field || rule.fullField
+      };
+    };
+  }
+  function deepMerge(target, source) {
+    if (source) {
+      for (var s in source) {
+        if (source.hasOwnProperty(s)) {
+          var value = source[s];
+
+          if (typeof value === 'object' && typeof target[s] === 'object') {
+            target[s] = _extends$2({}, target[s], value);
+          } else {
+            target[s] = value;
+          }
+        }
+      }
+    }
+
+    return target;
+  }
+
+  var required$1 = function required(rule, value, source, errors, options, type) {
+    if (rule.required && (!source.hasOwnProperty(rule.field) || isEmptyValue(value, type || rule.type))) {
+      errors.push(format(options.messages.required, rule.fullField));
+    }
+  };
+
+  /**
+   *  Rule for validating whitespace.
+   *
+   *  @param rule The validation rule.
+   *  @param value The value of the field on the source object.
+   *  @param source The source object being validated.
+   *  @param errors An array of errors that this rule may add
+   *  validation errors to.
+   *  @param options The validation options.
+   *  @param options.messages The validation messages.
+   */
+
+  var whitespace = function whitespace(rule, value, source, errors, options) {
+    if (/^\s+$/.test(value) || value === '') {
+      errors.push(format(options.messages.whitespace, rule.fullField));
+    }
+  };
+
+  /* eslint max-len:0 */
+
+  var pattern$2 = {
+    // http://emailregex.com/
+    email: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+\.)+[a-zA-Z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]{2,}))$/,
+    url: new RegExp("^(?!mailto:)(?:(?:http|https|ftp)://|//)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$", 'i'),
+    hex: /^#?([a-f0-9]{6}|[a-f0-9]{3})$/i
+  };
+  var types = {
+    integer: function integer(value) {
+      return types.number(value) && parseInt(value, 10) === value;
+    },
+    "float": function float(value) {
+      return types.number(value) && !types.integer(value);
+    },
+    array: function array(value) {
+      return Array.isArray(value);
+    },
+    regexp: function regexp(value) {
+      if (value instanceof RegExp) {
+        return true;
+      }
+
+      try {
+        return !!new RegExp(value);
+      } catch (e) {
+        return false;
+      }
+    },
+    date: function date(value) {
+      return typeof value.getTime === 'function' && typeof value.getMonth === 'function' && typeof value.getYear === 'function' && !isNaN(value.getTime());
+    },
+    number: function number(value) {
+      if (isNaN(value)) {
+        return false;
+      }
+
+      return typeof value === 'number';
+    },
+    object: function object(value) {
+      return typeof value === 'object' && !types.array(value);
+    },
+    method: function method(value) {
+      return typeof value === 'function';
+    },
+    email: function email(value) {
+      return typeof value === 'string' && value.length <= 320 && !!value.match(pattern$2.email);
+    },
+    url: function url(value) {
+      return typeof value === 'string' && value.length <= 2048 && !!value.match(pattern$2.url);
+    },
+    hex: function hex(value) {
+      return typeof value === 'string' && !!value.match(pattern$2.hex);
+    }
+  };
+
+  var type$1 = function type(rule, value, source, errors, options) {
+    if (rule.required && value === undefined) {
+      required$1(rule, value, source, errors, options);
+      return;
+    }
+
+    var custom = ['integer', 'float', 'array', 'regexp', 'object', 'method', 'email', 'number', 'date', 'url', 'hex'];
+    var ruleType = rule.type;
+
+    if (custom.indexOf(ruleType) > -1) {
+      if (!types[ruleType](value)) {
+        errors.push(format(options.messages.types[ruleType], rule.fullField, rule.type));
+      } // straight typeof check
+
+    } else if (ruleType && typeof value !== rule.type) {
+      errors.push(format(options.messages.types[ruleType], rule.fullField, rule.type));
+    }
+  };
+
+  var range = function range(rule, value, source, errors, options) {
+    var len = typeof rule.len === 'number';
+    var min = typeof rule.min === 'number';
+    var max = typeof rule.max === 'number'; // 正则匹配码点范围从U+010000一直到U+10FFFF的文字（补充平面Supplementary Plane）
+
+    var spRegexp = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+    var val = value;
+    var key = null;
+    var num = typeof value === 'number';
+    var str = typeof value === 'string';
+    var arr = Array.isArray(value);
+
+    if (num) {
+      key = 'number';
+    } else if (str) {
+      key = 'string';
+    } else if (arr) {
+      key = 'array';
+    } // if the value is not of a supported type for range validation
+    // the validation rule rule should use the
+    // type property to also test for a particular type
+
+
+    if (!key) {
+      return false;
+    }
+
+    if (arr) {
+      val = value.length;
+    }
+
+    if (str) {
+      // 处理码点大于U+010000的文字length属性不准确的bug，如"𠮷𠮷𠮷".lenght !== 3
+      val = value.replace(spRegexp, '_').length;
+    }
+
+    if (len) {
+      if (val !== rule.len) {
+        errors.push(format(options.messages[key].len, rule.fullField, rule.len));
+      }
+    } else if (min && !max && val < rule.min) {
+      errors.push(format(options.messages[key].min, rule.fullField, rule.min));
+    } else if (max && !min && val > rule.max) {
+      errors.push(format(options.messages[key].max, rule.fullField, rule.max));
+    } else if (min && max && (val < rule.min || val > rule.max)) {
+      errors.push(format(options.messages[key].range, rule.fullField, rule.min, rule.max));
+    }
+  };
+
+  var ENUM$1 = 'enum';
+
+  var enumerable$1 = function enumerable(rule, value, source, errors, options) {
+    rule[ENUM$1] = Array.isArray(rule[ENUM$1]) ? rule[ENUM$1] : [];
+
+    if (rule[ENUM$1].indexOf(value) === -1) {
+      errors.push(format(options.messages[ENUM$1], rule.fullField, rule[ENUM$1].join(', ')));
+    }
+  };
+
+  var pattern$1 = function pattern(rule, value, source, errors, options) {
+    if (rule.pattern) {
+      if (rule.pattern instanceof RegExp) {
+        // if a RegExp instance is passed, reset `lastIndex` in case its `global`
+        // flag is accidentally set to `true`, which in a validation scenario
+        // is not necessary and the result might be misleading
+        rule.pattern.lastIndex = 0;
+
+        if (!rule.pattern.test(value)) {
+          errors.push(format(options.messages.pattern.mismatch, rule.fullField, value, rule.pattern));
+        }
+      } else if (typeof rule.pattern === 'string') {
+        var _pattern = new RegExp(rule.pattern);
+
+        if (!_pattern.test(value)) {
+          errors.push(format(options.messages.pattern.mismatch, rule.fullField, value, rule.pattern));
+        }
+      }
+    }
+  };
+
+  var rules = {
+    required: required$1,
+    whitespace: whitespace,
+    type: type$1,
+    range: range,
+    "enum": enumerable$1,
+    pattern: pattern$1
+  };
+
+  var string = function string(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value, 'string') && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options, 'string');
+
+      if (!isEmptyValue(value, 'string')) {
+        rules.type(rule, value, source, errors, options);
+        rules.range(rule, value, source, errors, options);
+        rules.pattern(rule, value, source, errors, options);
+
+        if (rule.whitespace === true) {
+          rules.whitespace(rule, value, source, errors, options);
+        }
+      }
+    }
+
+    callback(errors);
+  };
+
+  var method = function method(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (value !== undefined) {
+        rules.type(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var number = function number(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (value === '') {
+        value = undefined;
+      }
+
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (value !== undefined) {
+        rules.type(rule, value, source, errors, options);
+        rules.range(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var _boolean = function _boolean(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (value !== undefined) {
+        rules.type(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var regexp = function regexp(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (!isEmptyValue(value)) {
+        rules.type(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var integer = function integer(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (value !== undefined) {
+        rules.type(rule, value, source, errors, options);
+        rules.range(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var floatFn = function floatFn(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (value !== undefined) {
+        rules.type(rule, value, source, errors, options);
+        rules.range(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var array = function array(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if ((value === undefined || value === null) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options, 'array');
+
+      if (value !== undefined && value !== null) {
+        rules.type(rule, value, source, errors, options);
+        rules.range(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var object = function object(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (value !== undefined) {
+        rules.type(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var ENUM = 'enum';
+
+  var enumerable = function enumerable(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (value !== undefined) {
+        rules[ENUM](rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var pattern = function pattern(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value, 'string') && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (!isEmptyValue(value, 'string')) {
+        rules.pattern(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var date = function date(rule, value, callback, source, options) {
+    // console.log('integer rule called %j', rule);
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field); // console.log('validate on %s value', value);
+
+    if (validate) {
+      if (isEmptyValue(value, 'date') && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+
+      if (!isEmptyValue(value, 'date')) {
+        var dateObject;
+
+        if (value instanceof Date) {
+          dateObject = value;
+        } else {
+          dateObject = new Date(value);
+        }
+
+        rules.type(rule, dateObject, source, errors, options);
+
+        if (dateObject) {
+          rules.range(rule, dateObject.getTime(), source, errors, options);
+        }
+      }
+    }
+
+    callback(errors);
+  };
+
+  var required = function required(rule, value, callback, source, options) {
+    var errors = [];
+    var type = Array.isArray(value) ? 'array' : typeof value;
+    rules.required(rule, value, source, errors, options, type);
+    callback(errors);
+  };
+
+  var type = function type(rule, value, callback, source, options) {
+    var ruleType = rule.type;
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value, ruleType) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options, ruleType);
+
+      if (!isEmptyValue(value, ruleType)) {
+        rules.type(rule, value, source, errors, options);
+      }
+    }
+
+    callback(errors);
+  };
+
+  var any = function any(rule, value, callback, source, options) {
+    var errors = [];
+    var validate = rule.required || !rule.required && source.hasOwnProperty(rule.field);
+
+    if (validate) {
+      if (isEmptyValue(value) && !rule.required) {
+        return callback();
+      }
+
+      rules.required(rule, value, source, errors, options);
+    }
+
+    callback(errors);
+  };
+
+  var validators = {
+    string: string,
+    method: method,
+    number: number,
+    "boolean": _boolean,
+    regexp: regexp,
+    integer: integer,
+    "float": floatFn,
+    array: array,
+    object: object,
+    "enum": enumerable,
+    pattern: pattern,
+    date: date,
+    url: type,
+    hex: type,
+    email: type,
+    required: required,
+    any: any
+  };
+
+  function newMessages() {
+    return {
+      "default": 'Validation error on field %s',
+      required: '%s is required',
+      "enum": '%s must be one of %s',
+      whitespace: '%s cannot be empty',
+      date: {
+        format: '%s date %s is invalid for format %s',
+        parse: '%s date could not be parsed, %s is invalid ',
+        invalid: '%s date %s is invalid'
+      },
+      types: {
+        string: '%s is not a %s',
+        method: '%s is not a %s (function)',
+        array: '%s is not an %s',
+        object: '%s is not an %s',
+        number: '%s is not a %s',
+        date: '%s is not a %s',
+        "boolean": '%s is not a %s',
+        integer: '%s is not an %s',
+        "float": '%s is not a %s',
+        regexp: '%s is not a valid %s',
+        email: '%s is not a valid %s',
+        url: '%s is not a valid %s',
+        hex: '%s is not a valid %s'
+      },
+      string: {
+        len: '%s must be exactly %s characters',
+        min: '%s must be at least %s characters',
+        max: '%s cannot be longer than %s characters',
+        range: '%s must be between %s and %s characters'
+      },
+      number: {
+        len: '%s must equal %s',
+        min: '%s cannot be less than %s',
+        max: '%s cannot be greater than %s',
+        range: '%s must be between %s and %s'
+      },
+      array: {
+        len: '%s must be exactly %s in length',
+        min: '%s cannot be less than %s in length',
+        max: '%s cannot be greater than %s in length',
+        range: '%s must be between %s and %s in length'
+      },
+      pattern: {
+        mismatch: '%s value %s does not match pattern %s'
+      },
+      clone: function clone() {
+        var cloned = JSON.parse(JSON.stringify(this));
+        cloned.clone = this.clone;
+        return cloned;
+      }
+    };
+  }
+  var messages = newMessages();
+
+  /**
+   *  Encapsulates a validation schema.
+   *
+   *  @param descriptor An object declaring validation rules
+   *  for this schema.
+   */
+
+  var Schema = /*#__PURE__*/function () {
+    // ========================= Static =========================
+    // ======================== Instance ========================
+    function Schema(descriptor) {
+      this.rules = null;
+      this._messages = messages;
+      this.define(descriptor);
+    }
+
+    var _proto = Schema.prototype;
+
+    _proto.define = function define(rules) {
+      var _this = this;
+
+      if (!rules) {
+        throw new Error('Cannot configure a schema with no rules');
+      }
+
+      if (typeof rules !== 'object' || Array.isArray(rules)) {
+        throw new Error('Rules must be an object');
+      }
+
+      this.rules = {};
+      Object.keys(rules).forEach(function (name) {
+        var item = rules[name];
+        _this.rules[name] = Array.isArray(item) ? item : [item];
+      });
+    };
+
+    _proto.messages = function messages(_messages) {
+      if (_messages) {
+        this._messages = deepMerge(newMessages(), _messages);
+      }
+
+      return this._messages;
+    };
+
+    _proto.validate = function validate(source_, o, oc) {
+      var _this2 = this;
+
+      if (o === void 0) {
+        o = {};
+      }
+
+      if (oc === void 0) {
+        oc = function oc() {};
+      }
+
+      var source = source_;
+      var options = o;
+      var callback = oc;
+
+      if (typeof options === 'function') {
+        callback = options;
+        options = {};
+      }
+
+      if (!this.rules || Object.keys(this.rules).length === 0) {
+        if (callback) {
+          callback(null, source);
+        }
+
+        return Promise.resolve(source);
+      }
+
+      function complete(results) {
+        var errors = [];
+        var fields = {};
+
+        function add(e) {
+          if (Array.isArray(e)) {
+            var _errors;
+
+            errors = (_errors = errors).concat.apply(_errors, e);
+          } else {
+            errors.push(e);
+          }
+        }
+
+        for (var i = 0; i < results.length; i++) {
+          add(results[i]);
+        }
+
+        if (!errors.length) {
+          callback(null, source);
+        } else {
+          fields = convertFieldsError(errors);
+          callback(errors, fields);
+        }
+      }
+
+      if (options.messages) {
+        var messages$1 = this.messages();
+
+        if (messages$1 === messages) {
+          messages$1 = newMessages();
+        }
+
+        deepMerge(messages$1, options.messages);
+        options.messages = messages$1;
+      } else {
+        options.messages = this.messages();
+      }
+
+      var series = {};
+      var keys = options.keys || Object.keys(this.rules);
+      keys.forEach(function (z) {
+        var arr = _this2.rules[z];
+        var value = source[z];
+        arr.forEach(function (r) {
+          var rule = r;
+
+          if (typeof rule.transform === 'function') {
+            if (source === source_) {
+              source = _extends$2({}, source);
+            }
+
+            value = source[z] = rule.transform(value);
+          }
+
+          if (typeof rule === 'function') {
+            rule = {
+              validator: rule
+            };
+          } else {
+            rule = _extends$2({}, rule);
+          } // Fill validator. Skip if nothing need to validate
+
+
+          rule.validator = _this2.getValidationMethod(rule);
+
+          if (!rule.validator) {
+            return;
+          }
+
+          rule.field = z;
+          rule.fullField = rule.fullField || z;
+          rule.type = _this2.getType(rule);
+          series[z] = series[z] || [];
+          series[z].push({
+            rule: rule,
+            value: value,
+            source: source,
+            field: z
+          });
+        });
+      });
+      var errorFields = {};
+      return asyncMap(series, options, function (data, doIt) {
+        var rule = data.rule;
+        var deep = (rule.type === 'object' || rule.type === 'array') && (typeof rule.fields === 'object' || typeof rule.defaultField === 'object');
+        deep = deep && (rule.required || !rule.required && data.value);
+        rule.field = data.field;
+
+        function addFullField(key, schema) {
+          return _extends$2({}, schema, {
+            fullField: rule.fullField + "." + key,
+            fullFields: rule.fullFields ? [].concat(rule.fullFields, [key]) : [key]
+          });
+        }
+
+        function cb(e) {
+          if (e === void 0) {
+            e = [];
+          }
+
+          var errorList = Array.isArray(e) ? e : [e];
+
+          if (!options.suppressWarning && errorList.length) {
+            Schema.warning('async-validator:', errorList);
+          }
+
+          if (errorList.length && rule.message !== undefined) {
+            errorList = [].concat(rule.message);
+          } // Fill error info
+
+
+          var filledErrors = errorList.map(complementError(rule, source));
+
+          if (options.first && filledErrors.length) {
+            errorFields[rule.field] = 1;
+            return doIt(filledErrors);
+          }
+
+          if (!deep) {
+            doIt(filledErrors);
+          } else {
+            // if rule is required but the target object
+            // does not exist fail at the rule level and don't
+            // go deeper
+            if (rule.required && !data.value) {
+              if (rule.message !== undefined) {
+                filledErrors = [].concat(rule.message).map(complementError(rule, source));
+              } else if (options.error) {
+                filledErrors = [options.error(rule, format(options.messages.required, rule.field))];
+              }
+
+              return doIt(filledErrors);
+            }
+
+            var fieldsSchema = {};
+
+            if (rule.defaultField) {
+              Object.keys(data.value).map(function (key) {
+                fieldsSchema[key] = rule.defaultField;
+              });
+            }
+
+            fieldsSchema = _extends$2({}, fieldsSchema, data.rule.fields);
+            var paredFieldsSchema = {};
+            Object.keys(fieldsSchema).forEach(function (field) {
+              var fieldSchema = fieldsSchema[field];
+              var fieldSchemaList = Array.isArray(fieldSchema) ? fieldSchema : [fieldSchema];
+              paredFieldsSchema[field] = fieldSchemaList.map(addFullField.bind(null, field));
+            });
+            var schema = new Schema(paredFieldsSchema);
+            schema.messages(options.messages);
+
+            if (data.rule.options) {
+              data.rule.options.messages = options.messages;
+              data.rule.options.error = options.error;
+            }
+
+            schema.validate(data.value, data.rule.options || options, function (errs) {
+              var finalErrors = [];
+
+              if (filledErrors && filledErrors.length) {
+                finalErrors.push.apply(finalErrors, filledErrors);
+              }
+
+              if (errs && errs.length) {
+                finalErrors.push.apply(finalErrors, errs);
+              }
+
+              doIt(finalErrors.length ? finalErrors : null);
+            });
+          }
+        }
+
+        var res;
+
+        if (rule.asyncValidator) {
+          res = rule.asyncValidator(rule, data.value, cb, data.source, options);
+        } else if (rule.validator) {
+          res = rule.validator(rule, data.value, cb, data.source, options);
+
+          if (res === true) {
+            cb();
+          } else if (res === false) {
+            cb(typeof rule.message === 'function' ? rule.message(rule.fullField || rule.field) : rule.message || (rule.fullField || rule.field) + " fails");
+          } else if (res instanceof Array) {
+            cb(res);
+          } else if (res instanceof Error) {
+            cb(res.message);
+          }
+        }
+
+        if (res && res.then) {
+          res.then(function () {
+            return cb();
+          }, function (e) {
+            return cb(e);
+          });
+        }
+      }, function (results) {
+        complete(results);
+      }, source);
+    };
+
+    _proto.getType = function getType(rule) {
+      if (rule.type === undefined && rule.pattern instanceof RegExp) {
+        rule.type = 'pattern';
+      }
+
+      if (typeof rule.validator !== 'function' && rule.type && !validators.hasOwnProperty(rule.type)) {
+        throw new Error(format('Unknown rule type %s', rule.type));
+      }
+
+      return rule.type || 'string';
+    };
+
+    _proto.getValidationMethod = function getValidationMethod(rule) {
+      if (typeof rule.validator === 'function') {
+        return rule.validator;
+      }
+
+      var keys = Object.keys(rule);
+      var messageIndex = keys.indexOf('message');
+
+      if (messageIndex !== -1) {
+        keys.splice(messageIndex, 1);
+      }
+
+      if (keys.length === 1 && keys[0] === 'required') {
+        return validators.required;
+      }
+
+      return validators[this.getType(rule)] || undefined;
+    };
+
+    return Schema;
+  }();
+
+  Schema.register = function register(type, validator) {
+    if (typeof validator !== 'function') {
+      throw new Error('Cannot register a validator by type, validator is not a function');
+    }
+
+    validators[type] = validator;
+  };
+
+  Schema.warning = warning$1;
+  Schema.messages = messages;
+  Schema.validators = validators;
+
+  var typeTemplate = "'${name}' is not a valid ${type}";
+  var defaultValidateMessages = {
+    default: "Validation error on field '${name}'",
+    required: "'${name}' is required",
+    enum: "'${name}' must be one of [${enum}]",
+    whitespace: "'${name}' cannot be empty",
+    date: {
+      format: "'${name}' is invalid for format date",
+      parse: "'${name}' could not be parsed as date",
+      invalid: "'${name}' is invalid date"
+    },
+    types: {
+      string: typeTemplate,
+      method: typeTemplate,
+      array: typeTemplate,
+      object: typeTemplate,
+      number: typeTemplate,
+      date: typeTemplate,
+      boolean: typeTemplate,
+      integer: typeTemplate,
+      float: typeTemplate,
+      regexp: typeTemplate,
+      email: typeTemplate,
+      url: typeTemplate,
+      hex: typeTemplate
+    },
+    string: {
+      len: "'${name}' must be exactly ${len} characters",
+      min: "'${name}' must be at least ${min} characters",
+      max: "'${name}' cannot be longer than ${max} characters",
+      range: "'${name}' must be between ${min} and ${max} characters"
+    },
+    number: {
+      len: "'${name}' must equal ${len}",
+      min: "'${name}' cannot be less than ${min}",
+      max: "'${name}' cannot be greater than ${max}",
+      range: "'${name}' must be between ${min} and ${max}"
+    },
+    array: {
+      len: "'${name}' must be exactly ${len} in length",
+      min: "'${name}' cannot be less than ${min} in length",
+      max: "'${name}' cannot be greater than ${max} in length",
+      range: "'${name}' must be between ${min} and ${max} in length"
+    },
+    pattern: {
+      mismatch: "'${name}' does not match pattern ${pattern}"
+    }
+  };
+
+  function get(entity, path) {
+    var current = entity;
+
+    for (var i = 0; i < path.length; i += 1) {
+      if (current === null || current === undefined) {
+        return undefined;
+      }
+
+      current = current[path[i]];
+    }
+
+    return current;
+  }
+
   function _arrayWithHoles(arr) {
     if (Array.isArray(arr)) return arr;
   }
@@ -28385,6 +30578,1282 @@
   function _nonIterableRest() {
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
+
+  function _toArray(arr) {
+    return _arrayWithHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableRest();
+  }
+
+  function internalSet(entity, paths, value, removeIfUndefined) {
+    if (!paths.length) {
+      return value;
+    }
+
+    var _paths = _toArray(paths),
+        path = _paths[0],
+        restPath = _paths.slice(1);
+
+    var clone;
+
+    if (!entity && typeof path === 'number') {
+      clone = [];
+    } else if (Array.isArray(entity)) {
+      clone = _toConsumableArray(entity);
+    } else {
+      clone = _objectSpread2({}, entity);
+    } // Delete prop if `removeIfUndefined` and value is undefined
+
+
+    if (removeIfUndefined && value === undefined && restPath.length === 1) {
+      delete clone[path][restPath[0]];
+    } else {
+      clone[path] = internalSet(clone[path], restPath, value, removeIfUndefined);
+    }
+
+    return clone;
+  }
+
+  function set(entity, paths, value) {
+    var removeIfUndefined = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+    // Do nothing if `removeIfUndefined` and parent object not exist
+    if (paths.length && removeIfUndefined && value === undefined && !get(entity, paths.slice(0, -1))) {
+      return entity;
+    }
+
+    return internalSet(entity, paths, value, removeIfUndefined);
+  }
+
+  /**
+   * Convert name to internal supported format.
+   * This function should keep since we still thinking if need support like `a.b.c` format.
+   * 'a' => ['a']
+   * 123 => [123]
+   * ['a', 123] => ['a', 123]
+   */
+
+  function getNamePath(path) {
+    return toArray$1(path);
+  }
+  function getValue$1(store, namePath) {
+    var value = get(store, namePath);
+    return value;
+  }
+  function setValue(store, namePath, value) {
+    var removeIfUndefined = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+    var newStore = set(store, namePath, value, removeIfUndefined);
+    return newStore;
+  }
+  function cloneByNamePathList(store, namePathList) {
+    var newStore = {};
+    namePathList.forEach(function (namePath) {
+      var value = getValue$1(store, namePath);
+      newStore = setValue(newStore, namePath, value);
+    });
+    return newStore;
+  }
+  function containsNamePath(namePathList, namePath) {
+    return namePathList && namePathList.some(function (path) {
+      return matchNamePath(path, namePath);
+    });
+  }
+
+  function isObject(obj) {
+    return _typeof$1(obj) === 'object' && obj !== null && Object.getPrototypeOf(obj) === Object.prototype;
+  }
+  /**
+   * Copy values into store and return a new values object
+   * ({ a: 1, b: { c: 2 } }, { a: 4, b: { d: 5 } }) => { a: 4, b: { c: 2, d: 5 } }
+   */
+
+
+  function internalSetValues(store, values) {
+    var newStore = Array.isArray(store) ? _toConsumableArray(store) : _objectSpread2({}, store);
+
+    if (!values) {
+      return newStore;
+    }
+
+    Object.keys(values).forEach(function (key) {
+      var prevValue = newStore[key];
+      var value = values[key]; // If both are object (but target is not array), we use recursion to set deep value
+
+      var recursive = isObject(prevValue) && isObject(value);
+      newStore[key] = recursive ? internalSetValues(prevValue, value || {}) : value;
+    });
+    return newStore;
+  }
+
+  function setValues(store) {
+    for (var _len = arguments.length, restValues = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      restValues[_key - 1] = arguments[_key];
+    }
+
+    return restValues.reduce(function (current, newStore) {
+      return internalSetValues(current, newStore);
+    }, store);
+  }
+  function matchNamePath(namePath, changedNamePath) {
+    if (!namePath || !changedNamePath || namePath.length !== changedNamePath.length) {
+      return false;
+    }
+
+    return namePath.every(function (nameUnit, i) {
+      return changedNamePath[i] === nameUnit;
+    });
+  }
+  function isSimilar(source, target) {
+    if (source === target) {
+      return true;
+    }
+
+    if (!source && target || source && !target) {
+      return false;
+    }
+
+    if (!source || !target || _typeof$1(source) !== 'object' || _typeof$1(target) !== 'object') {
+      return false;
+    }
+
+    var sourceKeys = Object.keys(source);
+    var targetKeys = Object.keys(target);
+    var keys = new Set([].concat(_toConsumableArray(sourceKeys), _toConsumableArray(targetKeys)));
+    return _toConsumableArray(keys).every(function (key) {
+      var sourceValue = source[key];
+      var targetValue = target[key];
+
+      if (typeof sourceValue === 'function' && typeof targetValue === 'function') {
+        return true;
+      }
+
+      return sourceValue === targetValue;
+    });
+  }
+  function defaultGetValueFromEvent(valuePropName) {
+    var event = arguments.length <= 1 ? undefined : arguments[1];
+
+    if (event && event.target && valuePropName in event.target) {
+      return event.target[valuePropName];
+    }
+
+    return event;
+  }
+  /**
+   * Moves an array item from one position in an array to another.
+   *
+   * Note: This is a pure function so a new array will be returned, instead
+   * of altering the array argument.
+   *
+   * @param array         Array in which to move an item.         (required)
+   * @param moveIndex     The index of the item to move.          (required)
+   * @param toIndex       The index to move item at moveIndex to. (required)
+   */
+
+  function move(array, moveIndex, toIndex) {
+    var length = array.length;
+
+    if (moveIndex < 0 || moveIndex >= length || toIndex < 0 || toIndex >= length) {
+      return array;
+    }
+
+    var item = array[moveIndex];
+    var diff = moveIndex - toIndex;
+
+    if (diff > 0) {
+      // move left
+      return [].concat(_toConsumableArray(array.slice(0, toIndex)), [item], _toConsumableArray(array.slice(toIndex, moveIndex)), _toConsumableArray(array.slice(moveIndex + 1, length)));
+    }
+
+    if (diff < 0) {
+      // move right
+      return [].concat(_toConsumableArray(array.slice(0, moveIndex)), _toConsumableArray(array.slice(moveIndex + 1, toIndex + 1)), [item], _toConsumableArray(array.slice(toIndex + 1, length)));
+    }
+
+    return array;
+  }
+
+  var AsyncValidator = Schema;
+  /**
+   * Replace with template.
+   *   `I'm ${name}` + { name: 'bamboo' } = I'm bamboo
+   */
+
+  function replaceMessage(template, kv) {
+    return template.replace(/\$\{\w+\}/g, function (str) {
+      var key = str.slice(2, -1);
+      return kv[key];
+    });
+  }
+
+  function validateRule(_x, _x2, _x3, _x4, _x5) {
+    return _validateRule.apply(this, arguments);
+  }
+  /**
+   * We use `async-validator` to validate the value.
+   * But only check one value in a time to avoid namePath validate issue.
+   */
+
+
+  function _validateRule() {
+    _validateRule = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee2(name, value, rule, options, messageVariables) {
+      var cloneRule, subRuleField, validator, messages, result, subResults, kv, fillVariableResult;
+      return regenerator.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              cloneRule = _objectSpread2({}, rule); // Bug of `async-validator`
+              // https://github.com/react-component/field-form/issues/316
+              // https://github.com/react-component/field-form/issues/313
+
+              delete cloneRule.ruleIndex; // We should special handle array validate
+
+              subRuleField = null;
+
+              if (cloneRule && cloneRule.type === 'array' && cloneRule.defaultField) {
+                subRuleField = cloneRule.defaultField;
+                delete cloneRule.defaultField;
+              }
+
+              validator = new AsyncValidator(_defineProperty({}, name, [cloneRule]));
+              messages = setValues({}, defaultValidateMessages, options.validateMessages);
+              validator.messages(messages);
+              result = [];
+              _context2.prev = 8;
+              _context2.next = 11;
+              return Promise.resolve(validator.validate(_defineProperty({}, name, value), _objectSpread2({}, options)));
+
+            case 11:
+              _context2.next = 16;
+              break;
+
+            case 13:
+              _context2.prev = 13;
+              _context2.t0 = _context2["catch"](8);
+
+              if (_context2.t0.errors) {
+                result = _context2.t0.errors.map(function (_ref4, index) {
+                  var message = _ref4.message;
+                  return (// Wrap ReactNode with `key`
+
+                    /*#__PURE__*/
+                    React.isValidElement(message) ? /*#__PURE__*/React.cloneElement(message, {
+                      key: "error_".concat(index)
+                    }) : message
+                  );
+                });
+              } else {
+                console.error(_context2.t0);
+                result = [messages.default];
+              }
+
+            case 16:
+              if (!(!result.length && subRuleField)) {
+                _context2.next = 21;
+                break;
+              }
+
+              _context2.next = 19;
+              return Promise.all(value.map(function (subValue, i) {
+                return validateRule("".concat(name, ".").concat(i), subValue, subRuleField, options, messageVariables);
+              }));
+
+            case 19:
+              subResults = _context2.sent;
+              return _context2.abrupt("return", subResults.reduce(function (prev, errors) {
+                return [].concat(_toConsumableArray(prev), _toConsumableArray(errors));
+              }, []));
+
+            case 21:
+              // Replace message with variables
+              kv = _objectSpread2(_objectSpread2({}, rule), {}, {
+                name: name,
+                enum: (rule.enum || []).join(', ')
+              }, messageVariables);
+              fillVariableResult = result.map(function (error) {
+                if (typeof error === 'string') {
+                  return replaceMessage(error, kv);
+                }
+
+                return error;
+              });
+              return _context2.abrupt("return", fillVariableResult);
+
+            case 24:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, _callee2, null, [[8, 13]]);
+    }));
+    return _validateRule.apply(this, arguments);
+  }
+
+  function validateRules(namePath, value, rules, options, validateFirst, messageVariables) {
+    var name = namePath.join('.'); // Fill rule with context
+
+    var filledRules = rules.map(function (currentRule, ruleIndex) {
+      var originValidatorFunc = currentRule.validator;
+
+      var cloneRule = _objectSpread2(_objectSpread2({}, currentRule), {}, {
+        ruleIndex: ruleIndex
+      }); // Replace validator if needed
+
+
+      if (originValidatorFunc) {
+        cloneRule.validator = function (rule, val, callback) {
+          var hasPromise = false; // Wrap callback only accept when promise not provided
+
+          var wrappedCallback = function wrappedCallback() {
+            for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+              args[_key] = arguments[_key];
+            }
+
+            // Wait a tick to make sure return type is a promise
+            Promise.resolve().then(function () {
+              warningOnce(!hasPromise, 'Your validator function has already return a promise. `callback` will be ignored.');
+
+              if (!hasPromise) {
+                callback.apply(void 0, args);
+              }
+            });
+          }; // Get promise
+
+
+          var promise = originValidatorFunc(rule, val, wrappedCallback);
+          hasPromise = promise && typeof promise.then === 'function' && typeof promise.catch === 'function';
+          /**
+           * 1. Use promise as the first priority.
+           * 2. If promise not exist, use callback with warning instead
+           */
+
+          warningOnce(hasPromise, '`callback` is deprecated. Please return a promise instead.');
+
+          if (hasPromise) {
+            promise.then(function () {
+              callback();
+            }).catch(function (err) {
+              callback(err || ' ');
+            });
+          }
+        };
+      }
+
+      return cloneRule;
+    }).sort(function (_ref, _ref2) {
+      var w1 = _ref.warningOnly,
+          i1 = _ref.ruleIndex;
+      var w2 = _ref2.warningOnly,
+          i2 = _ref2.ruleIndex;
+
+      if (!!w1 === !!w2) {
+        // Let keep origin order
+        return i1 - i2;
+      }
+
+      if (w1) {
+        return 1;
+      }
+
+      return -1;
+    }); // Do validate rules
+
+    var summaryPromise;
+
+    if (validateFirst === true) {
+      // >>>>> Validate by serialization
+      summaryPromise = new Promise( /*#__PURE__*/function () {
+        var _ref3 = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee(resolve, reject) {
+          var i, rule, errors;
+          return regenerator.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  i = 0;
+
+                case 1:
+                  if (!(i < filledRules.length)) {
+                    _context.next = 12;
+                    break;
+                  }
+
+                  rule = filledRules[i];
+                  _context.next = 5;
+                  return validateRule(name, value, rule, options, messageVariables);
+
+                case 5:
+                  errors = _context.sent;
+
+                  if (!errors.length) {
+                    _context.next = 9;
+                    break;
+                  }
+
+                  reject([{
+                    errors: errors,
+                    rule: rule
+                  }]);
+                  return _context.abrupt("return");
+
+                case 9:
+                  i += 1;
+                  _context.next = 1;
+                  break;
+
+                case 12:
+                  /* eslint-enable */
+                  resolve([]);
+
+                case 13:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        }));
+
+        return function (_x6, _x7) {
+          return _ref3.apply(this, arguments);
+        };
+      }());
+    } else {
+      // >>>>> Validate by parallel
+      var rulePromises = filledRules.map(function (rule) {
+        return validateRule(name, value, rule, options, messageVariables).then(function (errors) {
+          return {
+            errors: errors,
+            rule: rule
+          };
+        });
+      });
+      summaryPromise = (validateFirst ? finishOnFirstFailed(rulePromises) : finishOnAllFailed(rulePromises)).then(function (errors) {
+        // Always change to rejection for Field to catch
+        return Promise.reject(errors);
+      });
+    } // Internal catch error to avoid console error log.
+
+
+    summaryPromise.catch(function (e) {
+      return e;
+    });
+    return summaryPromise;
+  }
+
+  function finishOnAllFailed(_x8) {
+    return _finishOnAllFailed.apply(this, arguments);
+  }
+
+  function _finishOnAllFailed() {
+    _finishOnAllFailed = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee3(rulePromises) {
+      return regenerator.wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              return _context3.abrupt("return", Promise.all(rulePromises).then(function (errorsList) {
+                var _ref5;
+
+                var errors = (_ref5 = []).concat.apply(_ref5, _toConsumableArray(errorsList));
+
+                return errors;
+              }));
+
+            case 1:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3);
+    }));
+    return _finishOnAllFailed.apply(this, arguments);
+  }
+
+  function finishOnFirstFailed(_x9) {
+    return _finishOnFirstFailed.apply(this, arguments);
+  }
+
+  function _finishOnFirstFailed() {
+    _finishOnFirstFailed = _asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee4(rulePromises) {
+      var count;
+      return regenerator.wrap(function _callee4$(_context4) {
+        while (1) {
+          switch (_context4.prev = _context4.next) {
+            case 0:
+              count = 0;
+              return _context4.abrupt("return", new Promise(function (resolve) {
+                rulePromises.forEach(function (promise) {
+                  promise.then(function (ruleError) {
+                    if (ruleError.errors.length) {
+                      resolve([ruleError]);
+                    }
+
+                    count += 1;
+
+                    if (count === rulePromises.length) {
+                      resolve([]);
+                    }
+                  });
+                });
+              }));
+
+            case 2:
+            case "end":
+              return _context4.stop();
+          }
+        }
+      }, _callee4);
+    }));
+    return _finishOnFirstFailed.apply(this, arguments);
+  }
+
+  var _excluded$1 = ["name"];
+  var EMPTY_ERRORS = [];
+
+  function requireUpdate(shouldUpdate, prev, next, prevValue, nextValue, info) {
+    if (typeof shouldUpdate === 'function') {
+      return shouldUpdate(prev, next, 'source' in info ? {
+        source: info.source
+      } : {});
+    }
+
+    return prevValue !== nextValue;
+  } // We use Class instead of Hooks here since it will cost much code by using Hooks.
+
+
+  var Field = /*#__PURE__*/function (_React$Component) {
+    _inherits(Field, _React$Component);
+
+    var _super = _createSuper(Field);
+
+    /**
+     * Follow state should not management in State since it will async update by React.
+     * This makes first render of form can not get correct state value.
+     */
+
+    /**
+     * Mark when touched & validated. Currently only used for `dependencies`.
+     * Note that we do not think field with `initialValue` is dirty
+     * but this will be by `isFieldDirty` func.
+     */
+    // ============================== Subscriptions ==============================
+    function Field(props) {
+      var _this;
+
+      _classCallCheck(this, Field);
+
+      _this = _super.call(this, props); // Register on init
+
+      _this.state = {
+        resetCount: 0
+      };
+      _this.cancelRegisterFunc = null;
+      _this.mounted = false;
+      _this.touched = false;
+      _this.dirty = false;
+      _this.validatePromise = null;
+      _this.prevValidating = void 0;
+      _this.errors = EMPTY_ERRORS;
+      _this.warnings = EMPTY_ERRORS;
+
+      _this.cancelRegister = function () {
+        var _this$props = _this.props,
+            preserve = _this$props.preserve,
+            isListField = _this$props.isListField,
+            name = _this$props.name;
+
+        if (_this.cancelRegisterFunc) {
+          _this.cancelRegisterFunc(isListField, preserve, getNamePath(name));
+        }
+
+        _this.cancelRegisterFunc = null;
+      };
+
+      _this.getNamePath = function () {
+        var _this$props2 = _this.props,
+            name = _this$props2.name,
+            fieldContext = _this$props2.fieldContext;
+        var _fieldContext$prefixN = fieldContext.prefixName,
+            prefixName = _fieldContext$prefixN === void 0 ? [] : _fieldContext$prefixN;
+        return name !== undefined ? [].concat(_toConsumableArray(prefixName), _toConsumableArray(name)) : [];
+      };
+
+      _this.getRules = function () {
+        var _this$props3 = _this.props,
+            _this$props3$rules = _this$props3.rules,
+            rules = _this$props3$rules === void 0 ? [] : _this$props3$rules,
+            fieldContext = _this$props3.fieldContext;
+        return rules.map(function (rule) {
+          if (typeof rule === 'function') {
+            return rule(fieldContext);
+          }
+
+          return rule;
+        });
+      };
+
+      _this.refresh = function () {
+        if (!_this.mounted) return;
+        /**
+         * Clean up current node.
+         */
+
+        _this.setState(function (_ref) {
+          var resetCount = _ref.resetCount;
+          return {
+            resetCount: resetCount + 1
+          };
+        });
+      };
+
+      _this.triggerMetaEvent = function (destroy) {
+        var onMetaChange = _this.props.onMetaChange;
+        onMetaChange === null || onMetaChange === void 0 ? void 0 : onMetaChange(_objectSpread2(_objectSpread2({}, _this.getMeta()), {}, {
+          destroy: destroy
+        }));
+      };
+
+      _this.onStoreChange = function (prevStore, namePathList, info) {
+        var _this$props4 = _this.props,
+            shouldUpdate = _this$props4.shouldUpdate,
+            _this$props4$dependen = _this$props4.dependencies,
+            dependencies = _this$props4$dependen === void 0 ? [] : _this$props4$dependen,
+            onReset = _this$props4.onReset;
+        var store = info.store;
+
+        var namePath = _this.getNamePath();
+
+        var prevValue = _this.getValue(prevStore);
+
+        var curValue = _this.getValue(store);
+
+        var namePathMatch = namePathList && containsNamePath(namePathList, namePath); // `setFieldsValue` is a quick access to update related status
+
+        if (info.type === 'valueUpdate' && info.source === 'external' && prevValue !== curValue) {
+          _this.touched = true;
+          _this.dirty = true;
+          _this.validatePromise = null;
+          _this.errors = EMPTY_ERRORS;
+          _this.warnings = EMPTY_ERRORS;
+
+          _this.triggerMetaEvent();
+        }
+
+        switch (info.type) {
+          case 'reset':
+            if (!namePathList || namePathMatch) {
+              // Clean up state
+              _this.touched = false;
+              _this.dirty = false;
+              _this.validatePromise = null;
+              _this.errors = EMPTY_ERRORS;
+              _this.warnings = EMPTY_ERRORS;
+
+              _this.triggerMetaEvent();
+
+              onReset === null || onReset === void 0 ? void 0 : onReset();
+
+              _this.refresh();
+
+              return;
+            }
+
+            break;
+
+          case 'setField':
+            {
+              if (namePathMatch) {
+                var data = info.data;
+
+                if ('touched' in data) {
+                  _this.touched = data.touched;
+                }
+
+                if ('validating' in data && !('originRCField' in data)) {
+                  _this.validatePromise = data.validating ? Promise.resolve([]) : null;
+                }
+
+                if ('errors' in data) {
+                  _this.errors = data.errors || EMPTY_ERRORS;
+                }
+
+                if ('warnings' in data) {
+                  _this.warnings = data.warnings || EMPTY_ERRORS;
+                }
+
+                _this.dirty = true;
+
+                _this.triggerMetaEvent();
+
+                _this.reRender();
+
+                return;
+              } // Handle update by `setField` with `shouldUpdate`
+
+
+              if (shouldUpdate && !namePath.length && requireUpdate(shouldUpdate, prevStore, store, prevValue, curValue, info)) {
+                _this.reRender();
+
+                return;
+              }
+
+              break;
+            }
+
+          case 'dependenciesUpdate':
+            {
+              /**
+               * Trigger when marked `dependencies` updated. Related fields will all update
+               */
+              var dependencyList = dependencies.map(getNamePath); // No need for `namePathMath` check and `shouldUpdate` check, since `valueUpdate` will be
+              // emitted earlier and they will work there
+              // If set it may cause unnecessary twice rerendering
+
+              if (dependencyList.some(function (dependency) {
+                return containsNamePath(info.relatedFields, dependency);
+              })) {
+                _this.reRender();
+
+                return;
+              }
+
+              break;
+            }
+
+          default:
+            // 1. If `namePath` exists in `namePathList`, means it's related value and should update
+            //      For example <List name="list"><Field name={['list', 0]}></List>
+            //      If `namePathList` is [['list']] (List value update), Field should be updated
+            //      If `namePathList` is [['list', 0]] (Field value update), List shouldn't be updated
+            // 2.
+            //   2.1 If `dependencies` is set, `name` is not set and `shouldUpdate` is not set,
+            //       don't use `shouldUpdate`. `dependencies` is view as a shortcut if `shouldUpdate`
+            //       is not provided
+            //   2.2 If `shouldUpdate` provided, use customize logic to update the field
+            //       else to check if value changed
+            if (namePathMatch || (!dependencies.length || namePath.length || shouldUpdate) && requireUpdate(shouldUpdate, prevStore, store, prevValue, curValue, info)) {
+              _this.reRender();
+
+              return;
+            }
+
+            break;
+        }
+
+        if (shouldUpdate === true) {
+          _this.reRender();
+        }
+      };
+
+      _this.validateRules = function (options) {
+        // We should fixed namePath & value to avoid developer change then by form function
+        var namePath = _this.getNamePath();
+
+        var currentValue = _this.getValue(); // Force change to async to avoid rule OOD under renderProps field
+
+
+        var rootPromise = Promise.resolve().then(function () {
+          if (!_this.mounted) {
+            return [];
+          }
+
+          var _this$props5 = _this.props,
+              _this$props5$validate = _this$props5.validateFirst,
+              validateFirst = _this$props5$validate === void 0 ? false : _this$props5$validate,
+              messageVariables = _this$props5.messageVariables;
+
+          var _ref2 = options || {},
+              triggerName = _ref2.triggerName;
+
+          var filteredRules = _this.getRules();
+
+          if (triggerName) {
+            filteredRules = filteredRules.filter(function (rule) {
+              var validateTrigger = rule.validateTrigger;
+
+              if (!validateTrigger) {
+                return true;
+              }
+
+              var triggerList = toArray$1(validateTrigger);
+              return triggerList.includes(triggerName);
+            });
+          }
+
+          var promise = validateRules(namePath, currentValue, filteredRules, options, validateFirst, messageVariables);
+          promise.catch(function (e) {
+            return e;
+          }).then(function () {
+            var ruleErrors = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : EMPTY_ERRORS;
+
+            if (_this.validatePromise === rootPromise) {
+              _this.validatePromise = null; // Get errors & warnings
+
+              var nextErrors = [];
+              var nextWarnings = [];
+              ruleErrors.forEach(function (_ref3) {
+                var warningOnly = _ref3.rule.warningOnly,
+                    _ref3$errors = _ref3.errors,
+                    errors = _ref3$errors === void 0 ? EMPTY_ERRORS : _ref3$errors;
+
+                if (warningOnly) {
+                  nextWarnings.push.apply(nextWarnings, _toConsumableArray(errors));
+                } else {
+                  nextErrors.push.apply(nextErrors, _toConsumableArray(errors));
+                }
+              });
+              _this.errors = nextErrors;
+              _this.warnings = nextWarnings;
+
+              _this.triggerMetaEvent();
+
+              _this.reRender();
+            }
+          });
+          return promise;
+        });
+        _this.validatePromise = rootPromise;
+        _this.dirty = true;
+        _this.errors = EMPTY_ERRORS;
+        _this.warnings = EMPTY_ERRORS;
+
+        _this.triggerMetaEvent(); // Force trigger re-render since we need sync renderProps with new meta
+
+
+        _this.reRender();
+
+        return rootPromise;
+      };
+
+      _this.isFieldValidating = function () {
+        return !!_this.validatePromise;
+      };
+
+      _this.isFieldTouched = function () {
+        return _this.touched;
+      };
+
+      _this.isFieldDirty = function () {
+        // Touched or validate or has initialValue
+        if (_this.dirty || _this.props.initialValue !== undefined) {
+          return true;
+        } // Form set initialValue
+
+
+        var fieldContext = _this.props.fieldContext;
+
+        var _fieldContext$getInte = fieldContext.getInternalHooks(HOOK_MARK),
+            getInitialValue = _fieldContext$getInte.getInitialValue;
+
+        if (getInitialValue(_this.getNamePath()) !== undefined) {
+          return true;
+        }
+
+        return false;
+      };
+
+      _this.getErrors = function () {
+        return _this.errors;
+      };
+
+      _this.getWarnings = function () {
+        return _this.warnings;
+      };
+
+      _this.isListField = function () {
+        return _this.props.isListField;
+      };
+
+      _this.isList = function () {
+        return _this.props.isList;
+      };
+
+      _this.isPreserve = function () {
+        return _this.props.preserve;
+      };
+
+      _this.getMeta = function () {
+        // Make error & validating in cache to save perf
+        _this.prevValidating = _this.isFieldValidating();
+        var meta = {
+          touched: _this.isFieldTouched(),
+          validating: _this.prevValidating,
+          errors: _this.errors,
+          warnings: _this.warnings,
+          name: _this.getNamePath()
+        };
+        return meta;
+      };
+
+      _this.getOnlyChild = function (children) {
+        // Support render props
+        if (typeof children === 'function') {
+          var meta = _this.getMeta();
+
+          return _objectSpread2(_objectSpread2({}, _this.getOnlyChild(children(_this.getControlled(), meta, _this.props.fieldContext))), {}, {
+            isFunction: true
+          });
+        } // Filed element only
+
+
+        var childList = toArray(children);
+
+        if (childList.length !== 1 || ! /*#__PURE__*/React.isValidElement(childList[0])) {
+          return {
+            child: childList,
+            isFunction: false
+          };
+        }
+
+        return {
+          child: childList[0],
+          isFunction: false
+        };
+      };
+
+      _this.getValue = function (store) {
+        var getFieldsValue = _this.props.fieldContext.getFieldsValue;
+
+        var namePath = _this.getNamePath();
+
+        return getValue$1(store || getFieldsValue(true), namePath);
+      };
+
+      _this.getControlled = function () {
+        var childProps = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var _this$props6 = _this.props,
+            trigger = _this$props6.trigger,
+            validateTrigger = _this$props6.validateTrigger,
+            getValueFromEvent = _this$props6.getValueFromEvent,
+            normalize = _this$props6.normalize,
+            valuePropName = _this$props6.valuePropName,
+            getValueProps = _this$props6.getValueProps,
+            fieldContext = _this$props6.fieldContext;
+        var mergedValidateTrigger = validateTrigger !== undefined ? validateTrigger : fieldContext.validateTrigger;
+
+        var namePath = _this.getNamePath();
+
+        var getInternalHooks = fieldContext.getInternalHooks,
+            getFieldsValue = fieldContext.getFieldsValue;
+
+        var _getInternalHooks = getInternalHooks(HOOK_MARK),
+            dispatch = _getInternalHooks.dispatch;
+
+        var value = _this.getValue();
+
+        var mergedGetValueProps = getValueProps || function (val) {
+          return _defineProperty({}, valuePropName, val);
+        }; // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+
+        var originTriggerFunc = childProps[trigger];
+
+        var control = _objectSpread2(_objectSpread2({}, childProps), mergedGetValueProps(value)); // Add trigger
+
+
+        control[trigger] = function () {
+          // Mark as touched
+          _this.touched = true;
+          _this.dirty = true;
+
+          _this.triggerMetaEvent();
+
+          var newValue;
+
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          if (getValueFromEvent) {
+            newValue = getValueFromEvent.apply(void 0, args);
+          } else {
+            newValue = defaultGetValueFromEvent.apply(void 0, [valuePropName].concat(args));
+          }
+
+          if (normalize) {
+            newValue = normalize(newValue, value, getFieldsValue(true));
+          }
+
+          dispatch({
+            type: 'updateValue',
+            namePath: namePath,
+            value: newValue
+          });
+
+          if (originTriggerFunc) {
+            originTriggerFunc.apply(void 0, args);
+          }
+        }; // Add validateTrigger
+
+
+        var validateTriggerList = toArray$1(mergedValidateTrigger || []);
+        validateTriggerList.forEach(function (triggerName) {
+          // Wrap additional function of component, so that we can get latest value from store
+          var originTrigger = control[triggerName];
+
+          control[triggerName] = function () {
+            if (originTrigger) {
+              originTrigger.apply(void 0, arguments);
+            } // Always use latest rules
+
+
+            var rules = _this.props.rules;
+
+            if (rules && rules.length) {
+              // We dispatch validate to root,
+              // since it will update related data with other field with same name
+              dispatch({
+                type: 'validateField',
+                namePath: namePath,
+                triggerName: triggerName
+              });
+            }
+          };
+        });
+        return control;
+      };
+
+      if (props.fieldContext) {
+        var getInternalHooks = props.fieldContext.getInternalHooks;
+
+        var _getInternalHooks2 = getInternalHooks(HOOK_MARK),
+            initEntityValue = _getInternalHooks2.initEntityValue;
+
+        initEntityValue(_assertThisInitialized(_this));
+      }
+
+      return _this;
+    }
+
+    _createClass(Field, [{
+      key: "componentDidMount",
+      value: function componentDidMount() {
+        var _this$props7 = this.props,
+            shouldUpdate = _this$props7.shouldUpdate,
+            fieldContext = _this$props7.fieldContext;
+        this.mounted = true; // Register on init
+
+        if (fieldContext) {
+          var getInternalHooks = fieldContext.getInternalHooks;
+
+          var _getInternalHooks3 = getInternalHooks(HOOK_MARK),
+              registerField = _getInternalHooks3.registerField;
+
+          this.cancelRegisterFunc = registerField(this);
+        } // One more render for component in case fields not ready
+
+
+        if (shouldUpdate === true) {
+          this.reRender();
+        }
+      }
+    }, {
+      key: "componentWillUnmount",
+      value: function componentWillUnmount() {
+        this.cancelRegister();
+        this.triggerMetaEvent(true);
+        this.mounted = false;
+      }
+    }, {
+      key: "reRender",
+      value: function reRender() {
+        if (!this.mounted) return;
+        this.forceUpdate();
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        var resetCount = this.state.resetCount;
+        var children = this.props.children;
+
+        var _this$getOnlyChild = this.getOnlyChild(children),
+            child = _this$getOnlyChild.child,
+            isFunction = _this$getOnlyChild.isFunction; // Not need to `cloneElement` since user can handle this in render function self
+
+
+        var returnChildNode;
+
+        if (isFunction) {
+          returnChildNode = child;
+        } else if ( /*#__PURE__*/React.isValidElement(child)) {
+          returnChildNode = /*#__PURE__*/React.cloneElement(child, this.getControlled(child.props));
+        } else {
+          warningOnce(!child, '`children` of Field is not validate ReactElement.');
+          returnChildNode = child;
+        }
+
+        return /*#__PURE__*/React.createElement(React.Fragment, {
+          key: resetCount
+        }, returnChildNode);
+      }
+    }]);
+
+    return Field;
+  }(React.Component);
+
+  Field.contextType = Context;
+  Field.defaultProps = {
+    trigger: 'onChange',
+    valuePropName: 'value'
+  };
+
+  function WrapperField(_ref5) {
+    var name = _ref5.name,
+        restProps = _objectWithoutProperties$1(_ref5, _excluded$1);
+
+    var fieldContext = React.useContext(Context);
+    var namePath = name !== undefined ? getNamePath(name) : undefined;
+    var key = 'keep';
+
+    if (!restProps.isListField) {
+      key = "_".concat((namePath || []).join('_'));
+    } // Warning if it's a directly list field.
+    // We can still support multiple level field preserve.
+
+
+    if ( restProps.preserve === false && restProps.isListField && namePath.length <= 1) {
+      warningOnce(false, '`preserve` should not apply on Form.List fields.');
+    }
+
+    return /*#__PURE__*/React.createElement(Field, _extends$1({
+      key: key,
+      name: namePath
+    }, restProps, {
+      fieldContext: fieldContext
+    }));
+  }
+
+  var List = function List(_ref) {
+    var name = _ref.name,
+        initialValue = _ref.initialValue,
+        children = _ref.children,
+        rules = _ref.rules,
+        validateTrigger = _ref.validateTrigger;
+    var context = React.useContext(Context);
+    var keyRef = React.useRef({
+      keys: [],
+      id: 0
+    });
+    var keyManager = keyRef.current; // User should not pass `children` as other type.
+
+    if (typeof children !== 'function') {
+      warningOnce(false, 'Form.List only accepts function as children.');
+      return null;
+    }
+
+    var parentPrefixName = getNamePath(context.prefixName) || [];
+    var prefixName = [].concat(_toConsumableArray(parentPrefixName), _toConsumableArray(getNamePath(name)));
+
+    var shouldUpdate = function shouldUpdate(prevValue, nextValue, _ref2) {
+      var source = _ref2.source;
+
+      if (source === 'internal') {
+        return false;
+      }
+
+      return prevValue !== nextValue;
+    };
+
+    return /*#__PURE__*/React.createElement(Context.Provider, {
+      value: _objectSpread2(_objectSpread2({}, context), {}, {
+        prefixName: prefixName
+      })
+    }, /*#__PURE__*/React.createElement(WrapperField, {
+      name: [],
+      shouldUpdate: shouldUpdate,
+      rules: rules,
+      validateTrigger: validateTrigger,
+      initialValue: initialValue,
+      isList: true
+    }, function (_ref3, meta) {
+      var _ref3$value = _ref3.value,
+          value = _ref3$value === void 0 ? [] : _ref3$value,
+          onChange = _ref3.onChange;
+      var getFieldValue = context.getFieldValue;
+
+      var getNewValue = function getNewValue() {
+        var values = getFieldValue(prefixName || []);
+        return values || [];
+      };
+      /**
+       * Always get latest value in case user update fields by `form` api.
+       */
+
+
+      var operations = {
+        add: function add(defaultValue, index) {
+          // Mapping keys
+          var newValue = getNewValue();
+
+          if (index >= 0 && index <= newValue.length) {
+            keyManager.keys = [].concat(_toConsumableArray(keyManager.keys.slice(0, index)), [keyManager.id], _toConsumableArray(keyManager.keys.slice(index)));
+            onChange([].concat(_toConsumableArray(newValue.slice(0, index)), [defaultValue], _toConsumableArray(newValue.slice(index))));
+          } else {
+            if ( (index < 0 || index > newValue.length)) {
+              warningOnce(false, 'The second parameter of the add function should be a valid positive number.');
+            }
+
+            keyManager.keys = [].concat(_toConsumableArray(keyManager.keys), [keyManager.id]);
+            onChange([].concat(_toConsumableArray(newValue), [defaultValue]));
+          }
+
+          keyManager.id += 1;
+        },
+        remove: function remove(index) {
+          var newValue = getNewValue();
+          var indexSet = new Set(Array.isArray(index) ? index : [index]);
+
+          if (indexSet.size <= 0) {
+            return;
+          }
+
+          keyManager.keys = keyManager.keys.filter(function (_, keysIndex) {
+            return !indexSet.has(keysIndex);
+          }); // Trigger store change
+
+          onChange(newValue.filter(function (_, valueIndex) {
+            return !indexSet.has(valueIndex);
+          }));
+        },
+        move: function move$1(from, to) {
+          if (from === to) {
+            return;
+          }
+
+          var newValue = getNewValue(); // Do not handle out of range
+
+          if (from < 0 || from >= newValue.length || to < 0 || to >= newValue.length) {
+            return;
+          }
+
+          keyManager.keys = move(keyManager.keys, from, to); // Trigger store change
+
+          onChange(move(newValue, from, to));
+        }
+      };
+      var listValue = value || [];
+
+      if (!Array.isArray(listValue)) {
+        listValue = [];
+
+        {
+          warningOnce(false, "Current value of '".concat(prefixName.join(' > '), "' is not an array type."));
+        }
+      }
+
+      return children(listValue.map(function (__, index) {
+        var key = keyManager.keys[index];
+
+        if (key === undefined) {
+          keyManager.keys[index] = keyManager.id;
+          key = keyManager.keys[index];
+          keyManager.id += 1;
+        }
+
+        return {
+          name: index,
+          key: key,
+          isListField: true
+        };
+      }), operations, meta);
+    }));
+  };
 
   function _iterableToArrayLimit(arr, i) {
     var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
@@ -28418,6 +31887,1189 @@
 
   function _slicedToArray(arr, i) {
     return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
+  }
+
+  function allPromiseFinish(promiseList) {
+    var hasError = false;
+    var count = promiseList.length;
+    var results = [];
+
+    if (!promiseList.length) {
+      return Promise.resolve([]);
+    }
+
+    return new Promise(function (resolve, reject) {
+      promiseList.forEach(function (promise, index) {
+        promise.catch(function (e) {
+          hasError = true;
+          return e;
+        }).then(function (result) {
+          count -= 1;
+          results[index] = result;
+
+          if (count > 0) {
+            return;
+          }
+
+          if (hasError) {
+            reject(results);
+          }
+
+          resolve(results);
+        });
+      });
+    });
+  }
+
+  var SPLIT = '__@field_split__';
+  /**
+   * Convert name path into string to fast the fetch speed of Map.
+   */
+
+  function normalize(namePath) {
+    return namePath.map(function (cell) {
+      return "".concat(_typeof$1(cell), ":").concat(cell);
+    }) // Magic split
+    .join(SPLIT);
+  }
+  /**
+   * NameMap like a `Map` but accepts `string[]` as key.
+   */
+
+
+  var NameMap = /*#__PURE__*/function () {
+    function NameMap() {
+      _classCallCheck(this, NameMap);
+
+      this.kvs = new Map();
+    }
+
+    _createClass(NameMap, [{
+      key: "set",
+      value: function set(key, value) {
+        this.kvs.set(normalize(key), value);
+      }
+    }, {
+      key: "get",
+      value: function get(key) {
+        return this.kvs.get(normalize(key));
+      }
+    }, {
+      key: "update",
+      value: function update(key, updater) {
+        var origin = this.get(key);
+        var next = updater(origin);
+
+        if (!next) {
+          this.delete(key);
+        } else {
+          this.set(key, next);
+        }
+      }
+    }, {
+      key: "delete",
+      value: function _delete(key) {
+        this.kvs.delete(normalize(key));
+      } // Since we only use this in test, let simply realize this
+
+    }, {
+      key: "map",
+      value: function map(callback) {
+        return _toConsumableArray(this.kvs.entries()).map(function (_ref) {
+          var _ref2 = _slicedToArray(_ref, 2),
+              key = _ref2[0],
+              value = _ref2[1];
+
+          var cells = key.split(SPLIT);
+          return callback({
+            key: cells.map(function (cell) {
+              var _cell$match = cell.match(/^([^:]*):(.*)$/),
+                  _cell$match2 = _slicedToArray(_cell$match, 3),
+                  type = _cell$match2[1],
+                  unit = _cell$match2[2];
+
+              return type === 'number' ? Number(unit) : unit;
+            }),
+            value: value
+          });
+        });
+      }
+    }, {
+      key: "toJSON",
+      value: function toJSON() {
+        var json = {};
+        this.map(function (_ref3) {
+          var key = _ref3.key,
+              value = _ref3.value;
+          json[key.join('.')] = value;
+          return null;
+        });
+        return json;
+      }
+    }]);
+
+    return NameMap;
+  }();
+
+  var _excluded$2 = ["name", "errors"];
+  var FormStore = function FormStore(forceRootUpdate) {
+    var _this = this;
+
+    _classCallCheck(this, FormStore);
+
+    this.formHooked = false;
+    this.forceRootUpdate = void 0;
+    this.subscribable = true;
+    this.store = {};
+    this.fieldEntities = [];
+    this.initialValues = {};
+    this.callbacks = {};
+    this.validateMessages = null;
+    this.preserve = null;
+    this.lastValidatePromise = null;
+
+    this.getForm = function () {
+      return {
+        getFieldValue: _this.getFieldValue,
+        getFieldsValue: _this.getFieldsValue,
+        getFieldError: _this.getFieldError,
+        getFieldWarning: _this.getFieldWarning,
+        getFieldsError: _this.getFieldsError,
+        isFieldsTouched: _this.isFieldsTouched,
+        isFieldTouched: _this.isFieldTouched,
+        isFieldValidating: _this.isFieldValidating,
+        isFieldsValidating: _this.isFieldsValidating,
+        resetFields: _this.resetFields,
+        setFields: _this.setFields,
+        setFieldsValue: _this.setFieldsValue,
+        validateFields: _this.validateFields,
+        submit: _this.submit,
+        getInternalHooks: _this.getInternalHooks
+      };
+    };
+
+    this.getInternalHooks = function (key) {
+      if (key === HOOK_MARK) {
+        _this.formHooked = true;
+        return {
+          dispatch: _this.dispatch,
+          initEntityValue: _this.initEntityValue,
+          registerField: _this.registerField,
+          useSubscribe: _this.useSubscribe,
+          setInitialValues: _this.setInitialValues,
+          setCallbacks: _this.setCallbacks,
+          setValidateMessages: _this.setValidateMessages,
+          getFields: _this.getFields,
+          setPreserve: _this.setPreserve,
+          getInitialValue: _this.getInitialValue
+        };
+      }
+
+      warningOnce(false, '`getInternalHooks` is internal usage. Should not call directly.');
+      return null;
+    };
+
+    this.useSubscribe = function (subscribable) {
+      _this.subscribable = subscribable;
+    };
+
+    this.setInitialValues = function (initialValues, init) {
+      _this.initialValues = initialValues || {};
+
+      if (init) {
+        _this.store = setValues({}, initialValues, _this.store);
+      }
+    };
+
+    this.getInitialValue = function (namePath) {
+      return getValue$1(_this.initialValues, namePath);
+    };
+
+    this.setCallbacks = function (callbacks) {
+      _this.callbacks = callbacks;
+    };
+
+    this.setValidateMessages = function (validateMessages) {
+      _this.validateMessages = validateMessages;
+    };
+
+    this.setPreserve = function (preserve) {
+      _this.preserve = preserve;
+    };
+
+    this.timeoutId = null;
+
+    this.warningUnhooked = function () {
+      if ( !_this.timeoutId && typeof window !== 'undefined') {
+        _this.timeoutId = setTimeout(function () {
+          _this.timeoutId = null;
+
+          if (!_this.formHooked) {
+            warningOnce(false, 'Instance created by `useForm` is not connected to any Form element. Forget to pass `form` prop?');
+          }
+        });
+      }
+    };
+
+    this.getFieldEntities = function () {
+      var pure = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+      if (!pure) {
+        return _this.fieldEntities;
+      }
+
+      return _this.fieldEntities.filter(function (field) {
+        return field.getNamePath().length;
+      });
+    };
+
+    this.getFieldsMap = function () {
+      var pure = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var cache = new NameMap();
+
+      _this.getFieldEntities(pure).forEach(function (field) {
+        var namePath = field.getNamePath();
+        cache.set(namePath, field);
+      });
+
+      return cache;
+    };
+
+    this.getFieldEntitiesForNamePathList = function (nameList) {
+      if (!nameList) {
+        return _this.getFieldEntities(true);
+      }
+
+      var cache = _this.getFieldsMap(true);
+
+      return nameList.map(function (name) {
+        var namePath = getNamePath(name);
+        return cache.get(namePath) || {
+          INVALIDATE_NAME_PATH: getNamePath(name)
+        };
+      });
+    };
+
+    this.getFieldsValue = function (nameList, filterFunc) {
+      _this.warningUnhooked();
+
+      if (nameList === true && !filterFunc) {
+        return _this.store;
+      }
+
+      var fieldEntities = _this.getFieldEntitiesForNamePathList(Array.isArray(nameList) ? nameList : null);
+
+      var filteredNameList = [];
+      fieldEntities.forEach(function (entity) {
+        var _entity$isListField;
+
+        var namePath = 'INVALIDATE_NAME_PATH' in entity ? entity.INVALIDATE_NAME_PATH : entity.getNamePath(); // Ignore when it's a list item and not specific the namePath,
+        // since parent field is already take in count
+
+        if (!nameList && ((_entity$isListField = entity.isListField) === null || _entity$isListField === void 0 ? void 0 : _entity$isListField.call(entity))) {
+          return;
+        }
+
+        if (!filterFunc) {
+          filteredNameList.push(namePath);
+        } else {
+          var meta = 'getMeta' in entity ? entity.getMeta() : null;
+
+          if (filterFunc(meta)) {
+            filteredNameList.push(namePath);
+          }
+        }
+      });
+      return cloneByNamePathList(_this.store, filteredNameList.map(getNamePath));
+    };
+
+    this.getFieldValue = function (name) {
+      _this.warningUnhooked();
+
+      var namePath = getNamePath(name);
+      return getValue$1(_this.store, namePath);
+    };
+
+    this.getFieldsError = function (nameList) {
+      _this.warningUnhooked();
+
+      var fieldEntities = _this.getFieldEntitiesForNamePathList(nameList);
+
+      return fieldEntities.map(function (entity, index) {
+        if (entity && !('INVALIDATE_NAME_PATH' in entity)) {
+          return {
+            name: entity.getNamePath(),
+            errors: entity.getErrors(),
+            warnings: entity.getWarnings()
+          };
+        }
+
+        return {
+          name: getNamePath(nameList[index]),
+          errors: [],
+          warnings: []
+        };
+      });
+    };
+
+    this.getFieldError = function (name) {
+      _this.warningUnhooked();
+
+      var namePath = getNamePath(name);
+
+      var fieldError = _this.getFieldsError([namePath])[0];
+
+      return fieldError.errors;
+    };
+
+    this.getFieldWarning = function (name) {
+      _this.warningUnhooked();
+
+      var namePath = getNamePath(name);
+
+      var fieldError = _this.getFieldsError([namePath])[0];
+
+      return fieldError.warnings;
+    };
+
+    this.isFieldsTouched = function () {
+      _this.warningUnhooked();
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      var arg0 = args[0],
+          arg1 = args[1];
+      var namePathList;
+      var isAllFieldsTouched = false;
+
+      if (args.length === 0) {
+        namePathList = null;
+      } else if (args.length === 1) {
+        if (Array.isArray(arg0)) {
+          namePathList = arg0.map(getNamePath);
+          isAllFieldsTouched = false;
+        } else {
+          namePathList = null;
+          isAllFieldsTouched = arg0;
+        }
+      } else {
+        namePathList = arg0.map(getNamePath);
+        isAllFieldsTouched = arg1;
+      }
+
+      var fieldEntities = _this.getFieldEntities(true);
+
+      var isFieldTouched = function isFieldTouched(field) {
+        return field.isFieldTouched();
+      }; // ===== Will get fully compare when not config namePathList =====
+
+
+      if (!namePathList) {
+        return isAllFieldsTouched ? fieldEntities.every(isFieldTouched) : fieldEntities.some(isFieldTouched);
+      } // Generate a nest tree for validate
+
+
+      var map = new NameMap();
+      namePathList.forEach(function (shortNamePath) {
+        map.set(shortNamePath, []);
+      });
+      fieldEntities.forEach(function (field) {
+        var fieldNamePath = field.getNamePath(); // Find matched entity and put into list
+
+        namePathList.forEach(function (shortNamePath) {
+          if (shortNamePath.every(function (nameUnit, i) {
+            return fieldNamePath[i] === nameUnit;
+          })) {
+            map.update(shortNamePath, function (list) {
+              return [].concat(_toConsumableArray(list), [field]);
+            });
+          }
+        });
+      }); // Check if NameMap value is touched
+
+      var isNamePathListTouched = function isNamePathListTouched(entities) {
+        return entities.some(isFieldTouched);
+      };
+
+      var namePathListEntities = map.map(function (_ref) {
+        var value = _ref.value;
+        return value;
+      });
+      return isAllFieldsTouched ? namePathListEntities.every(isNamePathListTouched) : namePathListEntities.some(isNamePathListTouched);
+    };
+
+    this.isFieldTouched = function (name) {
+      _this.warningUnhooked();
+
+      return _this.isFieldsTouched([name]);
+    };
+
+    this.isFieldsValidating = function (nameList) {
+      _this.warningUnhooked();
+
+      var fieldEntities = _this.getFieldEntities();
+
+      if (!nameList) {
+        return fieldEntities.some(function (testField) {
+          return testField.isFieldValidating();
+        });
+      }
+
+      var namePathList = nameList.map(getNamePath);
+      return fieldEntities.some(function (testField) {
+        var fieldNamePath = testField.getNamePath();
+        return containsNamePath(namePathList, fieldNamePath) && testField.isFieldValidating();
+      });
+    };
+
+    this.isFieldValidating = function (name) {
+      _this.warningUnhooked();
+
+      return _this.isFieldsValidating([name]);
+    };
+
+    this.resetWithFieldInitialValue = function () {
+      var info = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      // Create cache
+      var cache = new NameMap();
+
+      var fieldEntities = _this.getFieldEntities(true);
+
+      fieldEntities.forEach(function (field) {
+        var initialValue = field.props.initialValue;
+        var namePath = field.getNamePath(); // Record only if has `initialValue`
+
+        if (initialValue !== undefined) {
+          var records = cache.get(namePath) || new Set();
+          records.add({
+            entity: field,
+            value: initialValue
+          });
+          cache.set(namePath, records);
+        }
+      }); // Reset
+
+      var resetWithFields = function resetWithFields(entities) {
+        entities.forEach(function (field) {
+          var initialValue = field.props.initialValue;
+
+          if (initialValue !== undefined) {
+            var namePath = field.getNamePath();
+
+            var formInitialValue = _this.getInitialValue(namePath);
+
+            if (formInitialValue !== undefined) {
+              // Warning if conflict with form initialValues and do not modify value
+              warningOnce(false, "Form already set 'initialValues' with path '".concat(namePath.join('.'), "'. Field can not overwrite it."));
+            } else {
+              var records = cache.get(namePath);
+
+              if (records && records.size > 1) {
+                // Warning if multiple field set `initialValue`and do not modify value
+                warningOnce(false, "Multiple Field with path '".concat(namePath.join('.'), "' set 'initialValue'. Can not decide which one to pick."));
+              } else if (records) {
+                var originValue = _this.getFieldValue(namePath); // Set `initialValue`
+
+
+                if (!info.skipExist || originValue === undefined) {
+                  _this.store = setValue(_this.store, namePath, _toConsumableArray(records)[0].value);
+                }
+              }
+            }
+          }
+        });
+      };
+
+      var requiredFieldEntities;
+
+      if (info.entities) {
+        requiredFieldEntities = info.entities;
+      } else if (info.namePathList) {
+        requiredFieldEntities = [];
+        info.namePathList.forEach(function (namePath) {
+          var records = cache.get(namePath);
+
+          if (records) {
+            var _requiredFieldEntitie;
+
+            (_requiredFieldEntitie = requiredFieldEntities).push.apply(_requiredFieldEntitie, _toConsumableArray(_toConsumableArray(records).map(function (r) {
+              return r.entity;
+            })));
+          }
+        });
+      } else {
+        requiredFieldEntities = fieldEntities;
+      }
+
+      resetWithFields(requiredFieldEntities);
+    };
+
+    this.resetFields = function (nameList) {
+      _this.warningUnhooked();
+
+      var prevStore = _this.store;
+
+      if (!nameList) {
+        _this.store = setValues({}, _this.initialValues);
+
+        _this.resetWithFieldInitialValue();
+
+        _this.notifyObservers(prevStore, null, {
+          type: 'reset'
+        });
+
+        return;
+      } // Reset by `nameList`
+
+
+      var namePathList = nameList.map(getNamePath);
+      namePathList.forEach(function (namePath) {
+        var initialValue = _this.getInitialValue(namePath);
+
+        _this.store = setValue(_this.store, namePath, initialValue);
+      });
+
+      _this.resetWithFieldInitialValue({
+        namePathList: namePathList
+      });
+
+      _this.notifyObservers(prevStore, namePathList, {
+        type: 'reset'
+      });
+    };
+
+    this.setFields = function (fields) {
+      _this.warningUnhooked();
+
+      var prevStore = _this.store;
+      fields.forEach(function (fieldData) {
+        var name = fieldData.name,
+            errors = fieldData.errors,
+            data = _objectWithoutProperties$1(fieldData, _excluded$2);
+
+        var namePath = getNamePath(name); // Value
+
+        if ('value' in data) {
+          _this.store = setValue(_this.store, namePath, data.value);
+        }
+
+        _this.notifyObservers(prevStore, [namePath], {
+          type: 'setField',
+          data: fieldData
+        });
+      });
+    };
+
+    this.getFields = function () {
+      var entities = _this.getFieldEntities(true);
+
+      var fields = entities.map(function (field) {
+        var namePath = field.getNamePath();
+        var meta = field.getMeta();
+
+        var fieldData = _objectSpread2(_objectSpread2({}, meta), {}, {
+          name: namePath,
+          value: _this.getFieldValue(namePath)
+        });
+
+        Object.defineProperty(fieldData, 'originRCField', {
+          value: true
+        });
+        return fieldData;
+      });
+      return fields;
+    };
+
+    this.initEntityValue = function (entity) {
+      var initialValue = entity.props.initialValue;
+
+      if (initialValue !== undefined) {
+        var namePath = entity.getNamePath();
+        var prevValue = getValue$1(_this.store, namePath);
+
+        if (prevValue === undefined) {
+          _this.store = setValue(_this.store, namePath, initialValue);
+        }
+      }
+    };
+
+    this.registerField = function (entity) {
+      _this.fieldEntities.push(entity); // Set initial values
+
+
+      if (entity.props.initialValue !== undefined) {
+        var prevStore = _this.store;
+
+        _this.resetWithFieldInitialValue({
+          entities: [entity],
+          skipExist: true
+        });
+
+        _this.notifyObservers(prevStore, [entity.getNamePath()], {
+          type: 'valueUpdate',
+          source: 'internal'
+        });
+      } // un-register field callback
+
+
+      return function (isListField, preserve) {
+        var subNamePath = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        _this.fieldEntities = _this.fieldEntities.filter(function (item) {
+          return item !== entity;
+        }); // Clean up store value if not preserve
+
+        var mergedPreserve = preserve !== undefined ? preserve : _this.preserve;
+
+        if (mergedPreserve === false && (!isListField || subNamePath.length > 1)) {
+          var namePath = entity.getNamePath();
+          var defaultValue = isListField ? undefined : getValue$1(_this.initialValues, namePath);
+
+          if (namePath.length && _this.getFieldValue(namePath) !== defaultValue && _this.fieldEntities.every(function (field) {
+            return (// Only reset when no namePath exist
+              !matchNamePath(field.getNamePath(), namePath)
+            );
+          })) {
+            _this.store = setValue(_this.store, namePath, defaultValue, true);
+          }
+        }
+      };
+    };
+
+    this.dispatch = function (action) {
+      switch (action.type) {
+        case 'updateValue':
+          {
+            var namePath = action.namePath,
+                value = action.value;
+
+            _this.updateValue(namePath, value);
+
+            break;
+          }
+
+        case 'validateField':
+          {
+            var _namePath = action.namePath,
+                triggerName = action.triggerName;
+
+            _this.validateFields([_namePath], {
+              triggerName: triggerName
+            });
+
+            break;
+          }
+
+      }
+    };
+
+    this.notifyObservers = function (prevStore, namePathList, info) {
+      if (_this.subscribable) {
+        var mergedInfo = _objectSpread2(_objectSpread2({}, info), {}, {
+          store: _this.getFieldsValue(true)
+        });
+
+        _this.getFieldEntities().forEach(function (_ref2) {
+          var onStoreChange = _ref2.onStoreChange;
+          onStoreChange(prevStore, namePathList, mergedInfo);
+        });
+      } else {
+        _this.forceRootUpdate();
+      }
+    };
+
+    this.updateValue = function (name, value) {
+      var namePath = getNamePath(name);
+      var prevStore = _this.store;
+      _this.store = setValue(_this.store, namePath, value);
+
+      _this.notifyObservers(prevStore, [namePath], {
+        type: 'valueUpdate',
+        source: 'internal'
+      }); // Notify dependencies children with parent update
+      // We need delay to trigger validate in case Field is under render props
+
+
+      var childrenFields = _this.getDependencyChildrenFields(namePath);
+
+      if (childrenFields.length) {
+        _this.validateFields(childrenFields);
+      }
+
+      _this.notifyObservers(prevStore, childrenFields, {
+        type: 'dependenciesUpdate',
+        relatedFields: [namePath].concat(_toConsumableArray(childrenFields))
+      }); // trigger callback function
+
+
+      var onValuesChange = _this.callbacks.onValuesChange;
+
+      if (onValuesChange) {
+        var changedValues = cloneByNamePathList(_this.store, [namePath]);
+        onValuesChange(changedValues, _this.getFieldsValue());
+      }
+
+      _this.triggerOnFieldsChange([namePath].concat(_toConsumableArray(childrenFields)));
+    };
+
+    this.setFieldsValue = function (store) {
+      _this.warningUnhooked();
+
+      var prevStore = _this.store;
+
+      if (store) {
+        _this.store = setValues(_this.store, store);
+      }
+
+      _this.notifyObservers(prevStore, null, {
+        type: 'valueUpdate',
+        source: 'external'
+      });
+    };
+
+    this.getDependencyChildrenFields = function (rootNamePath) {
+      var children = new Set();
+      var childrenFields = [];
+      var dependencies2fields = new NameMap();
+      /**
+       * Generate maps
+       * Can use cache to save perf if user report performance issue with this
+       */
+
+      _this.getFieldEntities().forEach(function (field) {
+        var dependencies = field.props.dependencies;
+        (dependencies || []).forEach(function (dependency) {
+          var dependencyNamePath = getNamePath(dependency);
+          dependencies2fields.update(dependencyNamePath, function () {
+            var fields = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Set();
+            fields.add(field);
+            return fields;
+          });
+        });
+      });
+
+      var fillChildren = function fillChildren(namePath) {
+        var fields = dependencies2fields.get(namePath) || new Set();
+        fields.forEach(function (field) {
+          if (!children.has(field)) {
+            children.add(field);
+            var fieldNamePath = field.getNamePath();
+
+            if (field.isFieldDirty() && fieldNamePath.length) {
+              childrenFields.push(fieldNamePath);
+              fillChildren(fieldNamePath);
+            }
+          }
+        });
+      };
+
+      fillChildren(rootNamePath);
+      return childrenFields;
+    };
+
+    this.triggerOnFieldsChange = function (namePathList, filedErrors) {
+      var onFieldsChange = _this.callbacks.onFieldsChange;
+
+      if (onFieldsChange) {
+        var fields = _this.getFields();
+        /**
+         * Fill errors since `fields` may be replaced by controlled fields
+         */
+
+
+        if (filedErrors) {
+          var cache = new NameMap();
+          filedErrors.forEach(function (_ref3) {
+            var name = _ref3.name,
+                errors = _ref3.errors;
+            cache.set(name, errors);
+          });
+          fields.forEach(function (field) {
+            // eslint-disable-next-line no-param-reassign
+            field.errors = cache.get(field.name) || field.errors;
+          });
+        }
+
+        var changedFields = fields.filter(function (_ref4) {
+          var fieldName = _ref4.name;
+          return containsNamePath(namePathList, fieldName);
+        });
+        onFieldsChange(changedFields, fields);
+      }
+    };
+
+    this.validateFields = function (nameList, options) {
+      _this.warningUnhooked();
+
+      var provideNameList = !!nameList;
+      var namePathList = provideNameList ? nameList.map(getNamePath) : []; // Collect result in promise list
+
+      var promiseList = [];
+
+      _this.getFieldEntities(true).forEach(function (field) {
+        // Add field if not provide `nameList`
+        if (!provideNameList) {
+          namePathList.push(field.getNamePath());
+        }
+        /**
+         * Recursive validate if configured.
+         * TODO: perf improvement @zombieJ
+         */
+
+
+        if ((options === null || options === void 0 ? void 0 : options.recursive) && provideNameList) {
+          var namePath = field.getNamePath();
+
+          if ( // nameList[i] === undefined 说明是以 nameList 开头的
+          // ['name'] -> ['name','list']
+          namePath.every(function (nameUnit, i) {
+            return nameList[i] === nameUnit || nameList[i] === undefined;
+          })) {
+            namePathList.push(namePath);
+          }
+        } // Skip if without rule
+
+
+        if (!field.props.rules || !field.props.rules.length) {
+          return;
+        }
+
+        var fieldNamePath = field.getNamePath(); // Add field validate rule in to promise list
+
+        if (!provideNameList || containsNamePath(namePathList, fieldNamePath)) {
+          var promise = field.validateRules(_objectSpread2({
+            validateMessages: _objectSpread2(_objectSpread2({}, defaultValidateMessages), _this.validateMessages)
+          }, options)); // Wrap promise with field
+
+          promiseList.push(promise.then(function () {
+            return {
+              name: fieldNamePath,
+              errors: [],
+              warnings: []
+            };
+          }).catch(function (ruleErrors) {
+            var mergedErrors = [];
+            var mergedWarnings = [];
+            ruleErrors.forEach(function (_ref5) {
+              var warningOnly = _ref5.rule.warningOnly,
+                  errors = _ref5.errors;
+
+              if (warningOnly) {
+                mergedWarnings.push.apply(mergedWarnings, _toConsumableArray(errors));
+              } else {
+                mergedErrors.push.apply(mergedErrors, _toConsumableArray(errors));
+              }
+            });
+
+            if (mergedErrors.length) {
+              return Promise.reject({
+                name: fieldNamePath,
+                errors: mergedErrors,
+                warnings: mergedWarnings
+              });
+            }
+
+            return {
+              name: fieldNamePath,
+              errors: mergedErrors,
+              warnings: mergedWarnings
+            };
+          }));
+        }
+      });
+
+      var summaryPromise = allPromiseFinish(promiseList);
+      _this.lastValidatePromise = summaryPromise; // Notify fields with rule that validate has finished and need update
+
+      summaryPromise.catch(function (results) {
+        return results;
+      }).then(function (results) {
+        var resultNamePathList = results.map(function (_ref6) {
+          var name = _ref6.name;
+          return name;
+        });
+
+        _this.notifyObservers(_this.store, resultNamePathList, {
+          type: 'validateFinish'
+        });
+
+        _this.triggerOnFieldsChange(resultNamePathList, results);
+      });
+      var returnPromise = summaryPromise.then(function () {
+        if (_this.lastValidatePromise === summaryPromise) {
+          return Promise.resolve(_this.getFieldsValue(namePathList));
+        }
+
+        return Promise.reject([]);
+      }).catch(function (results) {
+        var errorList = results.filter(function (result) {
+          return result && result.errors.length;
+        });
+        return Promise.reject({
+          values: _this.getFieldsValue(namePathList),
+          errorFields: errorList,
+          outOfDate: _this.lastValidatePromise !== summaryPromise
+        });
+      }); // Do not throw in console
+
+      returnPromise.catch(function (e) {
+        return e;
+      });
+      return returnPromise;
+    };
+
+    this.submit = function () {
+      _this.warningUnhooked();
+
+      _this.validateFields().then(function (values) {
+        var onFinish = _this.callbacks.onFinish;
+
+        if (onFinish) {
+          try {
+            onFinish(values);
+          } catch (err) {
+            // Should print error if user `onFinish` callback failed
+            console.error(err);
+          }
+        }
+      }).catch(function (e) {
+        var onFinishFailed = _this.callbacks.onFinishFailed;
+
+        if (onFinishFailed) {
+          onFinishFailed(e);
+        }
+      });
+    };
+
+    this.forceRootUpdate = forceRootUpdate;
+  };
+
+  function useForm(form) {
+    var formRef = React.useRef();
+
+    var _React$useState = React.useState({}),
+        _React$useState2 = _slicedToArray(_React$useState, 2),
+        forceUpdate = _React$useState2[1];
+
+    if (!formRef.current) {
+      if (form) {
+        formRef.current = form;
+      } else {
+        // Create a new FormStore if not provided
+        var forceReRender = function forceReRender() {
+          forceUpdate({});
+        };
+
+        var formStore = new FormStore(forceReRender);
+        formRef.current = formStore.getForm();
+      }
+    }
+
+    return [formRef.current];
+  }
+
+  var FormContext = /*#__PURE__*/React.createContext({
+    triggerFormChange: function triggerFormChange() {},
+    triggerFormFinish: function triggerFormFinish() {},
+    registerForm: function registerForm() {},
+    unregisterForm: function unregisterForm() {}
+  });
+
+  var FormProvider = function FormProvider(_ref) {
+    var validateMessages = _ref.validateMessages,
+        onFormChange = _ref.onFormChange,
+        onFormFinish = _ref.onFormFinish,
+        children = _ref.children;
+    var formContext = React.useContext(FormContext);
+    var formsRef = React.useRef({});
+    return /*#__PURE__*/React.createElement(FormContext.Provider, {
+      value: _objectSpread2(_objectSpread2({}, formContext), {}, {
+        validateMessages: _objectSpread2(_objectSpread2({}, formContext.validateMessages), validateMessages),
+        // =========================================================
+        // =                  Global Form Control                  =
+        // =========================================================
+        triggerFormChange: function triggerFormChange(name, changedFields) {
+          if (onFormChange) {
+            onFormChange(name, {
+              changedFields: changedFields,
+              forms: formsRef.current
+            });
+          }
+
+          formContext.triggerFormChange(name, changedFields);
+        },
+        triggerFormFinish: function triggerFormFinish(name, values) {
+          if (onFormFinish) {
+            onFormFinish(name, {
+              values: values,
+              forms: formsRef.current
+            });
+          }
+
+          formContext.triggerFormFinish(name, values);
+        },
+        registerForm: function registerForm(name, form) {
+          if (name) {
+            formsRef.current = _objectSpread2(_objectSpread2({}, formsRef.current), {}, _defineProperty({}, name, form));
+          }
+
+          formContext.registerForm(name, form);
+        },
+        unregisterForm: function unregisterForm(name) {
+          var newForms = _objectSpread2({}, formsRef.current);
+
+          delete newForms[name];
+          formsRef.current = newForms;
+          formContext.unregisterForm(name);
+        }
+      })
+    }, children);
+  };
+
+  var _excluded$3 = ["name", "initialValues", "fields", "form", "preserve", "children", "component", "validateMessages", "validateTrigger", "onValuesChange", "onFieldsChange", "onFinish", "onFinishFailed"];
+
+  var Form = function Form(_ref, ref) {
+    var name = _ref.name,
+        initialValues = _ref.initialValues,
+        fields = _ref.fields,
+        form = _ref.form,
+        preserve = _ref.preserve,
+        children = _ref.children,
+        _ref$component = _ref.component,
+        Component = _ref$component === void 0 ? 'form' : _ref$component,
+        validateMessages = _ref.validateMessages,
+        _ref$validateTrigger = _ref.validateTrigger,
+        validateTrigger = _ref$validateTrigger === void 0 ? 'onChange' : _ref$validateTrigger,
+        onValuesChange = _ref.onValuesChange,
+        _onFieldsChange = _ref.onFieldsChange,
+        _onFinish = _ref.onFinish,
+        onFinishFailed = _ref.onFinishFailed,
+        restProps = _objectWithoutProperties$1(_ref, _excluded$3);
+
+    var formContext = React.useContext(FormContext); // We customize handle event since Context will makes all the consumer re-render:
+    // https://reactjs.org/docs/context.html#contextprovider
+
+    var _useForm = useForm(form),
+        _useForm2 = _slicedToArray(_useForm, 1),
+        formInstance = _useForm2[0];
+
+    var _formInstance$getInte = formInstance.getInternalHooks(HOOK_MARK),
+        useSubscribe = _formInstance$getInte.useSubscribe,
+        setInitialValues = _formInstance$getInte.setInitialValues,
+        setCallbacks = _formInstance$getInte.setCallbacks,
+        setValidateMessages = _formInstance$getInte.setValidateMessages,
+        setPreserve = _formInstance$getInte.setPreserve; // Pass ref with form instance
+
+
+    React.useImperativeHandle(ref, function () {
+      return formInstance;
+    }); // Register form into Context
+
+    React.useEffect(function () {
+      formContext.registerForm(name, formInstance);
+      return function () {
+        formContext.unregisterForm(name);
+      };
+    }, [formContext, formInstance, name]); // Pass props to store
+
+    setValidateMessages(_objectSpread2(_objectSpread2({}, formContext.validateMessages), validateMessages));
+    setCallbacks({
+      onValuesChange: onValuesChange,
+      onFieldsChange: function onFieldsChange(changedFields) {
+        formContext.triggerFormChange(name, changedFields);
+
+        if (_onFieldsChange) {
+          for (var _len = arguments.length, rest = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+            rest[_key - 1] = arguments[_key];
+          }
+
+          _onFieldsChange.apply(void 0, [changedFields].concat(rest));
+        }
+      },
+      onFinish: function onFinish(values) {
+        formContext.triggerFormFinish(name, values);
+
+        if (_onFinish) {
+          _onFinish(values);
+        }
+      },
+      onFinishFailed: onFinishFailed
+    });
+    setPreserve(preserve); // Set initial value, init store value when first mount
+
+    var mountRef = React.useRef(null);
+    setInitialValues(initialValues, !mountRef.current);
+
+    if (!mountRef.current) {
+      mountRef.current = true;
+    } // Prepare children by `children` type
+
+
+    var childrenNode = children;
+    var childrenRenderProps = typeof children === 'function';
+
+    if (childrenRenderProps) {
+      var values = formInstance.getFieldsValue(true);
+      childrenNode = children(values, formInstance);
+    } // Not use subscribe when using render props
+
+
+    useSubscribe(!childrenRenderProps); // Listen if fields provided. We use ref to save prev data here to avoid additional render
+
+    var prevFieldsRef = React.useRef();
+    React.useEffect(function () {
+      if (!isSimilar(prevFieldsRef.current || [], fields || [])) {
+        formInstance.setFields(fields || []);
+      }
+
+      prevFieldsRef.current = fields;
+    }, [fields, formInstance]);
+    var formContextValue = React.useMemo(function () {
+      return _objectSpread2(_objectSpread2({}, formInstance), {}, {
+        validateTrigger: validateTrigger
+      });
+    }, [formInstance, validateTrigger]);
+    var wrapperNode = /*#__PURE__*/React.createElement(Context.Provider, {
+      value: formContextValue
+    }, childrenNode);
+
+    if (Component === false) {
+      return wrapperNode;
+    }
+
+    return /*#__PURE__*/React.createElement(Component, _extends$1({}, restProps, {
+      onSubmit: function onSubmit(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        formInstance.submit();
+      },
+      onReset: function onReset(event) {
+        var _restProps$onReset;
+
+        event.preventDefault();
+        formInstance.resetFields();
+        (_restProps$onReset = restProps.onReset) === null || _restProps$onReset === void 0 ? void 0 : _restProps$onReset.call(restProps, event);
+      }
+    }), wrapperNode);
+  };
+
+  var InternalForm = /*#__PURE__*/React.forwardRef(Form);
+  var RefForm = InternalForm;
+  RefForm.FormProvider = FormProvider;
+  RefForm.Field = WrapperField;
+  RefForm.List = List;
+  RefForm.useForm = useForm;
+
+  function useMemo(getValue, condition, shouldUpdate) {
+    var cacheRef = React.useRef({});
+
+    if (!('value' in cacheRef.current) || shouldUpdate(cacheRef.current.condition, condition)) {
+      cacheRef.current.value = getValue();
+      cacheRef.current.condition = condition;
+    }
+
+    return cacheRef.current.value;
   }
 
   var devWarning = (function (valid, component, message) {
@@ -28491,7 +33143,7 @@
   }; // All settings at:
 
   /* eslint-disable no-template-curly-in-string */
-  var typeTemplate = '${label} is not a valid ${type}';
+  var typeTemplate$1 = '${label} is not a valid ${type}';
   var localeValues = {
     locale: 'en',
     Pagination: enUS,
@@ -28576,19 +33228,19 @@
           invalid: '${label} is an invalid date'
         },
         types: {
-          string: typeTemplate,
-          method: typeTemplate,
-          array: typeTemplate,
-          object: typeTemplate,
-          number: typeTemplate,
-          date: typeTemplate,
-          "boolean": typeTemplate,
-          integer: typeTemplate,
-          "float": typeTemplate,
-          regexp: typeTemplate,
-          email: typeTemplate,
-          url: typeTemplate,
-          hex: typeTemplate
+          string: typeTemplate$1,
+          method: typeTemplate$1,
+          array: typeTemplate$1,
+          object: typeTemplate$1,
+          number: typeTemplate$1,
+          date: typeTemplate$1,
+          "boolean": typeTemplate$1,
+          integer: typeTemplate$1,
+          "float": typeTemplate$1,
+          regexp: typeTemplate$1,
+          email: typeTemplate$1,
+          url: typeTemplate$1,
+          hex: typeTemplate$1
         },
         string: {
           len: '${label} must be ${len} characters',
@@ -28618,7 +33270,77 @@
     }
   };
 
+  var runtimeLocale = _extends$1({}, localeValues.Modal);
+
+  function changeConfirmLocale(newLocale) {
+    if (newLocale) {
+      runtimeLocale = _extends$1(_extends$1({}, runtimeLocale), newLocale);
+    } else {
+      runtimeLocale = _extends$1({}, localeValues.Modal);
+    }
+  }
+  function getConfirmLocale() {
+    return runtimeLocale;
+  }
+
   var LocaleContext = /*#__PURE__*/React.createContext(undefined);
+
+  var ANT_MARK = 'internalMark';
+
+  var LocaleProvider = /*#__PURE__*/function (_React$Component) {
+    _inherits(LocaleProvider, _React$Component);
+
+    var _super = _createSuper(LocaleProvider);
+
+    function LocaleProvider(props) {
+      var _this;
+
+      _classCallCheck(this, LocaleProvider);
+
+      _this = _super.call(this, props);
+      changeConfirmLocale(props.locale && props.locale.Modal);
+      devWarning(props._ANT_MARK__ === ANT_MARK, 'LocaleProvider', '`LocaleProvider` is deprecated. Please use `locale` with `ConfigProvider` instead: http://u.ant.design/locale');
+      return _this;
+    }
+
+    _createClass(LocaleProvider, [{
+      key: "componentDidMount",
+      value: function componentDidMount() {
+        changeConfirmLocale(this.props.locale && this.props.locale.Modal);
+      }
+    }, {
+      key: "componentDidUpdate",
+      value: function componentDidUpdate(prevProps) {
+        var locale = this.props.locale;
+
+        if (prevProps.locale !== locale) {
+          changeConfirmLocale(locale && locale.Modal);
+        }
+      }
+    }, {
+      key: "componentWillUnmount",
+      value: function componentWillUnmount() {
+        changeConfirmLocale();
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        var _this$props = this.props,
+            locale = _this$props.locale,
+            children = _this$props.children;
+        return /*#__PURE__*/React.createElement(LocaleContext.Provider, {
+          value: _extends$1(_extends$1({}, locale), {
+            exist: true
+          })
+        }, children);
+      }
+    }]);
+
+    return LocaleProvider;
+  }(React.Component);
+  LocaleProvider.defaultProps = {
+    locale: {}
+  };
 
   var LocaleReceiver = /*#__PURE__*/function (_React$Component) {
     _inherits(LocaleReceiver, _React$Component);
@@ -28856,6 +33578,15 @@
   var ConfigConsumer = ConfigContext.Consumer;
 
   var SizeContext = /*#__PURE__*/React.createContext(undefined);
+  var SizeContextProvider = function SizeContextProvider(_ref) {
+    var children = _ref.children,
+        size = _ref.size;
+    return /*#__PURE__*/React.createElement(SizeContext.Consumer, null, function (originSize) {
+      return /*#__PURE__*/React.createElement(SizeContext.Provider, {
+        value: size || originSize
+      }, children);
+    });
+  };
 
   function canUseDom() {
     return !!(typeof window !== 'undefined' && window.document && window.document.createElement);
@@ -29517,6 +34248,669 @@
   }
   var CSSMotion = genCSSMotion(supportTransition);
 
+  var STATUS_ADD = 'add';
+  var STATUS_KEEP = 'keep';
+  var STATUS_REMOVE = 'remove';
+  var STATUS_REMOVED = 'removed';
+  function wrapKeyToObject(key) {
+    var keyObj;
+
+    if (key && _typeof$1(key) === 'object' && 'key' in key) {
+      keyObj = key;
+    } else {
+      keyObj = {
+        key: key
+      };
+    }
+
+    return _objectSpread2(_objectSpread2({}, keyObj), {}, {
+      key: String(keyObj.key)
+    });
+  }
+  function parseKeys() {
+    var keys = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+    return keys.map(wrapKeyToObject);
+  }
+  function diffKeys() {
+    var prevKeys = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+    var currentKeys = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+    var list = [];
+    var currentIndex = 0;
+    var currentLen = currentKeys.length;
+    var prevKeyObjects = parseKeys(prevKeys);
+    var currentKeyObjects = parseKeys(currentKeys); // Check prev keys to insert or keep
+
+    prevKeyObjects.forEach(function (keyObj) {
+      var hit = false;
+
+      for (var i = currentIndex; i < currentLen; i += 1) {
+        var currentKeyObj = currentKeyObjects[i];
+
+        if (currentKeyObj.key === keyObj.key) {
+          // New added keys should add before current key
+          if (currentIndex < i) {
+            list = list.concat(currentKeyObjects.slice(currentIndex, i).map(function (obj) {
+              return _objectSpread2(_objectSpread2({}, obj), {}, {
+                status: STATUS_ADD
+              });
+            }));
+            currentIndex = i;
+          }
+
+          list.push(_objectSpread2(_objectSpread2({}, currentKeyObj), {}, {
+            status: STATUS_KEEP
+          }));
+          currentIndex += 1;
+          hit = true;
+          break;
+        }
+      } // If not hit, it means key is removed
+
+
+      if (!hit) {
+        list.push(_objectSpread2(_objectSpread2({}, keyObj), {}, {
+          status: STATUS_REMOVE
+        }));
+      }
+    }); // Add rest to the list
+
+    if (currentIndex < currentLen) {
+      list = list.concat(currentKeyObjects.slice(currentIndex).map(function (obj) {
+        return _objectSpread2(_objectSpread2({}, obj), {}, {
+          status: STATUS_ADD
+        });
+      }));
+    }
+    /**
+     * Merge same key when it remove and add again:
+     *    [1 - add, 2 - keep, 1 - remove] -> [1 - keep, 2 - keep]
+     */
+
+
+    var keys = {};
+    list.forEach(function (_ref) {
+      var key = _ref.key;
+      keys[key] = (keys[key] || 0) + 1;
+    });
+    var duplicatedKeys = Object.keys(keys).filter(function (key) {
+      return keys[key] > 1;
+    });
+    duplicatedKeys.forEach(function (matchKey) {
+      // Remove `STATUS_REMOVE` node.
+      list = list.filter(function (_ref2) {
+        var key = _ref2.key,
+            status = _ref2.status;
+        return key !== matchKey || status !== STATUS_REMOVE;
+      }); // Update `STATUS_ADD` to `STATUS_KEEP`
+
+      list.forEach(function (node) {
+        if (node.key === matchKey) {
+          // eslint-disable-next-line no-param-reassign
+          node.status = STATUS_KEEP;
+        }
+      });
+    });
+    return list;
+  }
+
+  var MOTION_PROP_NAMES = ['eventProps', 'visible', 'children', 'motionName', 'motionAppear', 'motionEnter', 'motionLeave', 'motionLeaveImmediately', 'motionDeadline', 'removeOnLeave', 'leavedClassName', 'onAppearStart', 'onAppearActive', 'onAppearEnd', 'onEnterStart', 'onEnterActive', 'onEnterEnd', 'onLeaveStart', 'onLeaveActive', 'onLeaveEnd'];
+  /**
+   * Generate a CSSMotionList component with config
+   * @param transitionSupport No need since CSSMotionList no longer depends on transition support
+   * @param CSSMotion CSSMotion component
+   */
+
+  function genCSSMotionList(transitionSupport) {
+    var CSSMotion$1 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : CSSMotion;
+
+    var CSSMotionList = /*#__PURE__*/function (_React$Component) {
+      _inherits(CSSMotionList, _React$Component);
+
+      var _super = _createSuper(CSSMotionList);
+
+      function CSSMotionList() {
+        var _this;
+
+        _classCallCheck(this, CSSMotionList);
+
+        _this = _super.apply(this, arguments);
+        _this.state = {
+          keyEntities: []
+        };
+
+        _this.removeKey = function (removeKey) {
+          _this.setState(function (_ref) {
+            var keyEntities = _ref.keyEntities;
+            return {
+              keyEntities: keyEntities.map(function (entity) {
+                if (entity.key !== removeKey) return entity;
+                return _objectSpread2(_objectSpread2({}, entity), {}, {
+                  status: STATUS_REMOVED
+                });
+              })
+            };
+          });
+        };
+
+        return _this;
+      }
+
+      _createClass(CSSMotionList, [{
+        key: "render",
+        value: function render() {
+          var _this2 = this;
+
+          var keyEntities = this.state.keyEntities;
+
+          var _this$props = this.props,
+              component = _this$props.component,
+              children = _this$props.children,
+              _onVisibleChanged = _this$props.onVisibleChanged,
+              restProps = _objectWithoutProperties$1(_this$props, ["component", "children", "onVisibleChanged"]);
+
+          var Component = component || React.Fragment;
+          var motionProps = {};
+          MOTION_PROP_NAMES.forEach(function (prop) {
+            motionProps[prop] = restProps[prop];
+            delete restProps[prop];
+          });
+          delete restProps.keys;
+          return /*#__PURE__*/React.createElement(Component, restProps, keyEntities.map(function (_ref2) {
+            var status = _ref2.status,
+                eventProps = _objectWithoutProperties$1(_ref2, ["status"]);
+
+            var visible = status === STATUS_ADD || status === STATUS_KEEP;
+            return /*#__PURE__*/React.createElement(CSSMotion$1, _extends$1({}, motionProps, {
+              key: eventProps.key,
+              visible: visible,
+              eventProps: eventProps,
+              onVisibleChanged: function onVisibleChanged(changedVisible) {
+                _onVisibleChanged === null || _onVisibleChanged === void 0 ? void 0 : _onVisibleChanged(changedVisible, {
+                  key: eventProps.key
+                });
+
+                if (!changedVisible) {
+                  _this2.removeKey(eventProps.key);
+                }
+              }
+            }), children);
+          }));
+        }
+      }], [{
+        key: "getDerivedStateFromProps",
+        value: function getDerivedStateFromProps(_ref3, _ref4) {
+          var keys = _ref3.keys;
+          var keyEntities = _ref4.keyEntities;
+          var parsedKeyObjects = parseKeys(keys);
+          var mixedKeyEntities = diffKeys(keyEntities, parsedKeyObjects);
+          return {
+            keyEntities: mixedKeyEntities.filter(function (entity) {
+              var prevEntity = keyEntities.find(function (_ref5) {
+                var key = _ref5.key;
+                return entity.key === key;
+              }); // Remove if already mark as removed
+
+              if (prevEntity && prevEntity.status === STATUS_REMOVED && entity.status === STATUS_REMOVE) {
+                return false;
+              }
+
+              return true;
+            })
+          };
+        }
+      }]);
+
+      return CSSMotionList;
+    }(React.Component);
+
+    CSSMotionList.defaultProps = {
+      component: 'div'
+    };
+    return CSSMotionList;
+  }
+  var CSSMotionList = genCSSMotionList(supportTransition);
+
+  var Notice = /*#__PURE__*/function (_Component) {
+    _inherits(Notice, _Component);
+
+    var _super = _createSuper(Notice);
+
+    function Notice() {
+      var _this;
+
+      _classCallCheck(this, Notice);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _super.call.apply(_super, [this].concat(args));
+      _this.closeTimer = null;
+
+      _this.close = function (e) {
+        if (e) {
+          e.stopPropagation();
+        }
+
+        _this.clearCloseTimer();
+
+        var _this$props = _this.props,
+            onClose = _this$props.onClose,
+            noticeKey = _this$props.noticeKey;
+
+        if (onClose) {
+          onClose(noticeKey);
+        }
+      };
+
+      _this.startCloseTimer = function () {
+        if (_this.props.duration) {
+          _this.closeTimer = window.setTimeout(function () {
+            _this.close();
+          }, _this.props.duration * 1000);
+        }
+      };
+
+      _this.clearCloseTimer = function () {
+        if (_this.closeTimer) {
+          clearTimeout(_this.closeTimer);
+          _this.closeTimer = null;
+        }
+      };
+
+      return _this;
+    }
+
+    _createClass(Notice, [{
+      key: "componentDidMount",
+      value: function componentDidMount() {
+        this.startCloseTimer();
+      }
+    }, {
+      key: "componentDidUpdate",
+      value: function componentDidUpdate(prevProps) {
+        if (this.props.duration !== prevProps.duration || this.props.updateMark !== prevProps.updateMark || // Visible again need reset timer
+        this.props.visible !== prevProps.visible && this.props.visible) {
+          this.restartCloseTimer();
+        }
+      }
+    }, {
+      key: "componentWillUnmount",
+      value: function componentWillUnmount() {
+        this.clearCloseTimer();
+      }
+    }, {
+      key: "restartCloseTimer",
+      value: function restartCloseTimer() {
+        this.clearCloseTimer();
+        this.startCloseTimer();
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        var _this2 = this;
+
+        var _this$props2 = this.props,
+            prefixCls = _this$props2.prefixCls,
+            className = _this$props2.className,
+            closable = _this$props2.closable,
+            closeIcon = _this$props2.closeIcon,
+            style = _this$props2.style,
+            onClick = _this$props2.onClick,
+            children = _this$props2.children,
+            holder = _this$props2.holder;
+        var componentClass = "".concat(prefixCls, "-notice");
+        var dataOrAriaAttributeProps = Object.keys(this.props).reduce(function (acc, key) {
+          if (key.substr(0, 5) === 'data-' || key.substr(0, 5) === 'aria-' || key === 'role') {
+            acc[key] = _this2.props[key];
+          }
+
+          return acc;
+        }, {});
+        var node = /*#__PURE__*/React.createElement("div", _extends$1({
+          className: classnames(componentClass, className, _defineProperty({}, "".concat(componentClass, "-closable"), closable)),
+          style: style,
+          onMouseEnter: this.clearCloseTimer,
+          onMouseLeave: this.startCloseTimer,
+          onClick: onClick
+        }, dataOrAriaAttributeProps), /*#__PURE__*/React.createElement("div", {
+          className: "".concat(componentClass, "-content")
+        }, children), closable ? /*#__PURE__*/React.createElement("a", {
+          tabIndex: 0,
+          onClick: this.close,
+          className: "".concat(componentClass, "-close")
+        }, closeIcon || /*#__PURE__*/React.createElement("span", {
+          className: "".concat(componentClass, "-close-x")
+        })) : null);
+
+        if (holder) {
+          return /*#__PURE__*/reactDom.createPortal(node, holder);
+        }
+
+        return node;
+      }
+    }]);
+
+    return Notice;
+  }(React.Component);
+
+  Notice.defaultProps = {
+    onClose: function onClose() {},
+    duration: 1.5
+  };
+
+  function useNotification(notificationInstance) {
+    var createdRef = React.useRef({});
+
+    var _React$useState = React.useState([]),
+        _React$useState2 = _slicedToArray(_React$useState, 2),
+        elements = _React$useState2[0],
+        setElements = _React$useState2[1];
+
+    function notify(noticeProps) {
+      var firstMount = true;
+      notificationInstance.add(noticeProps, function (div, props) {
+        var key = props.key;
+
+        if (div && (!createdRef.current[key] || firstMount)) {
+          var noticeEle = /*#__PURE__*/React.createElement(Notice, _extends$1({}, props, {
+            holder: div
+          }));
+          createdRef.current[key] = noticeEle;
+          setElements(function (originElements) {
+            var index = originElements.findIndex(function (ele) {
+              return ele.key === props.key;
+            });
+
+            if (index === -1) {
+              return [].concat(_toConsumableArray(originElements), [noticeEle]);
+            }
+
+            var cloneList = _toConsumableArray(originElements);
+
+            cloneList[index] = noticeEle;
+            return cloneList;
+          });
+        }
+
+        firstMount = false;
+      });
+    }
+
+    return [notify, /*#__PURE__*/React.createElement(React.Fragment, null, elements)];
+  }
+
+  var seed = 0;
+  var now = Date.now();
+
+  function getUuid() {
+    var id = seed;
+    seed += 1;
+    return "rcNotification_".concat(now, "_").concat(id);
+  }
+
+  var Notification = /*#__PURE__*/function (_Component) {
+    _inherits(Notification, _Component);
+
+    var _super = _createSuper(Notification);
+
+    function Notification() {
+      var _this;
+
+      _classCallCheck(this, Notification);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _super.call.apply(_super, [this].concat(args));
+      _this.state = {
+        notices: []
+      };
+      _this.hookRefs = new Map();
+
+      _this.add = function (originNotice, holderCallback) {
+        var key = originNotice.key || getUuid();
+
+        var notice = _objectSpread2(_objectSpread2({}, originNotice), {}, {
+          key: key
+        });
+
+        var maxCount = _this.props.maxCount;
+
+        _this.setState(function (previousState) {
+          var notices = previousState.notices;
+          var noticeIndex = notices.map(function (v) {
+            return v.notice.key;
+          }).indexOf(key);
+          var updatedNotices = notices.concat();
+
+          if (noticeIndex !== -1) {
+            updatedNotices.splice(noticeIndex, 1, {
+              notice: notice,
+              holderCallback: holderCallback
+            });
+          } else {
+            if (maxCount && notices.length >= maxCount) {
+              // XXX, use key of first item to update new added (let React to move exsiting
+              // instead of remove and mount). Same key was used before for both a) external
+              // manual control and b) internal react 'key' prop , which is not that good.
+              // eslint-disable-next-line no-param-reassign
+              // zombieJ: Not know why use `updateKey`. This makes Notice infinite loop in jest.
+              // Change to `updateMark` for compare instead.
+              // https://github.com/react-component/notification/commit/32299e6be396f94040bfa82517eea940db947ece
+              notice.key = updatedNotices[0].notice.key;
+              notice.updateMark = getUuid(); // zombieJ: That's why. User may close by key directly.
+              // We need record this but not re-render to avoid upper issue
+              // https://github.com/react-component/notification/issues/129
+
+              notice.userPassKey = key;
+              updatedNotices.shift();
+            }
+
+            updatedNotices.push({
+              notice: notice,
+              holderCallback: holderCallback
+            });
+          }
+
+          return {
+            notices: updatedNotices
+          };
+        });
+      };
+
+      _this.remove = function (removeKey) {
+        _this.setState(function (_ref) {
+          var notices = _ref.notices;
+          return {
+            notices: notices.filter(function (_ref2) {
+              var _ref2$notice = _ref2.notice,
+                  key = _ref2$notice.key,
+                  userPassKey = _ref2$notice.userPassKey;
+              var mergedKey = userPassKey || key;
+              return mergedKey !== removeKey;
+            })
+          };
+        });
+      };
+
+      _this.noticePropsMap = {};
+      return _this;
+    }
+
+    _createClass(Notification, [{
+      key: "getTransitionName",
+      value: function getTransitionName() {
+        var _this$props = this.props,
+            prefixCls = _this$props.prefixCls,
+            animation = _this$props.animation;
+        var transitionName = this.props.transitionName;
+
+        if (!transitionName && animation) {
+          transitionName = "".concat(prefixCls, "-").concat(animation);
+        }
+
+        return transitionName;
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        var _this2 = this;
+
+        var notices = this.state.notices;
+        var _this$props2 = this.props,
+            prefixCls = _this$props2.prefixCls,
+            className = _this$props2.className,
+            closeIcon = _this$props2.closeIcon,
+            style = _this$props2.style;
+        var noticeKeys = [];
+        notices.forEach(function (_ref3, index) {
+          var notice = _ref3.notice,
+              holderCallback = _ref3.holderCallback;
+          var updateMark = index === notices.length - 1 ? notice.updateMark : undefined;
+          var key = notice.key,
+              userPassKey = notice.userPassKey;
+
+          var noticeProps = _objectSpread2(_objectSpread2(_objectSpread2({
+            prefixCls: prefixCls,
+            closeIcon: closeIcon
+          }, notice), notice.props), {}, {
+            key: key,
+            noticeKey: userPassKey || key,
+            updateMark: updateMark,
+            onClose: function onClose(noticeKey) {
+              var _notice$onClose;
+
+              _this2.remove(noticeKey);
+
+              (_notice$onClose = notice.onClose) === null || _notice$onClose === void 0 ? void 0 : _notice$onClose.call(notice);
+            },
+            onClick: notice.onClick,
+            children: notice.content
+          }); // Give to motion
+
+
+          noticeKeys.push(key);
+          _this2.noticePropsMap[key] = {
+            props: noticeProps,
+            holderCallback: holderCallback
+          };
+        });
+        return /*#__PURE__*/React.createElement("div", {
+          className: classnames(prefixCls, className),
+          style: style
+        }, /*#__PURE__*/React.createElement(CSSMotionList, {
+          keys: noticeKeys,
+          motionName: this.getTransitionName(),
+          onVisibleChanged: function onVisibleChanged(changedVisible, _ref4) {
+            var key = _ref4.key;
+
+            if (!changedVisible) {
+              delete _this2.noticePropsMap[key];
+            }
+          }
+        }, function (_ref5) {
+          var key = _ref5.key,
+              motionClassName = _ref5.className,
+              motionStyle = _ref5.style,
+              visible = _ref5.visible;
+          var _this2$noticePropsMap = _this2.noticePropsMap[key],
+              noticeProps = _this2$noticePropsMap.props,
+              holderCallback = _this2$noticePropsMap.holderCallback;
+
+          if (holderCallback) {
+            return /*#__PURE__*/React.createElement("div", {
+              key: key,
+              className: classnames(motionClassName, "".concat(prefixCls, "-hook-holder")),
+              style: _objectSpread2({}, motionStyle),
+              ref: function ref(div) {
+                if (typeof key === 'undefined') {
+                  return;
+                }
+
+                if (div) {
+                  _this2.hookRefs.set(key, div);
+
+                  holderCallback(div, noticeProps);
+                } else {
+                  _this2.hookRefs.delete(key);
+                }
+              }
+            });
+          }
+
+          return /*#__PURE__*/React.createElement(Notice, _extends$1({}, noticeProps, {
+            className: classnames(motionClassName, noticeProps === null || noticeProps === void 0 ? void 0 : noticeProps.className),
+            style: _objectSpread2(_objectSpread2({}, motionStyle), noticeProps === null || noticeProps === void 0 ? void 0 : noticeProps.style),
+            visible: visible
+          }));
+        }));
+      }
+    }]);
+
+    return Notification;
+  }(React.Component);
+
+  Notification.newInstance = void 0;
+  Notification.defaultProps = {
+    prefixCls: 'rc-notification',
+    animation: 'fade',
+    style: {
+      top: 65,
+      left: '50%'
+    }
+  };
+
+  Notification.newInstance = function newNotificationInstance(properties, callback) {
+    var _ref6 = properties || {},
+        getContainer = _ref6.getContainer,
+        props = _objectWithoutProperties$1(_ref6, ["getContainer"]);
+
+    var div = document.createElement('div');
+
+    if (getContainer) {
+      var root = getContainer();
+      root.appendChild(div);
+    } else {
+      document.body.appendChild(div);
+    }
+
+    var called = false;
+
+    function ref(notification) {
+      if (called) {
+        return;
+      }
+
+      called = true;
+      callback({
+        notice: function notice(noticeProps) {
+          notification.add(noticeProps);
+        },
+        removeNotice: function removeNotice(key) {
+          notification.remove(key);
+        },
+        component: notification,
+        destroy: function destroy() {
+          reactDom.unmountComponentAtNode(div);
+
+          if (div.parentNode) {
+            div.parentNode.removeChild(div);
+          }
+        },
+        // Hooks
+        useNotification: function useNotification$1() {
+          return useNotification(notification);
+        }
+      });
+    } // Only used for test case usage
+
+    reactDom.render( /*#__PURE__*/React.createElement(Notification, _extends$1({}, props, {
+      ref: ref
+    })), div);
+  };
+
   // This icon file is generated automatically.
   var LoadingOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "0 0 1024 1024", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M988 548c-19.9 0-36-16.1-36-36 0-59.4-11.6-117-34.6-171.3a440.45 440.45 0 00-94.3-139.9 437.71 437.71 0 00-139.9-94.3C629 83.6 571.4 72 512 72c-19.9 0-36-16.1-36-36s16.1-36 36-36c69.1 0 136.2 13.5 199.3 40.3C772.3 66 827 103 874 150c47 47 83.9 101.8 109.7 162.7 26.7 63.1 40.2 130.2 40.2 199.3.1 19.9-16 36-35.9 36z" } }] }, "name": "loading", "theme": "outlined" };
 
@@ -29551,6 +34945,13 @@
           n = (n % max) / parseFloat(String(max));
       }
       return n;
+  }
+  /**
+   * Force a number between 0 and 1
+   * @hidden
+   */
+  function clamp01(val) {
+      return Math.min(1, Math.max(0, val));
   }
   /**
    * Need to handle 1.0 as 100%, since once it is a number, there is no difference between it and 1
@@ -29610,6 +35011,42 @@
           g: bound01(g, 255) * 255,
           b: bound01(b, 255) * 255,
       };
+  }
+  /**
+   * Converts an RGB color value to HSL.
+   * *Assumes:* r, g, and b are contained in [0, 255] or [0, 1]
+   * *Returns:* { h, s, l } in [0,1]
+   */
+  function rgbToHsl(r, g, b) {
+      r = bound01(r, 255);
+      g = bound01(g, 255);
+      b = bound01(b, 255);
+      var max = Math.max(r, g, b);
+      var min = Math.min(r, g, b);
+      var h = 0;
+      var s = 0;
+      var l = (max + min) / 2;
+      if (max === min) {
+          s = 0;
+          h = 0; // achromatic
+      }
+      else {
+          var d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+              case r:
+                  h = (g - b) / d + (g < b ? 6 : 0);
+                  break;
+              case g:
+                  h = (b - r) / d + 2;
+                  break;
+              case b:
+                  h = (r - g) / d + 4;
+                  break;
+          }
+          h /= 6;
+      }
+      return { h: h, s: s, l: l };
   }
   function hue2rgb(p, q, t) {
       if (t < 0) {
@@ -29734,6 +35171,34 @@
       }
       return hex.join('');
   }
+  /**
+   * Converts an RGBA color plus alpha transparency to hex
+   *
+   * Assumes r, g, b are contained in the set [0, 255] and
+   * a in [0, 1]. Returns a 4 or 8 character rgba hex
+   */
+  // eslint-disable-next-line max-params
+  function rgbaToHex(r, g, b, a, allow4Char) {
+      var hex = [
+          pad2(Math.round(r).toString(16)),
+          pad2(Math.round(g).toString(16)),
+          pad2(Math.round(b).toString(16)),
+          pad2(convertDecimalToHex(a)),
+      ];
+      // Return a 4 character hex if possible
+      if (allow4Char &&
+          hex[0].startsWith(hex[0].charAt(1)) &&
+          hex[1].startsWith(hex[1].charAt(1)) &&
+          hex[2].startsWith(hex[2].charAt(1)) &&
+          hex[3].startsWith(hex[3].charAt(1))) {
+          return hex[0].charAt(0) + hex[1].charAt(0) + hex[2].charAt(0) + hex[3].charAt(0);
+      }
+      return hex.join('');
+  }
+  /** Converts a decimal to a hex value */
+  function convertDecimalToHex(d) {
+      return Math.round(parseFloat(d) * 255).toString(16);
+  }
   /** Converts a hex value to a decimal */
   function convertHexToDecimal(h) {
       return parseIntFromHex(h) / 255;
@@ -29741,6 +35206,13 @@
   /** Parse a base-16 hex value into a base-10 integer */
   function parseIntFromHex(val) {
       return parseInt(val, 16);
+  }
+  function numberInputToObject(color) {
+      return {
+          r: color >> 16,
+          g: (color & 0xff00) >> 8,
+          b: color & 0xff,
+      };
   }
 
   // https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json
@@ -30078,6 +35550,487 @@
       return Boolean(matchers.CSS_UNIT.exec(String(color)));
   }
 
+  var TinyColor = /** @class */ (function () {
+      function TinyColor(color, opts) {
+          if (color === void 0) { color = ''; }
+          if (opts === void 0) { opts = {}; }
+          var _a;
+          // If input is already a tinycolor, return itself
+          if (color instanceof TinyColor) {
+              // eslint-disable-next-line no-constructor-return
+              return color;
+          }
+          if (typeof color === 'number') {
+              color = numberInputToObject(color);
+          }
+          this.originalInput = color;
+          var rgb = inputToRGB(color);
+          this.originalInput = color;
+          this.r = rgb.r;
+          this.g = rgb.g;
+          this.b = rgb.b;
+          this.a = rgb.a;
+          this.roundA = Math.round(100 * this.a) / 100;
+          this.format = (_a = opts.format) !== null && _a !== void 0 ? _a : rgb.format;
+          this.gradientType = opts.gradientType;
+          // Don't let the range of [0,255] come back in [0,1].
+          // Potentially lose a little bit of precision here, but will fix issues where
+          // .5 gets interpreted as half of the total, instead of half of 1
+          // If it was supposed to be 128, this was already taken care of by `inputToRgb`
+          if (this.r < 1) {
+              this.r = Math.round(this.r);
+          }
+          if (this.g < 1) {
+              this.g = Math.round(this.g);
+          }
+          if (this.b < 1) {
+              this.b = Math.round(this.b);
+          }
+          this.isValid = rgb.ok;
+      }
+      TinyColor.prototype.isDark = function () {
+          return this.getBrightness() < 128;
+      };
+      TinyColor.prototype.isLight = function () {
+          return !this.isDark();
+      };
+      /**
+       * Returns the perceived brightness of the color, from 0-255.
+       */
+      TinyColor.prototype.getBrightness = function () {
+          // http://www.w3.org/TR/AERT#color-contrast
+          var rgb = this.toRgb();
+          return (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+      };
+      /**
+       * Returns the perceived luminance of a color, from 0-1.
+       */
+      TinyColor.prototype.getLuminance = function () {
+          // http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+          var rgb = this.toRgb();
+          var R;
+          var G;
+          var B;
+          var RsRGB = rgb.r / 255;
+          var GsRGB = rgb.g / 255;
+          var BsRGB = rgb.b / 255;
+          if (RsRGB <= 0.03928) {
+              R = RsRGB / 12.92;
+          }
+          else {
+              // eslint-disable-next-line prefer-exponentiation-operator
+              R = Math.pow((RsRGB + 0.055) / 1.055, 2.4);
+          }
+          if (GsRGB <= 0.03928) {
+              G = GsRGB / 12.92;
+          }
+          else {
+              // eslint-disable-next-line prefer-exponentiation-operator
+              G = Math.pow((GsRGB + 0.055) / 1.055, 2.4);
+          }
+          if (BsRGB <= 0.03928) {
+              B = BsRGB / 12.92;
+          }
+          else {
+              // eslint-disable-next-line prefer-exponentiation-operator
+              B = Math.pow((BsRGB + 0.055) / 1.055, 2.4);
+          }
+          return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+      };
+      /**
+       * Returns the alpha value of a color, from 0-1.
+       */
+      TinyColor.prototype.getAlpha = function () {
+          return this.a;
+      };
+      /**
+       * Sets the alpha value on the current color.
+       *
+       * @param alpha - The new alpha value. The accepted range is 0-1.
+       */
+      TinyColor.prototype.setAlpha = function (alpha) {
+          this.a = boundAlpha(alpha);
+          this.roundA = Math.round(100 * this.a) / 100;
+          return this;
+      };
+      /**
+       * Returns the object as a HSVA object.
+       */
+      TinyColor.prototype.toHsv = function () {
+          var hsv = rgbToHsv(this.r, this.g, this.b);
+          return { h: hsv.h * 360, s: hsv.s, v: hsv.v, a: this.a };
+      };
+      /**
+       * Returns the hsva values interpolated into a string with the following format:
+       * "hsva(xxx, xxx, xxx, xx)".
+       */
+      TinyColor.prototype.toHsvString = function () {
+          var hsv = rgbToHsv(this.r, this.g, this.b);
+          var h = Math.round(hsv.h * 360);
+          var s = Math.round(hsv.s * 100);
+          var v = Math.round(hsv.v * 100);
+          return this.a === 1 ? "hsv(" + h + ", " + s + "%, " + v + "%)" : "hsva(" + h + ", " + s + "%, " + v + "%, " + this.roundA + ")";
+      };
+      /**
+       * Returns the object as a HSLA object.
+       */
+      TinyColor.prototype.toHsl = function () {
+          var hsl = rgbToHsl(this.r, this.g, this.b);
+          return { h: hsl.h * 360, s: hsl.s, l: hsl.l, a: this.a };
+      };
+      /**
+       * Returns the hsla values interpolated into a string with the following format:
+       * "hsla(xxx, xxx, xxx, xx)".
+       */
+      TinyColor.prototype.toHslString = function () {
+          var hsl = rgbToHsl(this.r, this.g, this.b);
+          var h = Math.round(hsl.h * 360);
+          var s = Math.round(hsl.s * 100);
+          var l = Math.round(hsl.l * 100);
+          return this.a === 1 ? "hsl(" + h + ", " + s + "%, " + l + "%)" : "hsla(" + h + ", " + s + "%, " + l + "%, " + this.roundA + ")";
+      };
+      /**
+       * Returns the hex value of the color.
+       * @param allow3Char will shorten hex value to 3 char if possible
+       */
+      TinyColor.prototype.toHex = function (allow3Char) {
+          if (allow3Char === void 0) { allow3Char = false; }
+          return rgbToHex(this.r, this.g, this.b, allow3Char);
+      };
+      /**
+       * Returns the hex value of the color -with a # appened.
+       * @param allow3Char will shorten hex value to 3 char if possible
+       */
+      TinyColor.prototype.toHexString = function (allow3Char) {
+          if (allow3Char === void 0) { allow3Char = false; }
+          return '#' + this.toHex(allow3Char);
+      };
+      /**
+       * Returns the hex 8 value of the color.
+       * @param allow4Char will shorten hex value to 4 char if possible
+       */
+      TinyColor.prototype.toHex8 = function (allow4Char) {
+          if (allow4Char === void 0) { allow4Char = false; }
+          return rgbaToHex(this.r, this.g, this.b, this.a, allow4Char);
+      };
+      /**
+       * Returns the hex 8 value of the color -with a # appened.
+       * @param allow4Char will shorten hex value to 4 char if possible
+       */
+      TinyColor.prototype.toHex8String = function (allow4Char) {
+          if (allow4Char === void 0) { allow4Char = false; }
+          return '#' + this.toHex8(allow4Char);
+      };
+      /**
+       * Returns the object as a RGBA object.
+       */
+      TinyColor.prototype.toRgb = function () {
+          return {
+              r: Math.round(this.r),
+              g: Math.round(this.g),
+              b: Math.round(this.b),
+              a: this.a,
+          };
+      };
+      /**
+       * Returns the RGBA values interpolated into a string with the following format:
+       * "RGBA(xxx, xxx, xxx, xx)".
+       */
+      TinyColor.prototype.toRgbString = function () {
+          var r = Math.round(this.r);
+          var g = Math.round(this.g);
+          var b = Math.round(this.b);
+          return this.a === 1 ? "rgb(" + r + ", " + g + ", " + b + ")" : "rgba(" + r + ", " + g + ", " + b + ", " + this.roundA + ")";
+      };
+      /**
+       * Returns the object as a RGBA object.
+       */
+      TinyColor.prototype.toPercentageRgb = function () {
+          var fmt = function (x) { return Math.round(bound01(x, 255) * 100) + "%"; };
+          return {
+              r: fmt(this.r),
+              g: fmt(this.g),
+              b: fmt(this.b),
+              a: this.a,
+          };
+      };
+      /**
+       * Returns the RGBA relative values interpolated into a string
+       */
+      TinyColor.prototype.toPercentageRgbString = function () {
+          var rnd = function (x) { return Math.round(bound01(x, 255) * 100); };
+          return this.a === 1
+              ? "rgb(" + rnd(this.r) + "%, " + rnd(this.g) + "%, " + rnd(this.b) + "%)"
+              : "rgba(" + rnd(this.r) + "%, " + rnd(this.g) + "%, " + rnd(this.b) + "%, " + this.roundA + ")";
+      };
+      /**
+       * The 'real' name of the color -if there is one.
+       */
+      TinyColor.prototype.toName = function () {
+          if (this.a === 0) {
+              return 'transparent';
+          }
+          if (this.a < 1) {
+              return false;
+          }
+          var hex = '#' + rgbToHex(this.r, this.g, this.b, false);
+          for (var _i = 0, _a = Object.entries(names); _i < _a.length; _i++) {
+              var _b = _a[_i], key = _b[0], value = _b[1];
+              if (hex === value) {
+                  return key;
+              }
+          }
+          return false;
+      };
+      TinyColor.prototype.toString = function (format) {
+          var formatSet = Boolean(format);
+          format = format !== null && format !== void 0 ? format : this.format;
+          var formattedString = false;
+          var hasAlpha = this.a < 1 && this.a >= 0;
+          var needsAlphaFormat = !formatSet && hasAlpha && (format.startsWith('hex') || format === 'name');
+          if (needsAlphaFormat) {
+              // Special case for "transparent", all other non-alpha formats
+              // will return rgba when there is transparency.
+              if (format === 'name' && this.a === 0) {
+                  return this.toName();
+              }
+              return this.toRgbString();
+          }
+          if (format === 'rgb') {
+              formattedString = this.toRgbString();
+          }
+          if (format === 'prgb') {
+              formattedString = this.toPercentageRgbString();
+          }
+          if (format === 'hex' || format === 'hex6') {
+              formattedString = this.toHexString();
+          }
+          if (format === 'hex3') {
+              formattedString = this.toHexString(true);
+          }
+          if (format === 'hex4') {
+              formattedString = this.toHex8String(true);
+          }
+          if (format === 'hex8') {
+              formattedString = this.toHex8String();
+          }
+          if (format === 'name') {
+              formattedString = this.toName();
+          }
+          if (format === 'hsl') {
+              formattedString = this.toHslString();
+          }
+          if (format === 'hsv') {
+              formattedString = this.toHsvString();
+          }
+          return formattedString || this.toHexString();
+      };
+      TinyColor.prototype.toNumber = function () {
+          return (Math.round(this.r) << 16) + (Math.round(this.g) << 8) + Math.round(this.b);
+      };
+      TinyColor.prototype.clone = function () {
+          return new TinyColor(this.toString());
+      };
+      /**
+       * Lighten the color a given amount. Providing 100 will always return white.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.lighten = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.l += amount / 100;
+          hsl.l = clamp01(hsl.l);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Brighten the color a given amount, from 0 to 100.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.brighten = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var rgb = this.toRgb();
+          rgb.r = Math.max(0, Math.min(255, rgb.r - Math.round(255 * -(amount / 100))));
+          rgb.g = Math.max(0, Math.min(255, rgb.g - Math.round(255 * -(amount / 100))));
+          rgb.b = Math.max(0, Math.min(255, rgb.b - Math.round(255 * -(amount / 100))));
+          return new TinyColor(rgb);
+      };
+      /**
+       * Darken the color a given amount, from 0 to 100.
+       * Providing 100 will always return black.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.darken = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.l -= amount / 100;
+          hsl.l = clamp01(hsl.l);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Mix the color with pure white, from 0 to 100.
+       * Providing 0 will do nothing, providing 100 will always return white.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.tint = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          return this.mix('white', amount);
+      };
+      /**
+       * Mix the color with pure black, from 0 to 100.
+       * Providing 0 will do nothing, providing 100 will always return black.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.shade = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          return this.mix('black', amount);
+      };
+      /**
+       * Desaturate the color a given amount, from 0 to 100.
+       * Providing 100 will is the same as calling greyscale
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.desaturate = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.s -= amount / 100;
+          hsl.s = clamp01(hsl.s);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Saturate the color a given amount, from 0 to 100.
+       * @param amount - valid between 1-100
+       */
+      TinyColor.prototype.saturate = function (amount) {
+          if (amount === void 0) { amount = 10; }
+          var hsl = this.toHsl();
+          hsl.s += amount / 100;
+          hsl.s = clamp01(hsl.s);
+          return new TinyColor(hsl);
+      };
+      /**
+       * Completely desaturates a color into greyscale.
+       * Same as calling `desaturate(100)`
+       */
+      TinyColor.prototype.greyscale = function () {
+          return this.desaturate(100);
+      };
+      /**
+       * Spin takes a positive or negative amount within [-360, 360] indicating the change of hue.
+       * Values outside of this range will be wrapped into this range.
+       */
+      TinyColor.prototype.spin = function (amount) {
+          var hsl = this.toHsl();
+          var hue = (hsl.h + amount) % 360;
+          hsl.h = hue < 0 ? 360 + hue : hue;
+          return new TinyColor(hsl);
+      };
+      /**
+       * Mix the current color a given amount with another color, from 0 to 100.
+       * 0 means no mixing (return current color).
+       */
+      TinyColor.prototype.mix = function (color, amount) {
+          if (amount === void 0) { amount = 50; }
+          var rgb1 = this.toRgb();
+          var rgb2 = new TinyColor(color).toRgb();
+          var p = amount / 100;
+          var rgba = {
+              r: (rgb2.r - rgb1.r) * p + rgb1.r,
+              g: (rgb2.g - rgb1.g) * p + rgb1.g,
+              b: (rgb2.b - rgb1.b) * p + rgb1.b,
+              a: (rgb2.a - rgb1.a) * p + rgb1.a,
+          };
+          return new TinyColor(rgba);
+      };
+      TinyColor.prototype.analogous = function (results, slices) {
+          if (results === void 0) { results = 6; }
+          if (slices === void 0) { slices = 30; }
+          var hsl = this.toHsl();
+          var part = 360 / slices;
+          var ret = [this];
+          for (hsl.h = (hsl.h - ((part * results) >> 1) + 720) % 360; --results;) {
+              hsl.h = (hsl.h + part) % 360;
+              ret.push(new TinyColor(hsl));
+          }
+          return ret;
+      };
+      /**
+       * taken from https://github.com/infusion/jQuery-xcolor/blob/master/jquery.xcolor.js
+       */
+      TinyColor.prototype.complement = function () {
+          var hsl = this.toHsl();
+          hsl.h = (hsl.h + 180) % 360;
+          return new TinyColor(hsl);
+      };
+      TinyColor.prototype.monochromatic = function (results) {
+          if (results === void 0) { results = 6; }
+          var hsv = this.toHsv();
+          var h = hsv.h;
+          var s = hsv.s;
+          var v = hsv.v;
+          var res = [];
+          var modification = 1 / results;
+          while (results--) {
+              res.push(new TinyColor({ h: h, s: s, v: v }));
+              v = (v + modification) % 1;
+          }
+          return res;
+      };
+      TinyColor.prototype.splitcomplement = function () {
+          var hsl = this.toHsl();
+          var h = hsl.h;
+          return [
+              this,
+              new TinyColor({ h: (h + 72) % 360, s: hsl.s, l: hsl.l }),
+              new TinyColor({ h: (h + 216) % 360, s: hsl.s, l: hsl.l }),
+          ];
+      };
+      /**
+       * Compute how the color would appear on a background
+       */
+      TinyColor.prototype.onBackground = function (background) {
+          var fg = this.toRgb();
+          var bg = new TinyColor(background).toRgb();
+          return new TinyColor({
+              r: bg.r + (fg.r - bg.r) * fg.a,
+              g: bg.g + (fg.g - bg.g) * fg.a,
+              b: bg.b + (fg.b - bg.b) * fg.a,
+          });
+      };
+      /**
+       * Alias for `polyad(3)`
+       */
+      TinyColor.prototype.triad = function () {
+          return this.polyad(3);
+      };
+      /**
+       * Alias for `polyad(4)`
+       */
+      TinyColor.prototype.tetrad = function () {
+          return this.polyad(4);
+      };
+      /**
+       * Get polyad colors, like (for 1, 2, 3, 4, 5, 6, 7, 8, etc...)
+       * monad, dyad, triad, tetrad, pentad, hexad, heptad, octad, etc...
+       */
+      TinyColor.prototype.polyad = function (n) {
+          var hsl = this.toHsl();
+          var h = hsl.h;
+          var result = [this];
+          var increment = 360 / n;
+          for (var i = 1; i < n; i++) {
+              result.push(new TinyColor({ h: (h + i * increment) % 360, s: hsl.s, l: hsl.l }));
+          }
+          return result;
+      };
+      /**
+       * compare color vs current color
+       */
+      TinyColor.prototype.equals = function (color) {
+          return this.toRgbString() === new TinyColor(color).toRgbString();
+      };
+      return TinyColor;
+  }());
+
   var hueStep = 2; // 色相阶梯
 
   var saturationStep = 0.16; // 饱和度阶梯，浅色部分
@@ -30211,7 +36164,7 @@
     return Number(saturation.toFixed(2));
   }
 
-  function getValue(hsv, i, light) {
+  function getValue$2(hsv, i, light) {
     var value;
 
     if (light) {
@@ -30237,7 +36190,7 @@
       var colorString = toHex(inputToRGB({
         h: getHue(hsv, i, true),
         s: getSaturation(hsv, i, true),
-        v: getValue(hsv, i, true)
+        v: getValue$2(hsv, i, true)
       }));
       patterns.push(colorString);
     }
@@ -30250,7 +36203,7 @@
       var _colorString = toHex(inputToRGB({
         h: getHue(_hsv, _i),
         s: getSaturation(_hsv, _i),
-        v: getValue(_hsv, _i)
+        v: getValue$2(_hsv, _i)
       }));
 
       patterns.push(_colorString);
@@ -30378,7 +36331,7 @@
     return newNode;
   }
 
-  function warning$1(valid, message) {
+  function warning$2(valid, message) {
     warningOnce(valid, "[@ant-design/icons] ".concat(message));
   }
   function isIconDefinition(target) {
@@ -30443,7 +36396,7 @@
     }, []);
   };
 
-  var _excluded$1 = ["icon", "className", "onClick", "style", "primaryColor", "secondaryColor"];
+  var _excluded$4 = ["icon", "className", "onClick", "style", "primaryColor", "secondaryColor"];
   var twoToneColorPalette = {
     primaryColor: '#333',
     secondaryColor: '#E6E6E6',
@@ -30469,7 +36422,7 @@
         style = props.style,
         primaryColor = props.primaryColor,
         secondaryColor = props.secondaryColor,
-        restProps = _objectWithoutProperties$1(props, _excluded$1);
+        restProps = _objectWithoutProperties$1(props, _excluded$4);
 
     var colors = twoToneColorPalette;
 
@@ -30481,7 +36434,7 @@
     }
 
     useInsertStyles();
-    warning$1(isIconDefinition(icon), "icon should be icon definiton, but got ".concat(icon));
+    warning$2(isIconDefinition(icon), "icon should be icon definiton, but got ".concat(icon));
 
     if (!isIconDefinition(icon)) {
       return null;
@@ -30532,7 +36485,7 @@
     return [colors.primaryColor, colors.secondaryColor];
   }
 
-  var _excluded$2 = ["className", "icon", "spin", "rotate", "tabIndex", "onClick", "twoToneColor"];
+  var _excluded$5 = ["className", "icon", "spin", "rotate", "tabIndex", "onClick", "twoToneColor"];
   // should move it to antd main repo?
 
   setTwoToneColor('#1890ff');
@@ -30546,7 +36499,7 @@
         tabIndex = props.tabIndex,
         onClick = props.onClick,
         twoToneColor = props.twoToneColor,
-        restProps = _objectWithoutProperties$1(props, _excluded$2);
+        restProps = _objectWithoutProperties$1(props, _excluded$5);
 
     var _React$useContext = React.useContext(IconContext),
         _React$useContext$pre = _React$useContext.prefixCls,
@@ -30599,6 +36552,354 @@
   var LoadingOutlined$2 = /*#__PURE__*/React.forwardRef(LoadingOutlined$1);
 
   // This icon file is generated automatically.
+  var ExclamationCircleFilled = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm-32 232c0-4.4 3.6-8 8-8h48c4.4 0 8 3.6 8 8v272c0 4.4-3.6 8-8 8h-48c-4.4 0-8-3.6-8-8V296zm32 440a48.01 48.01 0 010-96 48.01 48.01 0 010 96z" } }] }, "name": "exclamation-circle", "theme": "filled" };
+
+  var ExclamationCircleFilled$1 = function ExclamationCircleFilled$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: ExclamationCircleFilled
+    }));
+  };
+
+  ExclamationCircleFilled$1.displayName = 'ExclamationCircleFilled';
+  var ExclamationCircleFilled$2 = /*#__PURE__*/React.forwardRef(ExclamationCircleFilled$1);
+
+  // This icon file is generated automatically.
+  var CloseCircleFilled = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm165.4 618.2l-66-.3L512 563.4l-99.3 118.4-66.1.3c-4.4 0-8-3.5-8-8 0-1.9.7-3.7 1.9-5.2l130.1-155L340.5 359a8.32 8.32 0 01-1.9-5.2c0-4.4 3.6-8 8-8l66.1.3L512 464.6l99.3-118.4 66-.3c4.4 0 8 3.5 8 8 0 1.9-.7 3.7-1.9 5.2L553.5 514l130 155c1.2 1.5 1.9 3.3 1.9 5.2 0 4.4-3.6 8-8 8z" } }] }, "name": "close-circle", "theme": "filled" };
+
+  var CloseCircleFilled$1 = function CloseCircleFilled$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: CloseCircleFilled
+    }));
+  };
+
+  CloseCircleFilled$1.displayName = 'CloseCircleFilled';
+  var CloseCircleFilled$2 = /*#__PURE__*/React.forwardRef(CloseCircleFilled$1);
+
+  // This icon file is generated automatically.
+  var CheckCircleFilled = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm193.5 301.7l-210.6 292a31.8 31.8 0 01-51.7 0L318.5 484.9c-3.8-5.3 0-12.7 6.5-12.7h46.9c10.2 0 19.9 4.9 25.9 13.3l71.2 98.8 157.2-218c6-8.3 15.6-13.3 25.9-13.3H699c6.5 0 10.3 7.4 6.5 12.7z" } }] }, "name": "check-circle", "theme": "filled" };
+
+  var CheckCircleFilled$1 = function CheckCircleFilled$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: CheckCircleFilled
+    }));
+  };
+
+  CheckCircleFilled$1.displayName = 'CheckCircleFilled';
+  var CheckCircleFilled$2 = /*#__PURE__*/React.forwardRef(CheckCircleFilled$1);
+
+  // This icon file is generated automatically.
+  var InfoCircleFilled = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm32 664c0 4.4-3.6 8-8 8h-48c-4.4 0-8-3.6-8-8V456c0-4.4 3.6-8 8-8h48c4.4 0 8 3.6 8 8v272zm-32-344a48.01 48.01 0 010-96 48.01 48.01 0 010 96z" } }] }, "name": "info-circle", "theme": "filled" };
+
+  var InfoCircleFilled$1 = function InfoCircleFilled$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: InfoCircleFilled
+    }));
+  };
+
+  InfoCircleFilled$1.displayName = 'InfoCircleFilled';
+  var InfoCircleFilled$2 = /*#__PURE__*/React.forwardRef(InfoCircleFilled$1);
+
+  function createUseMessage(getRcNotificationInstance, getRCNoticeProps) {
+    var useMessage = function useMessage() {
+      // We can only get content by render
+      var getPrefixCls;
+      var getPopupContainer; // We create a proxy to handle delay created instance
+
+      var innerInstance = null;
+      var proxy = {
+        add: function add(noticeProps, holderCallback) {
+          innerInstance === null || innerInstance === void 0 ? void 0 : innerInstance.component.add(noticeProps, holderCallback);
+        }
+      };
+
+      var _useRCNotification = useNotification(proxy),
+          _useRCNotification2 = _slicedToArray(_useRCNotification, 2),
+          hookNotify = _useRCNotification2[0],
+          holder = _useRCNotification2[1];
+
+      function notify(args) {
+        var customizePrefixCls = args.prefixCls;
+        var mergedPrefixCls = getPrefixCls('message', customizePrefixCls);
+        var rootPrefixCls = getPrefixCls();
+        var target = args.key || getKeyThenIncreaseKey();
+        var closePromise = new Promise(function (resolve) {
+          var callback = function callback() {
+            if (typeof args.onClose === 'function') {
+              args.onClose();
+            }
+
+            return resolve(true);
+          };
+
+          getRcNotificationInstance(_extends$1(_extends$1({}, args), {
+            prefixCls: mergedPrefixCls,
+            rootPrefixCls: rootPrefixCls,
+            getPopupContainer: getPopupContainer
+          }), function (_ref) {
+            var prefixCls = _ref.prefixCls,
+                instance = _ref.instance;
+            innerInstance = instance;
+            hookNotify(getRCNoticeProps(_extends$1(_extends$1({}, args), {
+              key: target,
+              onClose: callback
+            }), prefixCls));
+          });
+        });
+
+        var result = function result() {
+          if (innerInstance) {
+            innerInstance.removeNotice(target);
+          }
+        };
+
+        result.then = function (filled, rejected) {
+          return closePromise.then(filled, rejected);
+        };
+
+        result.promise = closePromise;
+        return result;
+      } // Fill functions
+
+
+      var hookApiRef = React.useRef({});
+      hookApiRef.current.open = notify;
+      ['success', 'info', 'warning', 'error', 'loading'].forEach(function (type) {
+        return attachTypeApi(hookApiRef.current, type);
+      });
+      return [hookApiRef.current, /*#__PURE__*/React.createElement(ConfigConsumer, {
+        key: "holder"
+      }, function (context) {
+        getPrefixCls = context.getPrefixCls;
+        getPopupContainer = context.getPopupContainer;
+        return holder;
+      })];
+    };
+
+    return useMessage;
+  }
+
+  var messageInstance;
+  var defaultDuration = 3;
+  var defaultTop;
+  var key = 1;
+  var localPrefixCls = '';
+  var transitionName = 'move-up';
+  var hasTransitionName = false;
+  var getContainer$1;
+  var maxCount;
+  var rtl = false;
+  function getKeyThenIncreaseKey() {
+    return key++;
+  }
+
+  function setMessageConfig(options) {
+    if (options.top !== undefined) {
+      defaultTop = options.top;
+      messageInstance = null; // delete messageInstance for new defaultTop
+    }
+
+    if (options.duration !== undefined) {
+      defaultDuration = options.duration;
+    }
+
+    if (options.prefixCls !== undefined) {
+      localPrefixCls = options.prefixCls;
+    }
+
+    if (options.getContainer !== undefined) {
+      getContainer$1 = options.getContainer;
+    }
+
+    if (options.transitionName !== undefined) {
+      transitionName = options.transitionName;
+      messageInstance = null; // delete messageInstance for new transitionName
+
+      hasTransitionName = true;
+    }
+
+    if (options.maxCount !== undefined) {
+      maxCount = options.maxCount;
+      messageInstance = null;
+    }
+
+    if (options.rtl !== undefined) {
+      rtl = options.rtl;
+    }
+  }
+
+  function getRCNotificationInstance(args, callback) {
+    var customizePrefixCls = args.prefixCls,
+        getContextPopupContainer = args.getPopupContainer;
+
+    var _globalConfig = globalConfig(),
+        getPrefixCls = _globalConfig.getPrefixCls,
+        getRootPrefixCls = _globalConfig.getRootPrefixCls,
+        getIconPrefixCls = _globalConfig.getIconPrefixCls;
+
+    var prefixCls = getPrefixCls('message', customizePrefixCls || localPrefixCls);
+    var rootPrefixCls = getRootPrefixCls(args.rootPrefixCls, prefixCls);
+    var iconPrefixCls = getIconPrefixCls();
+
+    if (messageInstance) {
+      callback({
+        prefixCls: prefixCls,
+        rootPrefixCls: rootPrefixCls,
+        iconPrefixCls: iconPrefixCls,
+        instance: messageInstance
+      });
+      return;
+    }
+
+    var instanceConfig = {
+      prefixCls: prefixCls,
+      transitionName: hasTransitionName ? transitionName : "".concat(rootPrefixCls, "-").concat(transitionName),
+      style: {
+        top: defaultTop
+      },
+      getContainer: getContainer$1 || getContextPopupContainer,
+      maxCount: maxCount
+    };
+    Notification.newInstance(instanceConfig, function (instance) {
+      if (messageInstance) {
+        callback({
+          prefixCls: prefixCls,
+          rootPrefixCls: rootPrefixCls,
+          iconPrefixCls: iconPrefixCls,
+          instance: messageInstance
+        });
+        return;
+      }
+
+      messageInstance = instance;
+
+      callback({
+        prefixCls: prefixCls,
+        rootPrefixCls: rootPrefixCls,
+        iconPrefixCls: iconPrefixCls,
+        instance: instance
+      });
+    });
+  }
+
+  var typeToIcon = {
+    info: InfoCircleFilled$2,
+    success: CheckCircleFilled$2,
+    error: CloseCircleFilled$2,
+    warning: ExclamationCircleFilled$2,
+    loading: LoadingOutlined$2
+  };
+
+  function getRCNoticeProps(args, prefixCls, iconPrefixCls) {
+    var _classNames;
+
+    var duration = args.duration !== undefined ? args.duration : defaultDuration;
+    var IconComponent = typeToIcon[args.type];
+    var messageClass = classnames("".concat(prefixCls, "-custom-content"), (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-").concat(args.type), args.type), _defineProperty(_classNames, "".concat(prefixCls, "-rtl"), rtl === true), _classNames));
+    return {
+      key: args.key,
+      duration: duration,
+      style: args.style || {},
+      className: args.className,
+      content: /*#__PURE__*/React.createElement(ConfigProvider, {
+        iconPrefixCls: iconPrefixCls
+      }, /*#__PURE__*/React.createElement("div", {
+        className: messageClass
+      }, args.icon || IconComponent && /*#__PURE__*/React.createElement(IconComponent, null), /*#__PURE__*/React.createElement("span", null, args.content))),
+      onClose: args.onClose,
+      onClick: args.onClick
+    };
+  }
+
+  function notice(args) {
+    var target = args.key || getKeyThenIncreaseKey();
+    var closePromise = new Promise(function (resolve) {
+      var callback = function callback() {
+        if (typeof args.onClose === 'function') {
+          args.onClose();
+        }
+
+        return resolve(true);
+      };
+
+      getRCNotificationInstance(args, function (_ref) {
+        var prefixCls = _ref.prefixCls,
+            iconPrefixCls = _ref.iconPrefixCls,
+            instance = _ref.instance;
+        instance.notice(getRCNoticeProps(_extends$1(_extends$1({}, args), {
+          key: target,
+          onClose: callback
+        }), prefixCls, iconPrefixCls));
+      });
+    });
+
+    var result = function result() {
+      if (messageInstance) {
+        messageInstance.removeNotice(target);
+      }
+    };
+
+    result.then = function (filled, rejected) {
+      return closePromise.then(filled, rejected);
+    };
+
+    result.promise = closePromise;
+    return result;
+  }
+
+  function isArgsProps(content) {
+    return Object.prototype.toString.call(content) === '[object Object]' && !!content.content;
+  }
+
+  var api = {
+    open: notice,
+    config: setMessageConfig,
+    destroy: function destroy(messageKey) {
+      if (messageInstance) {
+        if (messageKey) {
+          var _messageInstance = messageInstance,
+              removeNotice = _messageInstance.removeNotice;
+          removeNotice(messageKey);
+        } else {
+          var _messageInstance2 = messageInstance,
+              destroy = _messageInstance2.destroy;
+          destroy();
+          messageInstance = null;
+        }
+      }
+    }
+  };
+  function attachTypeApi(originalApi, type) {
+    originalApi[type] = function (content, duration, onClose) {
+      if (isArgsProps(content)) {
+        return originalApi.open(_extends$1(_extends$1({}, content), {
+          type: type
+        }));
+      }
+
+      if (typeof duration === 'function') {
+        onClose = duration;
+        duration = undefined;
+      }
+
+      return originalApi.open({
+        content: content,
+        duration: duration,
+        type: type,
+        onClose: onClose
+      });
+    };
+  }
+  ['success', 'info', 'warning', 'error', 'loading'].forEach(function (type) {
+    return attachTypeApi(api, type);
+  });
+  api.warn = api.warning;
+  api.useMessage = createUseMessage(getRCNotificationInstance, getRCNoticeProps);
+
+  // This icon file is generated automatically.
   var CloseOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 00203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z" } }] }, "name": "close", "theme": "outlined" };
 
   var CloseOutlined$1 = function CloseOutlined$1(props, ref) {
@@ -30610,6 +36911,666 @@
 
   CloseOutlined$1.displayName = 'CloseOutlined';
   var CloseOutlined$2 = /*#__PURE__*/React.forwardRef(CloseOutlined$1);
+
+  // This icon file is generated automatically.
+  var CheckCircleOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M699 353h-46.9c-10.2 0-19.9 4.9-25.9 13.3L469 584.3l-71.2-98.8c-6-8.3-15.6-13.3-25.9-13.3H325c-6.5 0-10.3 7.4-6.5 12.7l124.6 172.8a31.8 31.8 0 0051.7 0l210.6-292c3.9-5.3.1-12.7-6.4-12.7z" } }, { "tag": "path", "attrs": { "d": "M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" } }] }, "name": "check-circle", "theme": "outlined" };
+
+  var CheckCircleOutlined$1 = function CheckCircleOutlined$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: CheckCircleOutlined
+    }));
+  };
+
+  CheckCircleOutlined$1.displayName = 'CheckCircleOutlined';
+  var CheckCircleOutlined$2 = /*#__PURE__*/React.forwardRef(CheckCircleOutlined$1);
+
+  // This icon file is generated automatically.
+  var CloseCircleOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M685.4 354.8c0-4.4-3.6-8-8-8l-66 .3L512 465.6l-99.3-118.4-66.1-.3c-4.4 0-8 3.5-8 8 0 1.9.7 3.7 1.9 5.2l130.1 155L340.5 670a8.32 8.32 0 00-1.9 5.2c0 4.4 3.6 8 8 8l66.1-.3L512 564.4l99.3 118.4 66 .3c4.4 0 8-3.5 8-8 0-1.9-.7-3.7-1.9-5.2L553.5 515l130.1-155c1.2-1.4 1.8-3.3 1.8-5.2z" } }, { "tag": "path", "attrs": { "d": "M512 65C264.6 65 64 265.6 64 513s200.6 448 448 448 448-200.6 448-448S759.4 65 512 65zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" } }] }, "name": "close-circle", "theme": "outlined" };
+
+  var CloseCircleOutlined$1 = function CloseCircleOutlined$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: CloseCircleOutlined
+    }));
+  };
+
+  CloseCircleOutlined$1.displayName = 'CloseCircleOutlined';
+  var CloseCircleOutlined$2 = /*#__PURE__*/React.forwardRef(CloseCircleOutlined$1);
+
+  // This icon file is generated automatically.
+  var ExclamationCircleOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" } }, { "tag": "path", "attrs": { "d": "M464 688a48 48 0 1096 0 48 48 0 10-96 0zm24-112h48c4.4 0 8-3.6 8-8V296c0-4.4-3.6-8-8-8h-48c-4.4 0-8 3.6-8 8v272c0 4.4 3.6 8 8 8z" } }] }, "name": "exclamation-circle", "theme": "outlined" };
+
+  var ExclamationCircleOutlined$1 = function ExclamationCircleOutlined$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: ExclamationCircleOutlined
+    }));
+  };
+
+  ExclamationCircleOutlined$1.displayName = 'ExclamationCircleOutlined';
+  var ExclamationCircleOutlined$2 = /*#__PURE__*/React.forwardRef(ExclamationCircleOutlined$1);
+
+  // This icon file is generated automatically.
+  var InfoCircleOutlined = { "icon": { "tag": "svg", "attrs": { "viewBox": "64 64 896 896", "focusable": "false" }, "children": [{ "tag": "path", "attrs": { "d": "M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" } }, { "tag": "path", "attrs": { "d": "M464 336a48 48 0 1096 0 48 48 0 10-96 0zm72 112h-48c-4.4 0-8 3.6-8 8v272c0 4.4 3.6 8 8 8h48c4.4 0 8-3.6 8-8V456c0-4.4-3.6-8-8-8z" } }] }, "name": "info-circle", "theme": "outlined" };
+
+  var InfoCircleOutlined$1 = function InfoCircleOutlined$1(props, ref) {
+    return /*#__PURE__*/React.createElement(Icon, _objectSpread2(_objectSpread2({}, props), {}, {
+      ref: ref,
+      icon: InfoCircleOutlined
+    }));
+  };
+
+  InfoCircleOutlined$1.displayName = 'InfoCircleOutlined';
+  var InfoCircleOutlined$2 = /*#__PURE__*/React.forwardRef(InfoCircleOutlined$1);
+
+  function createUseNotification(getNotificationInstance, getRCNoticeProps) {
+    var useNotification$1 = function useNotification$1() {
+      // We can only get content by render
+      var getPrefixCls; // We create a proxy to handle delay created instance
+
+      var innerInstance = null;
+      var proxy = {
+        add: function add(noticeProps, holderCallback) {
+          innerInstance === null || innerInstance === void 0 ? void 0 : innerInstance.component.add(noticeProps, holderCallback);
+        }
+      };
+
+      var _useRCNotification = useNotification(proxy),
+          _useRCNotification2 = _slicedToArray(_useRCNotification, 2),
+          hookNotify = _useRCNotification2[0],
+          holder = _useRCNotification2[1];
+
+      function notify(args) {
+        var customizePrefixCls = args.prefixCls;
+        var mergedPrefixCls = getPrefixCls('notification', customizePrefixCls);
+        getNotificationInstance(_extends$1(_extends$1({}, args), {
+          prefixCls: mergedPrefixCls
+        }), function (_ref) {
+          var prefixCls = _ref.prefixCls,
+              instance = _ref.instance;
+          innerInstance = instance;
+          hookNotify(getRCNoticeProps(args, prefixCls));
+        });
+      } // Fill functions
+
+
+      var hookApiRef = React.useRef({});
+      hookApiRef.current.open = notify;
+      ['success', 'info', 'warning', 'error'].forEach(function (type) {
+        hookApiRef.current[type] = function (args) {
+          return hookApiRef.current.open(_extends$1(_extends$1({}, args), {
+            type: type
+          }));
+        };
+      });
+      return [hookApiRef.current, /*#__PURE__*/React.createElement(ConfigConsumer, {
+        key: "holder"
+      }, function (context) {
+        getPrefixCls = context.getPrefixCls;
+        return holder;
+      })];
+    };
+
+    return useNotification$1;
+  }
+
+  var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+    function adopt(value) {
+      return value instanceof P ? value : new P(function (resolve) {
+        resolve(value);
+      });
+    }
+
+    return new (P || (P = Promise))(function (resolve, reject) {
+      function fulfilled(value) {
+        try {
+          step(generator.next(value));
+        } catch (e) {
+          reject(e);
+        }
+      }
+
+      function rejected(value) {
+        try {
+          step(generator["throw"](value));
+        } catch (e) {
+          reject(e);
+        }
+      }
+
+      function step(result) {
+        result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+      }
+
+      step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+  };
+  var notificationInstance = {};
+  var defaultDuration$1 = 4.5;
+  var defaultTop$1 = 24;
+  var defaultBottom = 24;
+  var defaultPrefixCls = '';
+  var defaultPlacement = 'topRight';
+  var defaultGetContainer;
+  var defaultCloseIcon;
+  var rtl$1 = false;
+  var maxCount$1;
+
+  function setNotificationConfig(options) {
+    var duration = options.duration,
+        placement = options.placement,
+        bottom = options.bottom,
+        top = options.top,
+        getContainer = options.getContainer,
+        closeIcon = options.closeIcon,
+        prefixCls = options.prefixCls;
+
+    if (prefixCls !== undefined) {
+      defaultPrefixCls = prefixCls;
+    }
+
+    if (duration !== undefined) {
+      defaultDuration$1 = duration;
+    }
+
+    if (placement !== undefined) {
+      defaultPlacement = placement;
+    } else if (options.rtl) {
+      defaultPlacement = 'topLeft';
+    }
+
+    if (bottom !== undefined) {
+      defaultBottom = bottom;
+    }
+
+    if (top !== undefined) {
+      defaultTop$1 = top;
+    }
+
+    if (getContainer !== undefined) {
+      defaultGetContainer = getContainer;
+    }
+
+    if (closeIcon !== undefined) {
+      defaultCloseIcon = closeIcon;
+    }
+
+    if (options.rtl !== undefined) {
+      rtl$1 = options.rtl;
+    }
+
+    if (options.maxCount !== undefined) {
+      maxCount$1 = options.maxCount;
+    }
+  }
+
+  function getPlacementStyle(placement) {
+    var top = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultTop$1;
+    var bottom = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : defaultBottom;
+    var style;
+
+    switch (placement) {
+      case 'topLeft':
+        style = {
+          left: 0,
+          top: top,
+          bottom: 'auto'
+        };
+        break;
+
+      case 'topRight':
+        style = {
+          right: 0,
+          top: top,
+          bottom: 'auto'
+        };
+        break;
+
+      case 'bottomLeft':
+        style = {
+          left: 0,
+          top: 'auto',
+          bottom: bottom
+        };
+        break;
+
+      default:
+        style = {
+          right: 0,
+          top: 'auto',
+          bottom: bottom
+        };
+        break;
+    }
+
+    return style;
+  }
+
+  function getNotificationInstance(args, callback) {
+    var _args$placement = args.placement,
+        placement = _args$placement === void 0 ? defaultPlacement : _args$placement,
+        top = args.top,
+        bottom = args.bottom,
+        _args$getContainer = args.getContainer,
+        getContainer = _args$getContainer === void 0 ? defaultGetContainer : _args$getContainer,
+        customizePrefixCls = args.prefixCls;
+
+    var _globalConfig = globalConfig(),
+        getPrefixCls = _globalConfig.getPrefixCls,
+        getIconPrefixCls = _globalConfig.getIconPrefixCls;
+
+    var prefixCls = getPrefixCls('notification', customizePrefixCls || defaultPrefixCls);
+    var iconPrefixCls = getIconPrefixCls();
+    var cacheKey = "".concat(prefixCls, "-").concat(placement);
+    var cacheInstance = notificationInstance[cacheKey];
+
+    if (cacheInstance) {
+      Promise.resolve(cacheInstance).then(function (instance) {
+        callback({
+          prefixCls: "".concat(prefixCls, "-notice"),
+          iconPrefixCls: iconPrefixCls,
+          instance: instance
+        });
+      });
+      return;
+    }
+
+    var notificationClass = classnames("".concat(prefixCls, "-").concat(placement), _defineProperty({}, "".concat(prefixCls, "-rtl"), rtl$1 === true));
+    notificationInstance[cacheKey] = new Promise(function (resolve) {
+      Notification.newInstance({
+        prefixCls: prefixCls,
+        className: notificationClass,
+        style: getPlacementStyle(placement, top, bottom),
+        getContainer: getContainer,
+        maxCount: maxCount$1
+      }, function (notification) {
+        resolve(notification);
+        callback({
+          prefixCls: "".concat(prefixCls, "-notice"),
+          iconPrefixCls: iconPrefixCls,
+          instance: notification
+        });
+      });
+    });
+  }
+
+  var typeToIcon$1 = {
+    success: CheckCircleOutlined$2,
+    info: InfoCircleOutlined$2,
+    error: CloseCircleOutlined$2,
+    warning: ExclamationCircleOutlined$2
+  };
+
+  function getRCNoticeProps$1(args, prefixCls, iconPrefixCls) {
+    var durationArg = args.duration,
+        icon = args.icon,
+        type = args.type,
+        description = args.description,
+        message = args.message,
+        btn = args.btn,
+        onClose = args.onClose,
+        onClick = args.onClick,
+        key = args.key,
+        style = args.style,
+        className = args.className,
+        _args$closeIcon = args.closeIcon,
+        closeIcon = _args$closeIcon === void 0 ? defaultCloseIcon : _args$closeIcon;
+    var duration = durationArg === undefined ? defaultDuration$1 : durationArg;
+    var iconNode = null;
+
+    if (icon) {
+      iconNode = /*#__PURE__*/React.createElement("span", {
+        className: "".concat(prefixCls, "-icon")
+      }, args.icon);
+    } else if (type) {
+      iconNode = /*#__PURE__*/React.createElement(typeToIcon$1[type] || null, {
+        className: "".concat(prefixCls, "-icon ").concat(prefixCls, "-icon-").concat(type)
+      });
+    }
+
+    var closeIconToRender = /*#__PURE__*/React.createElement("span", {
+      className: "".concat(prefixCls, "-close-x")
+    }, closeIcon || /*#__PURE__*/React.createElement(CloseOutlined$2, {
+      className: "".concat(prefixCls, "-close-icon")
+    }));
+    var autoMarginTag = !description && iconNode ? /*#__PURE__*/React.createElement("span", {
+      className: "".concat(prefixCls, "-message-single-line-auto-margin")
+    }) : null;
+    return {
+      content: /*#__PURE__*/React.createElement(ConfigProvider, {
+        iconPrefixCls: iconPrefixCls
+      }, /*#__PURE__*/React.createElement("div", {
+        className: iconNode ? "".concat(prefixCls, "-with-icon") : '',
+        role: "alert"
+      }, iconNode, /*#__PURE__*/React.createElement("div", {
+        className: "".concat(prefixCls, "-message")
+      }, autoMarginTag, message), /*#__PURE__*/React.createElement("div", {
+        className: "".concat(prefixCls, "-description")
+      }, description), btn ? /*#__PURE__*/React.createElement("span", {
+        className: "".concat(prefixCls, "-btn")
+      }, btn) : null)),
+      duration: duration,
+      closable: true,
+      closeIcon: closeIconToRender,
+      onClose: onClose,
+      onClick: onClick,
+      key: key,
+      style: style || {},
+      className: classnames(className, _defineProperty({}, "".concat(prefixCls, "-").concat(type), !!type))
+    };
+  }
+
+  function notice$1(args) {
+    getNotificationInstance(args, function (_ref) {
+      var prefixCls = _ref.prefixCls,
+          iconPrefixCls = _ref.iconPrefixCls,
+          instance = _ref.instance;
+      instance.notice(getRCNoticeProps$1(args, prefixCls, iconPrefixCls));
+    });
+  }
+
+  var api$1 = {
+    open: notice$1,
+    close: function close(key) {
+      Object.keys(notificationInstance).forEach(function (cacheKey) {
+        return Promise.resolve(notificationInstance[cacheKey]).then(function (instance) {
+          instance.removeNotice(key);
+        });
+      });
+    },
+    config: setNotificationConfig,
+    destroy: function destroy() {
+      Object.keys(notificationInstance).forEach(function (cacheKey) {
+        Promise.resolve(notificationInstance[cacheKey]).then(function (instance) {
+          instance.destroy();
+        });
+        delete notificationInstance[cacheKey]; // lgtm[js/missing-await]
+      });
+    }
+  };
+  ['success', 'info', 'warning', 'error'].forEach(function (type) {
+    api$1[type] = function (args) {
+      return api$1.open(_extends$1(_extends$1({}, args), {
+        type: type
+      }));
+    };
+  });
+  api$1.warn = api$1.warning;
+  api$1.useNotification = createUseNotification(getNotificationInstance, getRCNoticeProps$1);
+
+  /* eslint-disable import/prefer-default-export, prefer-destructuring */
+  var dynamicStyleMark = "-ant-".concat(Date.now(), "-").concat(Math.random());
+  function registerTheme(globalPrefixCls, theme) {
+    var variables = {};
+
+    var formatColor = function formatColor(color, updater) {
+      var clone = color.clone();
+      clone = (updater === null || updater === void 0 ? void 0 : updater(clone)) || clone;
+      return clone.toRgbString();
+    };
+
+    var fillColor = function fillColor(colorVal, type) {
+      var baseColor = new TinyColor(colorVal);
+      var colorPalettes = generate(baseColor.toRgbString());
+      variables["".concat(type, "-color")] = formatColor(baseColor);
+      variables["".concat(type, "-color-disabled")] = colorPalettes[1];
+      variables["".concat(type, "-color-hover")] = colorPalettes[4];
+      variables["".concat(type, "-color-active")] = colorPalettes[7];
+      variables["".concat(type, "-color-outline")] = baseColor.clone().setAlpha(0.2).toRgbString();
+      variables["".concat(type, "-color-deprecated-bg")] = colorPalettes[1];
+      variables["".concat(type, "-color-deprecated-border")] = colorPalettes[3];
+    }; // ================ Primary Color ================
+
+
+    if (theme.primaryColor) {
+      fillColor(theme.primaryColor, 'primary');
+      var primaryColor = new TinyColor(theme.primaryColor);
+      var primaryColors = generate(primaryColor.toRgbString()); // Legacy - We should use semantic naming standard
+
+      primaryColors.forEach(function (color, index) {
+        variables["primary-".concat(index + 1)] = color;
+      }); // Deprecated
+
+      variables['primary-color-deprecated-l-35'] = formatColor(primaryColor, function (c) {
+        return c.lighten(35);
+      });
+      variables['primary-color-deprecated-l-20'] = formatColor(primaryColor, function (c) {
+        return c.lighten(20);
+      });
+      variables['primary-color-deprecated-t-20'] = formatColor(primaryColor, function (c) {
+        return c.tint(20);
+      });
+      variables['primary-color-deprecated-t-50'] = formatColor(primaryColor, function (c) {
+        return c.tint(50);
+      });
+      variables['primary-color-deprecated-f-12'] = formatColor(primaryColor, function (c) {
+        return c.setAlpha(c.getAlpha() * 0.12);
+      });
+      var primaryActiveColor = new TinyColor(primaryColors[0]);
+      variables['primary-color-active-deprecated-f-30'] = formatColor(primaryActiveColor, function (c) {
+        return c.setAlpha(c.getAlpha() * 0.3);
+      });
+      variables['primary-color-active-deprecated-d-02'] = formatColor(primaryActiveColor, function (c) {
+        return c.darken(2);
+      });
+    } // ================ Success Color ================
+
+
+    if (theme.successColor) {
+      fillColor(theme.successColor, 'success');
+    } // ================ Warning Color ================
+
+
+    if (theme.warningColor) {
+      fillColor(theme.warningColor, 'warning');
+    } // ================= Error Color =================
+
+
+    if (theme.errorColor) {
+      fillColor(theme.errorColor, 'error');
+    } // ================= Info Color ==================
+
+
+    if (theme.infoColor) {
+      fillColor(theme.infoColor, 'info');
+    } // Convert to css variables
+
+
+    var cssList = Object.keys(variables).map(function (key) {
+      return "--".concat(globalPrefixCls, "-").concat(key, ": ").concat(variables[key], ";");
+    });
+    updateCSS("\n  :root {\n    ".concat(cssList.join('\n'), "\n  }\n  "), "".concat(dynamicStyleMark, "-dynamic-theme"));
+  }
+
+  var PASSED_PROPS = ['getTargetContainer', 'getPopupContainer', 'renderEmpty', 'pageHeader', 'input', 'form'];
+  var defaultPrefixCls$1 = 'ant';
+  var defaultIconPrefixCls = 'anticon';
+  var globalPrefixCls;
+  var globalIconPrefixCls;
+
+  function getGlobalPrefixCls() {
+    return globalPrefixCls || defaultPrefixCls$1;
+  }
+
+  function getGlobalIconPrefixCls() {
+    return globalIconPrefixCls || defaultIconPrefixCls;
+  }
+
+  var setGlobalConfig = function setGlobalConfig(_ref) {
+    var prefixCls = _ref.prefixCls,
+        iconPrefixCls = _ref.iconPrefixCls,
+        theme = _ref.theme;
+
+    if (prefixCls !== undefined) {
+      globalPrefixCls = prefixCls;
+    }
+
+    if (iconPrefixCls !== undefined) {
+      globalIconPrefixCls = iconPrefixCls;
+    }
+
+    if (theme) {
+      registerTheme(getGlobalPrefixCls(), theme);
+    }
+  };
+
+  var globalConfig = function globalConfig() {
+    return {
+      getPrefixCls: function getPrefixCls(suffixCls, customizePrefixCls) {
+        if (customizePrefixCls) return customizePrefixCls;
+        return suffixCls ? "".concat(getGlobalPrefixCls(), "-").concat(suffixCls) : getGlobalPrefixCls();
+      },
+      getIconPrefixCls: getGlobalIconPrefixCls,
+      getRootPrefixCls: function getRootPrefixCls(rootPrefixCls, customizePrefixCls) {
+        // Customize rootPrefixCls is first priority
+        if (rootPrefixCls) {
+          return rootPrefixCls;
+        } // If Global prefixCls provided, use this
+
+
+        if (globalPrefixCls) {
+          return globalPrefixCls;
+        } // [Legacy] If customize prefixCls provided, we cut it to get the prefixCls
+
+
+        if (customizePrefixCls && customizePrefixCls.includes('-')) {
+          return customizePrefixCls.replace(/^(.*)-[^-]*$/, '$1');
+        } // Fallback to default prefixCls
+
+
+        return getGlobalPrefixCls();
+      }
+    };
+  };
+
+  var ProviderChildren = function ProviderChildren(props) {
+    var _a, _b;
+
+    var children = props.children,
+        csp = props.csp,
+        autoInsertSpaceInButton = props.autoInsertSpaceInButton,
+        form = props.form,
+        locale = props.locale,
+        componentSize = props.componentSize,
+        direction = props.direction,
+        space = props.space,
+        virtual = props.virtual,
+        dropdownMatchSelectWidth = props.dropdownMatchSelectWidth,
+        legacyLocale = props.legacyLocale,
+        parentContext = props.parentContext,
+        iconPrefixCls = props.iconPrefixCls;
+    var getPrefixCls = React.useCallback(function (suffixCls, customizePrefixCls) {
+      var prefixCls = props.prefixCls;
+      if (customizePrefixCls) return customizePrefixCls;
+      var mergedPrefixCls = prefixCls || parentContext.getPrefixCls('');
+      return suffixCls ? "".concat(mergedPrefixCls, "-").concat(suffixCls) : mergedPrefixCls;
+    }, [parentContext.getPrefixCls, props.prefixCls]);
+
+    var config = _extends$1(_extends$1({}, parentContext), {
+      csp: csp,
+      autoInsertSpaceInButton: autoInsertSpaceInButton,
+      locale: locale || legacyLocale,
+      direction: direction,
+      space: space,
+      virtual: virtual,
+      dropdownMatchSelectWidth: dropdownMatchSelectWidth,
+      getPrefixCls: getPrefixCls
+    }); // Pass the props used by `useContext` directly with child component.
+    // These props should merged into `config`.
+
+
+    PASSED_PROPS.forEach(function (propName) {
+      var propValue = props[propName];
+
+      if (propValue) {
+        config[propName] = propValue;
+      }
+    }); // https://github.com/ant-design/ant-design/issues/27617
+
+    var memoedConfig = useMemo(function () {
+      return config;
+    }, config, function (prevConfig, currentConfig) {
+      var prevKeys = Object.keys(prevConfig);
+      var currentKeys = Object.keys(currentConfig);
+      return prevKeys.length !== currentKeys.length || prevKeys.some(function (key) {
+        return prevConfig[key] !== currentConfig[key];
+      });
+    });
+    var memoIconContextValue = React.useMemo(function () {
+      return {
+        prefixCls: iconPrefixCls,
+        csp: csp
+      };
+    }, [iconPrefixCls]);
+    var childNode = children; // Additional Form provider
+
+    var validateMessages = {};
+
+    if (locale) {
+      validateMessages = ((_a = locale.Form) === null || _a === void 0 ? void 0 : _a.defaultValidateMessages) || ((_b = localeValues.Form) === null || _b === void 0 ? void 0 : _b.defaultValidateMessages) || {};
+    }
+
+    if (form && form.validateMessages) {
+      validateMessages = _extends$1(_extends$1({}, validateMessages), form.validateMessages);
+    }
+
+    if (Object.keys(validateMessages).length > 0) {
+      childNode = /*#__PURE__*/React.createElement(FormProvider, {
+        validateMessages: validateMessages
+      }, children);
+    }
+
+    if (locale) {
+      childNode = /*#__PURE__*/React.createElement(LocaleProvider, {
+        locale: locale,
+        _ANT_MARK__: ANT_MARK
+      }, childNode);
+    }
+
+    if (iconPrefixCls) {
+      childNode = /*#__PURE__*/React.createElement(IconContext.Provider, {
+        value: memoIconContextValue
+      }, childNode);
+    }
+
+    if (componentSize) {
+      childNode = /*#__PURE__*/React.createElement(SizeContextProvider, {
+        size: componentSize
+      }, childNode);
+    }
+
+    return /*#__PURE__*/React.createElement(ConfigContext.Provider, {
+      value: memoedConfig
+    }, childNode);
+  };
+
+  var ConfigProvider = function ConfigProvider(props) {
+    React.useEffect(function () {
+      if (props.direction) {
+        api.config({
+          rtl: props.direction === 'rtl'
+        });
+        api$1.config({
+          rtl: props.direction === 'rtl'
+        });
+      }
+    }, [props.direction]);
+    return /*#__PURE__*/React.createElement(LocaleReceiver, null, function (_, __, legacyLocale) {
+      return /*#__PURE__*/React.createElement(ConfigConsumer, null, function (context) {
+        return /*#__PURE__*/React.createElement(ProviderChildren, _extends$1({
+          parentContext: context,
+          legacyLocale: legacyLocale
+        }, props));
+      });
+    });
+  };
+  /** @private internal Usage. do not use in your production */
+
+
+  ConfigProvider.ConfigContext = ConfigContext;
+  ConfigProvider.SizeContext = SizeContext;
+  ConfigProvider.config = setGlobalConfig;
 
   function addEventListenerWrap(target, eventType, cb, option) {
     /* eslint camelcase: 2 */
@@ -31876,6 +38837,17 @@
   var ButtonTypes = tuple('default', 'primary', 'ghost', 'dashed', 'link', 'text');
   var ButtonShapes = tuple('default', 'circle', 'round');
   var ButtonHTMLTypes = tuple('submit', 'button', 'reset');
+  function convertLegacyProps(type) {
+    if (type === 'danger') {
+      return {
+        danger: true
+      };
+    }
+
+    return {
+      type: type
+    };
+  }
 
   var InternalButton = function InternalButton(props, ref) {
     var _classNames;
@@ -32045,6 +39017,10 @@
 
   LeftOutlined$1.displayName = 'LeftOutlined';
   var LeftOutlined$2 = /*#__PURE__*/React.forwardRef(LeftOutlined$1);
+
+  var canUseDocElement = function canUseDocElement() {
+    return canUseDom() && window.document.documentElement;
+  };
 
   /* eslint-disable no-param-reassign */
   var cached;
@@ -33105,7 +40081,7 @@
     return fixPos;
   }
 
-  var _excluded$3 = ["visible", "onVisibleChange", "getContainer", "current"];
+  var _excluded$6 = ["visible", "onVisibleChange", "getContainer", "current"];
   /* istanbul ignore next */
 
   var context = /*#__PURE__*/React.createContext({
@@ -33148,7 +40124,7 @@
         getContainer = _ref2$getContainer === void 0 ? undefined : _ref2$getContainer,
         _ref2$current = _ref2.current,
         currentIndex = _ref2$current === void 0 ? 0 : _ref2$current,
-        dialogProps = _objectWithoutProperties$1(_ref2, _excluded$3);
+        dialogProps = _objectWithoutProperties$1(_ref2, _excluded$6);
 
     var _useState = React.useState(new Map()),
         _useState2 = _slicedToArray(_useState, 2),
@@ -33246,7 +40222,7 @@
     }, dialogProps)));
   };
 
-  var _excluded$4 = ["prefixCls", "src", "alt", "onClose", "afterClose", "visible", "icons"];
+  var _excluded$7 = ["prefixCls", "src", "alt", "onClose", "afterClose", "visible", "icons"];
   var useState = React.useState,
       useEffect = React.useEffect;
   var initialPosition = {
@@ -33263,7 +40239,7 @@
         visible = props.visible,
         _props$icons = props.icons,
         icons = _props$icons === void 0 ? {} : _props$icons,
-        restProps = _objectWithoutProperties$1(props, _excluded$4);
+        restProps = _objectWithoutProperties$1(props, _excluded$7);
 
     var rotateLeft = icons.rotateLeft,
         rotateRight = icons.rotateRight,
@@ -33541,7 +40517,7 @@
     }, right));
   };
 
-  var _excluded$5 = ["src", "alt", "onPreviewClose", "prefixCls", "previewPrefixCls", "placeholder", "fallback", "width", "height", "style", "preview", "className", "onClick", "onError", "wrapperClassName", "wrapperStyle", "crossOrigin", "decoding", "loading", "referrerPolicy", "sizes", "srcSet", "useMap"],
+  var _excluded$8 = ["src", "alt", "onPreviewClose", "prefixCls", "previewPrefixCls", "placeholder", "fallback", "width", "height", "style", "preview", "className", "onClick", "onError", "wrapperClassName", "wrapperStyle", "crossOrigin", "decoding", "loading", "referrerPolicy", "sizes", "srcSet", "useMap"],
       _excluded2 = ["src", "visible", "onVisibleChange", "getContainer", "mask", "maskClassName", "icons"];
   var uuid$2 = 0;
 
@@ -33572,7 +40548,7 @@
         sizes = _ref.sizes,
         srcSet = _ref.srcSet,
         useMap = _ref.useMap,
-        otherProps = _objectWithoutProperties$1(_ref, _excluded$5);
+        otherProps = _objectWithoutProperties$1(_ref, _excluded$8);
 
     var isCustomPlaceholder = placeholder && placeholder !== true;
 
@@ -33918,15 +40894,716 @@
 
   Image.PreviewGroup = InternalPreviewGroup;
 
-  var ApaasButton = /*#__PURE__*/React.forwardRef(function (props, ref) {
-    var handleClick = function handleClick(e) {
-      var _props$events;
+  var __rest$5 = undefined && undefined.__rest || function (s, e) {
+    var t = {};
 
-      if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onClick) === 'function') {
-        props.events.onClick(e);
+    for (var p in s) {
+      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+    }
+
+    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+    }
+    return t;
+  };
+  var mousePosition; // ref: https://github.com/ant-design/ant-design/issues/15795
+
+  var getClickPosition = function getClickPosition(e) {
+    mousePosition = {
+      x: e.pageX,
+      y: e.pageY
+    }; // 100ms 内发生过点击事件，则从点击位置动画展示
+    // 否则直接 zoom 展示
+    // 这样可以兼容非点击方式展开
+
+    setTimeout(function () {
+      mousePosition = null;
+    }, 100);
+  }; // 只有点击事件支持从鼠标位置动画展开
+
+
+  if (canUseDocElement()) {
+    document.documentElement.addEventListener('click', getClickPosition, true);
+  }
+
+  var Modal = function Modal(props) {
+    var _classNames;
+
+    var _React$useContext = React.useContext(ConfigContext),
+        getContextPopupContainer = _React$useContext.getPopupContainer,
+        getPrefixCls = _React$useContext.getPrefixCls,
+        direction = _React$useContext.direction;
+
+    var handleCancel = function handleCancel(e) {
+      var onCancel = props.onCancel;
+      onCancel === null || onCancel === void 0 ? void 0 : onCancel(e);
+    };
+
+    var handleOk = function handleOk(e) {
+      var onOk = props.onOk;
+      onOk === null || onOk === void 0 ? void 0 : onOk(e);
+    };
+
+    var renderFooter = function renderFooter(locale) {
+      var okText = props.okText,
+          okType = props.okType,
+          cancelText = props.cancelText,
+          confirmLoading = props.confirmLoading;
+      return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, _extends$1({
+        onClick: handleCancel
+      }, props.cancelButtonProps), cancelText || locale.cancelText), /*#__PURE__*/React.createElement(Button, _extends$1({}, convertLegacyProps(okType), {
+        loading: confirmLoading,
+        onClick: handleOk
+      }, props.okButtonProps), okText || locale.okText));
+    };
+
+    var customizePrefixCls = props.prefixCls,
+        footer = props.footer,
+        visible = props.visible,
+        wrapClassName = props.wrapClassName,
+        centered = props.centered,
+        getContainer = props.getContainer,
+        closeIcon = props.closeIcon,
+        _props$focusTriggerAf = props.focusTriggerAfterClose,
+        focusTriggerAfterClose = _props$focusTriggerAf === void 0 ? true : _props$focusTriggerAf,
+        restProps = __rest$5(props, ["prefixCls", "footer", "visible", "wrapClassName", "centered", "getContainer", "closeIcon", "focusTriggerAfterClose"]);
+
+    var prefixCls = getPrefixCls('modal', customizePrefixCls);
+    var rootPrefixCls = getPrefixCls();
+    var defaultFooter = /*#__PURE__*/React.createElement(LocaleReceiver, {
+      componentName: "Modal",
+      defaultLocale: getConfirmLocale()
+    }, renderFooter);
+    var closeIconToRender = /*#__PURE__*/React.createElement("span", {
+      className: "".concat(prefixCls, "-close-x")
+    }, closeIcon || /*#__PURE__*/React.createElement(CloseOutlined$2, {
+      className: "".concat(prefixCls, "-close-icon")
+    }));
+    var wrapClassNameExtended = classnames(wrapClassName, (_classNames = {}, _defineProperty(_classNames, "".concat(prefixCls, "-centered"), !!centered), _defineProperty(_classNames, "".concat(prefixCls, "-wrap-rtl"), direction === 'rtl'), _classNames));
+    return /*#__PURE__*/React.createElement(DialogWrap, _extends$1({}, restProps, {
+      getContainer: getContainer === undefined ? getContextPopupContainer : getContainer,
+      prefixCls: prefixCls,
+      wrapClassName: wrapClassNameExtended,
+      footer: footer === undefined ? defaultFooter : footer,
+      visible: visible,
+      mousePosition: mousePosition,
+      onClose: handleCancel,
+      closeIcon: closeIconToRender,
+      focusTriggerAfterClose: focusTriggerAfterClose,
+      transitionName: getTransitionName$1(rootPrefixCls, 'zoom', props.transitionName),
+      maskTransitionName: getTransitionName$1(rootPrefixCls, 'fade', props.maskTransitionName)
+    }));
+  };
+
+  Modal.defaultProps = {
+    width: 520,
+    confirmLoading: false,
+    visible: false,
+    okType: 'primary'
+  };
+
+  function isThenable(thing) {
+    return !!(thing && !!thing.then);
+  }
+
+  var ActionButton = function ActionButton(props) {
+    var clickedRef = React.useRef(false);
+    var ref = React.useRef();
+
+    var _React$useState = React.useState(false),
+        _React$useState2 = _slicedToArray(_React$useState, 2),
+        loading = _React$useState2[0],
+        setLoading = _React$useState2[1];
+
+    React.useEffect(function () {
+      var timeoutId;
+
+      if (props.autoFocus) {
+        var $this = ref.current;
+        timeoutId = setTimeout(function () {
+          return $this.focus();
+        });
+      }
+
+      return function () {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      };
+    }, []);
+
+    var handlePromiseOnOk = function handlePromiseOnOk(returnValueOfOnOk) {
+      var close = props.close;
+
+      if (!isThenable(returnValueOfOnOk)) {
+        return;
+      }
+
+      setLoading(true);
+      returnValueOfOnOk.then(function () {
+        setLoading(false);
+        close.apply(void 0, arguments);
+        clickedRef.current = false;
+      }, function (e) {
+        // Emit error when catch promise reject
+        // eslint-disable-next-line no-console
+        console.error(e); // See: https://github.com/ant-design/ant-design/issues/6183
+
+        setLoading(false);
+        clickedRef.current = false;
+      });
+    };
+
+    var onClick = function onClick(e) {
+      var actionFn = props.actionFn,
+          close = props.close;
+
+      if (clickedRef.current) {
+        return;
+      }
+
+      clickedRef.current = true;
+
+      if (!actionFn) {
+        close();
+        return;
+      }
+
+      var returnValueOfOnOk;
+
+      if (props.emitEvent) {
+        returnValueOfOnOk = actionFn(e);
+
+        if (props.quitOnNullishReturnValue && !isThenable(returnValueOfOnOk)) {
+          clickedRef.current = false;
+          close(e);
+          return;
+        }
+      } else if (actionFn.length) {
+        returnValueOfOnOk = actionFn(close); // https://github.com/ant-design/ant-design/issues/23358
+
+        clickedRef.current = false;
+      } else {
+        returnValueOfOnOk = actionFn();
+
+        if (!returnValueOfOnOk) {
+          close();
+          return;
+        }
+      }
+
+      handlePromiseOnOk(returnValueOfOnOk);
+    };
+
+    var type = props.type,
+        children = props.children,
+        prefixCls = props.prefixCls,
+        buttonProps = props.buttonProps;
+    return /*#__PURE__*/React.createElement(Button, _extends$1({}, convertLegacyProps(type), {
+      onClick: onClick,
+      loading: loading,
+      prefixCls: prefixCls
+    }, buttonProps, {
+      ref: ref
+    }), children);
+  };
+
+  var ConfirmDialog = function ConfirmDialog(props) {
+    var icon = props.icon,
+        onCancel = props.onCancel,
+        onOk = props.onOk,
+        close = props.close,
+        zIndex = props.zIndex,
+        afterClose = props.afterClose,
+        visible = props.visible,
+        keyboard = props.keyboard,
+        centered = props.centered,
+        getContainer = props.getContainer,
+        maskStyle = props.maskStyle,
+        okText = props.okText,
+        okButtonProps = props.okButtonProps,
+        cancelText = props.cancelText,
+        cancelButtonProps = props.cancelButtonProps,
+        direction = props.direction,
+        prefixCls = props.prefixCls,
+        rootPrefixCls = props.rootPrefixCls,
+        iconPrefixCls = props.iconPrefixCls,
+        bodyStyle = props.bodyStyle,
+        _props$closable = props.closable,
+        closable = _props$closable === void 0 ? false : _props$closable,
+        closeIcon = props.closeIcon,
+        modalRender = props.modalRender,
+        focusTriggerAfterClose = props.focusTriggerAfterClose;
+    devWarning(!(typeof icon === 'string' && icon.length > 2), 'Modal', "`icon` is using ReactNode instead of string naming in v4. Please check `".concat(icon, "` at https://ant.design/components/icon")); // 支持传入{ icon: null }来隐藏`Modal.confirm`默认的Icon
+
+    var okType = props.okType || 'primary';
+    var contentPrefixCls = "".concat(prefixCls, "-confirm"); // 默认为 true，保持向下兼容
+
+    var okCancel = 'okCancel' in props ? props.okCancel : true;
+    var width = props.width || 416;
+    var style = props.style || {};
+    var mask = props.mask === undefined ? true : props.mask; // 默认为 false，保持旧版默认行为
+
+    var maskClosable = props.maskClosable === undefined ? false : props.maskClosable;
+    var autoFocusButton = props.autoFocusButton === null ? false : props.autoFocusButton || 'ok';
+    var classString = classnames(contentPrefixCls, "".concat(contentPrefixCls, "-").concat(props.type), _defineProperty({}, "".concat(contentPrefixCls, "-rtl"), direction === 'rtl'), props.className);
+    var cancelButton = okCancel && /*#__PURE__*/React.createElement(ActionButton, {
+      actionFn: onCancel,
+      close: close,
+      autoFocus: autoFocusButton === 'cancel',
+      buttonProps: cancelButtonProps,
+      prefixCls: "".concat(rootPrefixCls, "-btn")
+    }, cancelText);
+    return /*#__PURE__*/React.createElement(ConfigProvider, {
+      prefixCls: rootPrefixCls,
+      iconPrefixCls: iconPrefixCls,
+      direction: direction
+    }, /*#__PURE__*/React.createElement(Modal, {
+      prefixCls: prefixCls,
+      className: classString,
+      wrapClassName: classnames(_defineProperty({}, "".concat(contentPrefixCls, "-centered"), !!props.centered)),
+      onCancel: function onCancel() {
+        return close({
+          triggerCancel: true
+        });
+      },
+      visible: visible,
+      title: "",
+      footer: "",
+      transitionName: getTransitionName$1(rootPrefixCls, 'zoom', props.transitionName),
+      maskTransitionName: getTransitionName$1(rootPrefixCls, 'fade', props.maskTransitionName),
+      mask: mask,
+      maskClosable: maskClosable,
+      maskStyle: maskStyle,
+      style: style,
+      bodyStyle: bodyStyle,
+      width: width,
+      zIndex: zIndex,
+      afterClose: afterClose,
+      keyboard: keyboard,
+      centered: centered,
+      getContainer: getContainer,
+      closable: closable,
+      closeIcon: closeIcon,
+      modalRender: modalRender,
+      focusTriggerAfterClose: focusTriggerAfterClose
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "".concat(contentPrefixCls, "-body-wrapper")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "".concat(contentPrefixCls, "-body")
+    }, icon, props.title === undefined ? null : /*#__PURE__*/React.createElement("span", {
+      className: "".concat(contentPrefixCls, "-title")
+    }, props.title), /*#__PURE__*/React.createElement("div", {
+      className: "".concat(contentPrefixCls, "-content")
+    }, props.content)), /*#__PURE__*/React.createElement("div", {
+      className: "".concat(contentPrefixCls, "-btns")
+    }, cancelButton, /*#__PURE__*/React.createElement(ActionButton, {
+      type: okType,
+      actionFn: onOk,
+      close: close,
+      autoFocus: autoFocusButton === 'ok',
+      buttonProps: okButtonProps,
+      prefixCls: "".concat(rootPrefixCls, "-btn")
+    }, okText)))));
+  };
+
+  var destroyFns = [];
+
+  var __rest$6 = undefined && undefined.__rest || function (s, e) {
+    var t = {};
+
+    for (var p in s) {
+      if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+    }
+
+    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+    }
+    return t;
+  };
+  var defaultRootPrefixCls = '';
+
+  function getRootPrefixCls() {
+    return defaultRootPrefixCls;
+  }
+
+  function confirm(config) {
+    var container = document.createDocumentFragment(); // eslint-disable-next-line @typescript-eslint/no-use-before-define
+
+    var currentConfig = _extends$1(_extends$1({}, config), {
+      close: close,
+      visible: true
+    });
+
+    function destroy() {
+      reactDom.unmountComponentAtNode(container);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      var triggerCancel = args.some(function (param) {
+        return param && param.triggerCancel;
+      });
+
+      if (config.onCancel && triggerCancel) {
+        config.onCancel.apply(config, args);
+      }
+
+      for (var i = 0; i < destroyFns.length; i++) {
+        var fn = destroyFns[i]; // eslint-disable-next-line @typescript-eslint/no-use-before-define
+
+        if (fn === close) {
+          destroyFns.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    function render(_a) {
+      var okText = _a.okText,
+          cancelText = _a.cancelText,
+          customizePrefixCls = _a.prefixCls,
+          props = __rest$6(_a, ["okText", "cancelText", "prefixCls"]);
+      /**
+       * https://github.com/ant-design/ant-design/issues/23623
+       *
+       * Sync render blocks React event. Let's make this async.
+       */
+
+
+      setTimeout(function () {
+        var runtimeLocale = getConfirmLocale();
+
+        var _globalConfig = globalConfig(),
+            getPrefixCls = _globalConfig.getPrefixCls,
+            getIconPrefixCls = _globalConfig.getIconPrefixCls; // because Modal.config  set rootPrefixCls, which is different from other components
+
+
+        var rootPrefixCls = getPrefixCls(undefined, getRootPrefixCls());
+        var prefixCls = customizePrefixCls || "".concat(rootPrefixCls, "-modal");
+        var iconPrefixCls = getIconPrefixCls();
+        reactDom.render( /*#__PURE__*/React.createElement(ConfirmDialog, _extends$1({}, props, {
+          prefixCls: prefixCls,
+          rootPrefixCls: rootPrefixCls,
+          iconPrefixCls: iconPrefixCls,
+          okText: okText || (props.okCancel ? runtimeLocale.okText : runtimeLocale.justOkText),
+          cancelText: cancelText || runtimeLocale.cancelText
+        })), container);
+      });
+    }
+
+    function close() {
+      var _this = this;
+
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      currentConfig = _extends$1(_extends$1({}, currentConfig), {
+        visible: false,
+        afterClose: function afterClose() {
+          if (typeof config.afterClose === 'function') {
+            config.afterClose();
+          }
+
+          destroy.apply(_this, args);
+        }
+      });
+      render(currentConfig);
+    }
+
+    function update(configUpdate) {
+      if (typeof configUpdate === 'function') {
+        currentConfig = configUpdate(currentConfig);
+      } else {
+        currentConfig = _extends$1(_extends$1({}, currentConfig), configUpdate);
+      }
+
+      render(currentConfig);
+    }
+
+    render(currentConfig);
+    destroyFns.push(close);
+    return {
+      destroy: close,
+      update: update
+    };
+  }
+  function withWarn(props) {
+    return _extends$1(_extends$1({
+      icon: /*#__PURE__*/React.createElement(ExclamationCircleOutlined$2, null),
+      okCancel: false
+    }, props), {
+      type: 'warning'
+    });
+  }
+  function withInfo(props) {
+    return _extends$1(_extends$1({
+      icon: /*#__PURE__*/React.createElement(InfoCircleOutlined$2, null),
+      okCancel: false
+    }, props), {
+      type: 'info'
+    });
+  }
+  function withSuccess(props) {
+    return _extends$1(_extends$1({
+      icon: /*#__PURE__*/React.createElement(CheckCircleOutlined$2, null),
+      okCancel: false
+    }, props), {
+      type: 'success'
+    });
+  }
+  function withError(props) {
+    return _extends$1(_extends$1({
+      icon: /*#__PURE__*/React.createElement(CloseCircleOutlined$2, null),
+      okCancel: false
+    }, props), {
+      type: 'error'
+    });
+  }
+  function withConfirm(props) {
+    return _extends$1(_extends$1({
+      icon: /*#__PURE__*/React.createElement(ExclamationCircleOutlined$2, null),
+      okCancel: true
+    }, props), {
+      type: 'confirm'
+    });
+  }
+  function modalGlobalConfig(_ref) {
+    var rootPrefixCls = _ref.rootPrefixCls;
+    devWarning(false, 'Modal', 'Modal.config is deprecated. Please use ConfigProvider.config instead.');
+    defaultRootPrefixCls = rootPrefixCls;
+  }
+
+  function usePatchElement() {
+    var _React$useState = React.useState([]),
+        _React$useState2 = _slicedToArray(_React$useState, 2),
+        elements = _React$useState2[0],
+        setElements = _React$useState2[1];
+
+    var patchElement = React.useCallback(function (element) {
+      // append a new element to elements (and create a new ref)
+      setElements(function (originElements) {
+        return [].concat(_toConsumableArray(originElements), [element]);
+      }); // return a function that removes the new element out of elements (and create a new ref)
+      // it works a little like useEffect
+
+      return function () {
+        setElements(function (originElements) {
+          return originElements.filter(function (ele) {
+            return ele !== element;
+          });
+        });
+      };
+    }, []);
+    return [elements, patchElement];
+  }
+
+  var HookModal = function HookModal(_ref, ref) {
+    var afterClose = _ref.afterClose,
+        config = _ref.config;
+
+    var _React$useState = React.useState(true),
+        _React$useState2 = _slicedToArray(_React$useState, 2),
+        visible = _React$useState2[0],
+        setVisible = _React$useState2[1];
+
+    var _React$useState3 = React.useState(config),
+        _React$useState4 = _slicedToArray(_React$useState3, 2),
+        innerConfig = _React$useState4[0],
+        setInnerConfig = _React$useState4[1];
+
+    var _React$useContext = React.useContext(ConfigContext),
+        direction = _React$useContext.direction,
+        getPrefixCls = _React$useContext.getPrefixCls;
+
+    var prefixCls = getPrefixCls('modal');
+    var rootPrefixCls = getPrefixCls();
+
+    var close = function close() {
+      setVisible(false);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      var triggerCancel = args.some(function (param) {
+        return param && param.triggerCancel;
+      });
+
+      if (innerConfig.onCancel && triggerCancel) {
+        innerConfig.onCancel();
       }
     };
 
+    React.useImperativeHandle(ref, function () {
+      return {
+        destroy: close,
+        update: function update(newConfig) {
+          setInnerConfig(function (originConfig) {
+            return _extends$1(_extends$1({}, originConfig), newConfig);
+          });
+        }
+      };
+    });
+    return /*#__PURE__*/React.createElement(LocaleReceiver, {
+      componentName: "Modal",
+      defaultLocale: localeValues.Modal
+    }, function (modalLocale) {
+      return /*#__PURE__*/React.createElement(ConfirmDialog, _extends$1({
+        prefixCls: prefixCls,
+        rootPrefixCls: rootPrefixCls
+      }, innerConfig, {
+        close: close,
+        visible: visible,
+        afterClose: afterClose,
+        okText: innerConfig.okText || (innerConfig.okCancel ? modalLocale.okText : modalLocale.justOkText),
+        direction: direction,
+        cancelText: innerConfig.cancelText || modalLocale.cancelText
+      }));
+    });
+  };
+
+  var HookModal$1 = /*#__PURE__*/React.forwardRef(HookModal);
+
+  var uuid$3 = 0;
+  var ElementsHolder = /*#__PURE__*/React.memo( /*#__PURE__*/React.forwardRef(function (_props, ref) {
+    var _usePatchElement = usePatchElement(),
+        _usePatchElement2 = _slicedToArray(_usePatchElement, 2),
+        elements = _usePatchElement2[0],
+        patchElement = _usePatchElement2[1];
+
+    React.useImperativeHandle(ref, function () {
+      return {
+        patchElement: patchElement
+      };
+    }, []);
+    return /*#__PURE__*/React.createElement(React.Fragment, null, elements);
+  }));
+  function useModal() {
+    var holderRef = React.useRef(null); // ========================== Effect ==========================
+
+    var _React$useState = React.useState([]),
+        _React$useState2 = _slicedToArray(_React$useState, 2),
+        actionQueue = _React$useState2[0],
+        setActionQueue = _React$useState2[1];
+
+    React.useEffect(function () {
+      if (actionQueue.length) {
+        var cloneQueue = _toConsumableArray(actionQueue);
+
+        cloneQueue.forEach(function (action) {
+          action();
+        });
+        setActionQueue([]);
+      }
+    }, [actionQueue]); // =========================== Hook ===========================
+
+    var getConfirmFunc = React.useCallback(function (withFunc) {
+      return function hookConfirm(config) {
+        var _a;
+
+        uuid$3 += 1;
+        var modalRef = /*#__PURE__*/React.createRef();
+        var closeFunc;
+        var modal = /*#__PURE__*/React.createElement(HookModal$1, {
+          key: "modal-".concat(uuid$3),
+          config: withFunc(config),
+          ref: modalRef,
+          afterClose: function afterClose() {
+            closeFunc();
+          }
+        });
+        closeFunc = (_a = holderRef.current) === null || _a === void 0 ? void 0 : _a.patchElement(modal);
+        return {
+          destroy: function destroy() {
+            function destroyAction() {
+              var _a;
+
+              (_a = modalRef.current) === null || _a === void 0 ? void 0 : _a.destroy();
+            }
+
+            if (modalRef.current) {
+              destroyAction();
+            } else {
+              setActionQueue(function (prev) {
+                return [].concat(_toConsumableArray(prev), [destroyAction]);
+              });
+            }
+          },
+          update: function update(newConfig) {
+            function updateAction() {
+              var _a;
+
+              (_a = modalRef.current) === null || _a === void 0 ? void 0 : _a.update(newConfig);
+            }
+
+            if (modalRef.current) {
+              updateAction();
+            } else {
+              setActionQueue(function (prev) {
+                return [].concat(_toConsumableArray(prev), [updateAction]);
+              });
+            }
+          }
+        };
+      };
+    }, []);
+    var fns = React.useMemo(function () {
+      return {
+        info: getConfirmFunc(withInfo),
+        success: getConfirmFunc(withSuccess),
+        error: getConfirmFunc(withError),
+        warning: getConfirmFunc(withWarn),
+        confirm: getConfirmFunc(withConfirm)
+      };
+    }, []); // eslint-disable-next-line react/jsx-key
+
+    return [fns, /*#__PURE__*/React.createElement(ElementsHolder, {
+      ref: holderRef
+    })];
+  }
+
+  function modalWarn(props) {
+    return confirm(withWarn(props));
+  }
+
+  var Modal$1 = Modal;
+  Modal$1.useModal = useModal;
+
+  Modal$1.info = function infoFn(props) {
+    return confirm(withInfo(props));
+  };
+
+  Modal$1.success = function successFn(props) {
+    return confirm(withSuccess(props));
+  };
+
+  Modal$1.error = function errorFn(props) {
+    return confirm(withError(props));
+  };
+
+  Modal$1.warning = modalWarn;
+  Modal$1.warn = modalWarn;
+
+  Modal$1.confirm = function confirmFn(props) {
+    return confirm(withConfirm(props));
+  };
+
+  Modal$1.destroyAll = function destroyAllFn() {
+    while (destroyFns.length) {
+      var close = destroyFns.pop();
+
+      if (close) {
+        close();
+      }
+    }
+  };
+
+  Modal$1.config = modalGlobalConfig;
+
+  var useLifeCycle = function useLifeCycle(props) {
     React.useEffect(function () {
       var _props$lifeCycle;
 
@@ -33946,6 +41623,18 @@
         }
       };
     }, []);
+  };
+
+  var ApaasButton = /*#__PURE__*/React.forwardRef(function (props, ref) {
+    var handleClick = function handleClick(e) {
+      var _props$events;
+
+      if (typeof (props === null || props === void 0 ? void 0 : (_props$events = props.events) === null || _props$events === void 0 ? void 0 : _props$events.onClick) === 'function') {
+        props.events.onClick(e);
+      }
+    };
+
+    useLifeCycle(props);
     return /*#__PURE__*/React__default['default'].createElement(Button, _extends({}, props, {
       onClick: handleClick,
       ref: ref
@@ -33974,7 +41663,7 @@
           title: '链接地址',
           type: 'string',
           default: '',
-          hidden: "{{state.type !== 'link'}}"
+          hidden: "{{formData.type !== 'link'}}"
         },
         target: {
           title: '跳转方式',
@@ -34234,8 +41923,7 @@
   styleInject(css_248z);
 
   var COMPONENT_NAME = "链接块";
-
-  var ApaasLinkDiv = function ApaasLinkDiv(props) {
+  var ApaasLinkDiv = /*#__PURE__*/React.forwardRef(function (props, ref) {
     var children = props.children,
         style = props.style,
         url = props.url,
@@ -34243,11 +41931,12 @@
     return /*#__PURE__*/React__default['default'].createElement("a", {
       style: style,
       href: url,
-      target: openOther ? '_blank' : '_self'
+      target: openOther ? '_blank' : '_self',
+      ref: ref
     }, children ? children : /*#__PURE__*/React__default['default'].createElement("div", {
       className: "container"
     }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC"));
-  };
+  });
   ApaasLinkDiv.schema = {
     basicSchema: {
       type: "object",
@@ -34343,12 +42032,218 @@
 
   };
 
+  var css_248z$1 = ".footer {\n  display: flex;\n  justify-content: flex-end;\n  margin-top: 16px;\n}\n\n.container {\n  background-color: #f0f0f0;\n  border: 1px dotted;\n  color: rgb(167, 177, 189);\n  max-height: 572px;\n  padding: 20px;\n  overflow: auto;\n  margin-top: 16px;\n}\n\n.titleWrap {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  justify-content: space-between;\n  border-bottom: 1px solid #f0f0f0;\n  padding: 10px 16px;\n}\n\n.titleName {\n  color: #333;\n  font-size: 16px;\n}\n\n.footer-wrap {\n  margin-top: 4px;\n  padding: 10px 16px;\n  text-align: right;\n  background: 0 0;\n  border-top: 1px solid #f0f0f0;\n  border-radius: 0 0 2px 2px;\n}\n\n.button-list :not(:first-child) {\n  margin-left:8px\n}";
+  styleInject(css_248z$1);
+
+  var DevModal = function DevModal(props) {
+    var children = props.children,
+        title = props.title,
+        width = props.width,
+        closable = props.closable,
+        footer = props.footer;
+    return /*#__PURE__*/React__default['default'].createElement("div", {
+      style: {
+        width: width,
+        background: '#fff'
+      }
+    }, /*#__PURE__*/React__default['default'].createElement("div", {
+      className: "titleWrap"
+    }, /*#__PURE__*/React__default['default'].createElement("span", {
+      className: "titleName"
+    }, title), closable && /*#__PURE__*/React__default['default'].createElement(CloseOutlined$2, null)), children ? children : /*#__PURE__*/React__default['default'].createElement("div", {
+      className: "container"
+    }, "\u62D6\u62FD\u7EC4\u4EF6\u6216\u8005\u6A21\u7248\u5230\u8FD9\u91CC"), /*#__PURE__*/React__default['default'].createElement("div", {
+      className: "footer-wrap"
+    }, footer));
+  };
+
+  var fn = function fn() {};
+
+  var RenderFooter = function RenderFooter(props) {
+    var show = props.show,
+        align = props.align,
+        permutation = props.permutation,
+        _props$okText = props.okText,
+        okText = _props$okText === void 0 ? '确认' : _props$okText,
+        _props$cancelText = props.cancelText,
+        cancelText = _props$cancelText === void 0 ? '取消' : _props$cancelText,
+        _props$onOk = props.onOk,
+        onOk = _props$onOk === void 0 ? fn : _props$onOk,
+        _props$onCancel = props.onCancel,
+        onCancel = _props$onCancel === void 0 ? fn : _props$onCancel;
+    if (!show) return null;
+
+    var handleClick = function handleClick(item, e) {
+      return item === 'sure' ? onOk(e) : onCancel(e);
+    };
+
+    return /*#__PURE__*/React__default['default'].createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: align
+      }
+    }, /*#__PURE__*/React__default['default'].createElement("div", {
+      className: "button-list"
+    }, permutation.split(',').map(function (item) {
+      return /*#__PURE__*/React__default['default'].createElement(Button, {
+        type: item === 'sure' ? 'primary' : 'default',
+        onClick: function onClick(e) {
+          return handleClick(item, e);
+        }
+      }, item === 'sure' ? okText : cancelText);
+    })));
+  };
+
+  var _excluded$9 = ["children", "events", "mode", "footer"];
+  var ApaasModal = /*#__PURE__*/React.forwardRef(function (props, ref) {
+    var children = props.children,
+        events = props.events,
+        _props$mode = props.mode,
+        mode = _props$mode === void 0 ? COMPONENT_MODE_PREVIEW : _props$mode,
+        _props$footer = props.footer,
+        footer = _props$footer === void 0 ? {} : _props$footer,
+        basicProps = _objectWithoutProperties(props, _excluded$9);
+
+    useLifeCycle(props);
+    return mode === COMPONENT_MODE_EDIT ? /*#__PURE__*/React__default['default'].createElement(DevModal, _extends({}, props, {
+      footer: /*#__PURE__*/React__default['default'].createElement(RenderFooter, _extends({}, footer, events))
+    })) : /*#__PURE__*/React__default['default'].createElement(Modal$1, _extends({}, basicProps, events, {
+      ref: ref,
+      footer: /*#__PURE__*/React__default['default'].createElement(RenderFooter, _extends({}, footer, events))
+    }), children);
+  });
+  ApaasModal.schema = {
+    basicSchema: {
+      type: "object",
+      displayType: "column",
+      properties: {
+        title: {
+          title: '标题',
+          type: 'string',
+          default: '标题'
+        },
+        width: {
+          title: '宽度',
+          type: 'number',
+          default: 520,
+          min: 0
+        },
+        closable: {
+          title: '是否显示关闭按钮',
+          type: 'boolean',
+          default: true
+        },
+        visible: {
+          title: '显示',
+          type: 'boolean',
+          default: true
+        },
+        footer: {
+          title: '底部按钮配置',
+          type: "object",
+          displayType: "column",
+          properties: {
+            show: {
+              title: '是否显示底部按钮',
+              type: 'boolean',
+              default: true
+            },
+            align: {
+              "title": "对齐方式",
+              "type": "string",
+              "enum": ["flex-start", "center", "flex-end"],
+              "enumNames": ["左", "中", "右"],
+              "widget": "select",
+              "default": "flex-end"
+            },
+            permutation: {
+              "title": "排列方式",
+              "type": "string",
+              "enum": ['sure,cancel', 'cancel,sure', 'sure', 'cancel'],
+              "enumNames": ["确定，取消", "取消，确定", "确定", "取消"],
+              "widget": "select",
+              "default": 'sure,cancel'
+            },
+            okText: {
+              title: '确认按钮文案',
+              type: 'string',
+              default: '确认'
+            },
+            cancelText: {
+              title: '取消按钮文案',
+              type: 'string',
+              default: '取消'
+            }
+          }
+        }
+      }
+    },
+    // 基础属性Schema
+    styleSchema: {
+      type: "object",
+      displayType: "column",
+      properties: {}
+    },
+    // 样式属性Schema
+    expandSchema: {
+      type: "object",
+      displayType: "column",
+      properties: {
+        events: {
+          title: "绑定动作",
+          type: "object",
+          widget: "BindAction",
+          required: false,
+          default: {},
+          props: {
+            actions: ['onOk', 'onCancel']
+          },
+          hidden: true
+        },
+        lifeCycle: {
+          title: "生命周期",
+          type: "object",
+          properties: {
+            didMount: {
+              title: "组件加载完成时",
+              description: 'didMount',
+              type: "string",
+              required: false
+            },
+            unMount: {
+              title: "组件销毁时",
+              description: 'unMount',
+              type: "string",
+              required: false
+            }
+          },
+          default: {}
+        }
+      }
+    },
+    // 扩展属性Schema,用于写函数这些功能
+    type: "ApaasModal",
+    name: "对话框",
+    __source__: CURRENT_PACKAGE_NAME,
+    __componentType__: COMPONENT_TYPE_CONTAINER,
+    __showModal__: true,
+    // 弹框组件
+    __canDelete__: true,
+    // 是否支持在IDE中删除
+    __canCopy__: false,
+    // 是否支持被复制
+    __canMove__: false // 是否支持被移动
+
+  };
+
   var index = {
     ApaasText: ApaasText,
     ApaasButton: ApaasButton,
     ApaasImage: ApaasImage,
     ApaasLinkDiv: ApaasLinkDiv,
-    showComponentList: [ApaasText, ApaasButton, ApaasImage, ApaasLinkDiv]
+    ApaasModal: ApaasModal,
+    showComponentList: [ApaasText, ApaasButton, ApaasImage, ApaasLinkDiv, ApaasModal]
   };
 
   return index;

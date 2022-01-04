@@ -5,3 +5,6 @@ export const COMPONENT_TYPE_FORM = 'form'; // form类型
 export const COMPONENT_TYPE_CONTAINER = 'container'; // 容器类型
 export const COMPONENT_TYPE_BASIC = 'basic'; // 基础类型
 export const COMPONENT_LAYOUT_INLINE = 'inline' // 行类元素
+
+export const COMPONENT_MODE_PREVIEW = 'preview' // 组件预览模式
+export const COMPONENT_MODE_EDIT = 'edit' // 组件在IDE模式
